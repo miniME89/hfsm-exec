@@ -20,24 +20,28 @@ namespace hfsmexec
     {
         Q_OBJECT
 
+        friend class StateMachineBuilder;
+
         public:
-            AbstractState(const QString& id, State* parent = NULL);
+            AbstractState(const QString& stateId, const QString& parentStateId = "");
             virtual ~AbstractState();
 
             const QString& getId() const;
-            const bool& isInitialized() const;
 
             State* getParentState() const;
-            virtual const StateMachine* getStateMachine() const;
-            virtual const AbstractState* findState(const QString& id) const;
+            QList<AbstractTransition*> getTransitions() const;
+            virtual AbstractState* getState(const QString& stateId);
+            virtual StateMachine* getStateMachine();
 
             virtual QAbstractState* getDelegate() const = 0;
             virtual bool initialize() = 0;
             virtual QString toString() const = 0;
 
         protected:
-            QString id;
-            bool initialized;
+            QString stateId;
+            QString parentStateId;
+            StateMachine* stateMachine;
+            QList<AbstractTransition*> transitions;
     };
 
     class FinalState : public AbstractState
@@ -45,7 +49,7 @@ namespace hfsmexec
         Q_OBJECT
 
         public:
-            FinalState(const QString& id, State* parent = NULL);
+            FinalState(const QString& stateId, const QString& parentStateId = "");
             ~FinalState();
 
             virtual QFinalState* getDelegate() const;
@@ -61,18 +65,15 @@ namespace hfsmexec
         Q_OBJECT
 
         public:
-            State(const QString& id, State* parent = NULL);
+            State(const QString& stateId, const QString& parentStateId = "");
             ~State();
 
-            void addTransition(AbstractTransition* transition);
-            void removeTransition(AbstractTransition* transition);
-
-            virtual const AbstractState* findState(const QString& id) const;
-            virtual const QList<AbstractState*> getChildStates() const;
+            const QList<AbstractState*> getChildStates() const;
+            virtual AbstractState* getState(const QString& stateId);
 
             virtual QState* getDelegate() const;
-            virtual bool initialize();
-            virtual QString toString() const;
+            virtual bool initialize() = 0;
+            virtual QString toString() const = 0;
 
         protected slots:
             virtual void eventEntered();
@@ -89,17 +90,14 @@ namespace hfsmexec
         Q_OBJECT
 
         public:
-            CompositeState(const QString& id, State* parent = NULL);
+            CompositeState(const QString& stateId, const QString &initialStateId, const QString& parentStateId = "");
             ~CompositeState();
-
-            const QString& getInitial() const;
-            void setInitial(const QString& initial);
 
             virtual bool initialize();
             virtual QString toString() const;
 
         private:
-            QString initial;
+            QString initialStateId;
     };
 
     class ParallelState : public State
@@ -107,7 +105,7 @@ namespace hfsmexec
         Q_OBJECT
 
         public:
-            ParallelState(const QString& id, State* parent = NULL);
+            ParallelState(const QString& stateId, const QString& parentStateId = "");
             ~ParallelState();
 
             virtual bool initialize();
@@ -118,12 +116,10 @@ namespace hfsmexec
     {
         Q_OBJECT
 
-        public:
-            StateMachine(const QString& id, State* parent = NULL);
-            ~StateMachine();
+        friend class StateMachineBuilder;
 
-            const QString& getInitial() const;
-            void setInitial(const QString& initial);
+        public:
+            ~StateMachine();
 
             void start() const;
             void stop() const;
@@ -131,7 +127,7 @@ namespace hfsmexec
             int postDelayedEvent(QEvent* event, int delay);
             void postEvent(QEvent* event, QStateMachine::EventPriority priority = QStateMachine::NormalPriority);
 
-            virtual const StateMachine* getStateMachine() const;
+            StateMachine* getStateMachine();
 
             virtual QStateMachine* getDelegate() const;
             virtual bool initialize();
@@ -145,7 +141,30 @@ namespace hfsmexec
             QStateMachine* delegate;
 
         private:
-            QString initial;
+            QString initialId;
+
+            StateMachine(const QString& initialId);
+    };
+
+    class StateMachineBuilder
+    {
+        public:
+            StateMachineBuilder();
+            ~StateMachineBuilder();
+
+            void addState(AbstractState* state);
+            void addTransition(AbstractTransition* transition);
+
+            StateMachine* create(const QString& initialStateId);
+
+            StateMachineBuilder& operator<<(AbstractState* state);
+            StateMachineBuilder& operator<<(AbstractTransition* transition);
+
+        private:
+            QList<AbstractState*> states;
+            QList<AbstractTransition*> transitions;
+
+            AbstractState* getState(const QString& stateId);
     };
 
     class StateMachineTest : public QObject
@@ -161,6 +180,7 @@ namespace hfsmexec
         private slots:
             void triggerEvents();
     };
+
 }
 
 #endif

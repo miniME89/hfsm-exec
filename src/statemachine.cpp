@@ -7,11 +7,11 @@ using namespace hfsmexec;
 /*
  * AbstractState
  */
-AbstractState::AbstractState(const QString& id, State* parent) :
-        id(id),
-        initialized(false)
+AbstractState::AbstractState(const QString& stateId, const QString& parentStateId) :
+        stateId(stateId),
+        parentStateId(parentStateId),
+        stateMachine(NULL)
 {
-    setParent(parent);
     setObjectName("AbstractState");
 }
 
@@ -19,14 +19,10 @@ AbstractState::~AbstractState()
 {
 }
 
+
 const QString& AbstractState::getId() const
 {
-    return id;
-}
-
-const bool& AbstractState::isInitialized() const
-{
-    return initialized;
+    return stateId;
 }
 
 State* AbstractState::getParentState() const
@@ -34,20 +30,14 @@ State* AbstractState::getParentState() const
     return qobject_cast<State*>(parent());
 }
 
-const StateMachine* AbstractState::getStateMachine() const
+QList<AbstractTransition*> AbstractState::getTransitions() const
 {
-    AbstractState* parent = getParentState();
-    if (parent != NULL)
-    {
-        return parent->getStateMachine();
-    }
-
-    return NULL;
+    return transitions;
 }
 
-const AbstractState* AbstractState::findState(const QString& id) const
+AbstractState* AbstractState::getState(const QString& stateId)
 {
-    if (this->id == id)
+    if (this->stateId == stateId)
     {
         return this;
     }
@@ -55,13 +45,19 @@ const AbstractState* AbstractState::findState(const QString& id) const
     return NULL;
 }
 
+StateMachine* AbstractState::getStateMachine()
+{
+    return stateMachine;
+}
+
 /*
  * FinalState
  */
-FinalState::FinalState(const QString& id, State* parent) :
-        AbstractState(id, parent)
+FinalState::FinalState(const QString& stateId, const QString& parentStateId) :
+    AbstractState(stateId, parentStateId),
+    delegate(new QFinalState())
 {
-    delegate = new QFinalState((parent != NULL) ? parent->getDelegate() : NULL);
+
 }
 
 FinalState::~FinalState()
@@ -75,23 +71,25 @@ QFinalState* FinalState::getDelegate() const
 
 bool FinalState::initialize()
 {
-    qDebug() <<toString() <<"initialize";
-
     return true;
 }
 
 QString FinalState::toString() const
 {
-    return "Final [id: " + id + "]";
+    return "Final [stateId: " + stateId + "]";
 }
 
 /*
  * State
  */
-State::State(const QString &id, State *parent) :
-    AbstractState(id, parent)
+State::State(const QString &stateId, const QString& parentStateId) :
+    AbstractState(stateId, parentStateId),
+    delegate(new QState())
 {
-    delegate = new QState((parent != NULL) ? parent->getDelegate() : NULL);
+    //connect signals
+    connect(delegate, SIGNAL(entered()), this, SLOT(eventEntered()));
+    connect(delegate, SIGNAL(exited()), this, SLOT(eventExited()));
+    connect(delegate, SIGNAL(finished()), this, SLOT(eventFinished()));
 }
 
 State::~State()
@@ -99,42 +97,10 @@ State::~State()
 
 }
 
-void State::addTransition(AbstractTransition* transition)
-{
-    transitions.push_back(transition);
-}
-
-void State::removeTransition(AbstractTransition* transition)
-{
-    //TODO
-}
-
-const AbstractState* State::findState(const QString& id) const
-{
-    if (this->id == id)
-    {
-        return this;
-    }
-
-    //find state recursively
-    QList<AbstractState*> children = getChildStates();
-    for (int i = 0; i < children.size(); i++)
-    {
-        const AbstractState* element = children[i]->findState(id);
-        if (element != NULL)
-        {
-            return element;
-        }
-    }
-
-    return NULL;
-}
-
 const QList<AbstractState*> State::getChildStates() const
 {
     QList<AbstractState*> childsCast;
     QObjectList childs = children();
-
     for (int i = 0; i < childs.size(); i++)
     {
         childsCast.append(qobject_cast<AbstractState*>(childs[i]));
@@ -143,65 +109,32 @@ const QList<AbstractState*> State::getChildStates() const
     return childsCast;
 }
 
-QState *State::getDelegate() const
+AbstractState* State::getState(const QString& stateId)
+{
+    if (this->stateId == stateId)
+    {
+        return this;
+    }
+
+    //find state recursively
+    QList<AbstractState*> states = getChildStates();
+    for (int i = 0; i < states.size(); i++)
+    {
+        AbstractState* state = states[i]->getState(stateId);
+        if (state != NULL)
+        {
+            return state;
+        }
+    }
+
+    qWarning() <<toString() <<"couldn't find state with state id" <<stateId;
+
+    return NULL;
+}
+
+QState* State::getDelegate() const
 {
     return delegate;
-}
-
-bool State::initialize()
-{
-    if (initialized)
-    {
-        qWarning() <<toString() <<"already initialized";
-
-        return true;
-    }
-
-    qDebug() <<toString() <<"initialize";
-
-    //initialize children
-    QList<AbstractState*> children = getChildStates();
-    for (int i = 0; i < children.size(); i++)
-    {
-        if (!children[i]->initialize())
-        {
-            qWarning() <<toString() <<"initialization failed: couldn't initialize all child components";
-
-            return false;
-        }
-    }
-
-    //get the state machine
-    const StateMachine* stateMachine = getStateMachine();
-    if (stateMachine == NULL)
-    {
-        qWarning() <<toString() <<"initialization failed: couldn't find state machine";
-
-        return false;
-    }
-
-    //initialize transitions
-    for (unsigned int i = 0; i < transitions.size(); i++)
-    {
-        if (!transitions[i]->initialize(stateMachine))
-        {
-            qWarning() <<toString() <<"initialization failed: couldn't initialize all transitions";
-
-            return false;
-        }
-    }
-
-    //connect signals
-    connect(getDelegate(), SIGNAL(entered()), this, SLOT(eventEntered()));
-    connect(getDelegate(), SIGNAL(exited()), this, SLOT(eventExited()));
-    connect(getDelegate(), SIGNAL(finished()), this, SLOT(eventFinished()));
-
-    return true;
-}
-
-QString State::toString() const
-{
-    return "State [id: " + id + "]";
 }
 
 void State::eventEntered()
@@ -222,8 +155,9 @@ void State::eventFinished()
 /*
  * CompositeState
  */
-CompositeState::CompositeState(const QString& id, State* parent) :
-        State(id, parent)
+CompositeState::CompositeState(const QString& stateId, const QString &initialId, const QString& parentStateId) :
+        State(stateId, parentStateId),
+        initialStateId(initialId)
 {
     delegate->setChildMode(QState::ExclusiveStates);
 }
@@ -232,59 +166,35 @@ CompositeState::~CompositeState()
 {
 }
 
-const QString& CompositeState::getInitial() const
-{
-    return initial;
-}
-
-void CompositeState::setInitial(const QString& initial)
-{
-    this->initial = initial;
-}
-
 bool CompositeState::initialize()
 {
-    if (initialized)
+    if (!initialStateId.isEmpty())
     {
-        qWarning() <<toString() <<"already initialized";
+        //set initial state
+        const AbstractState* initialState = getState(initialStateId);
+        if (initialState == NULL)
+        {
+            qWarning() <<toString() <<"initialization failed: couldn't find initial state " <<initialStateId;
 
-        return true;
+            return false;
+        }
+
+        delegate->setInitialState(initialState->getDelegate());
     }
-
-    //initialize state
-    if (State::initialize())
-    {
-        qWarning() <<toString() <<"initialization failed: base class initialization failed";
-
-        return false;
-    }
-
-    //set initial state
-    const AbstractState* initialState = findState(initial);
-    if (initialState == NULL)
-    {
-        qWarning() <<toString() <<"initialization failed: couldn't find initial state \"" <<initial <<"\"";
-
-        return false;
-    }
-
-    delegate->setInitialState(initialState->getDelegate());
-
-    initialized = true;
 
     return true;
 }
 
 QString CompositeState::toString() const
 {
-    return "CompositeState [id: " + id + "]";
+    return "CompositeState [stateId: " + stateId + "]";
 }
 
 /*
  * ParallelState
  */
-ParallelState::ParallelState(const QString& id, State* parent) :
-        State(id, parent)
+ParallelState::ParallelState(const QString& stateId, const QString& parentStateId) :
+        State(stateId, parentStateId)
 {
     delegate->setChildMode(QState::ParallelStates);
 }
@@ -295,53 +205,35 @@ ParallelState::~ParallelState()
 
 bool ParallelState::initialize()
 {
-    if (initialized)
-    {
-        qWarning() <<toString() <<"already initialized";
-
-        return true;
-    }
-
-    //initialize state
-    if (State::initialize())
-    {
-        qWarning() <<toString() <<"initialization failed: base class initialization failed";
-
-        return false;
-    }
-
-    initialized = true;
-
     return true;
 }
 
 QString ParallelState::toString() const
 {
-    return "Parallel [id: " + id + "]";
+    return "Parallel [stateId: " + stateId + "]";
 }
 
 /*
  * StateMachine
  */
-StateMachine::StateMachine(const QString& id, State* parent) :
-    State(id, parent)
+StateMachine::StateMachine(const QString &initialId) :
+    State("SM"),
+    delegate(new QStateMachine()),
+    initialId(initialId)
 {
+    stateMachine = this;
     delete State::delegate;
-    delegate = new QStateMachine((parent != NULL) ? parent->getDelegate() : NULL);
+
+    //connect signals
+    connect(delegate, SIGNAL(entered()), this, SLOT(eventEntered()));
+    connect(delegate, SIGNAL(exited()), this, SLOT(eventExited()));
+    connect(delegate, SIGNAL(finished()), this, SLOT(eventFinished()));
+    connect(delegate, SIGNAL(started()), this, SLOT(eventStarted()));
+    connect(delegate, SIGNAL(stopped()), this, SLOT(eventStopped()));
 }
 
 StateMachine::~StateMachine()
 {
-}
-
-const QString& StateMachine::getInitial() const
-{
-    return initial;
-}
-
-void StateMachine::setInitial(const QString& initial)
-{
-    this->initial = initial;
 }
 
 void StateMachine::start() const
@@ -364,7 +256,7 @@ void StateMachine::postEvent(QEvent* event, QStateMachine::EventPriority priorit
     delegate->postEvent(event, priority);
 }
 
-const StateMachine* StateMachine::getStateMachine() const
+StateMachine* StateMachine::getStateMachine()
 {
     return this;
 }
@@ -376,44 +268,25 @@ QStateMachine* StateMachine::getDelegate() const
 
 bool StateMachine::initialize()
 {
-    if (initialized)
-    {
-        qWarning() <<toString() <<"already initialized";
-
-        return true;
-    }
-
-    //initialize state
-    if (State::initialize())
-    {
-        qWarning() <<toString() <<"initialization failed: base class initialization failed";
-
-        return false;
-    }
+    qDebug() <<"initialize state machine";
 
     //set initial state
-    const AbstractState* initialState = findState(initial);
+    const AbstractState* initialState = getState(initialId);
     if (initialState == NULL)
     {
-        qWarning() <<toString() <<"initialization failed: couldn't find initial state \"" <<initial <<"\"";
+        qWarning() <<toString() <<"initialization failed: couldn't find initial state \"" <<initialId <<"\"";
 
         return false;
     }
 
     delegate->setInitialState(initialState->getDelegate());
 
-    //connect signals
-    connect(getDelegate(), SIGNAL(started()), this, SLOT(eventStarted()));
-    connect(getDelegate(), SIGNAL(stopped()), this, SLOT(eventStopped()));
-
-    initialized = true;
-
     return true;
 }
 
 QString StateMachine::toString() const
 {
-    return "StateMachine [id: " + id + "]";
+    return "StateMachine [stateId: " + stateId + "]";
 }
 
 void StateMachine::eventStarted()
@@ -427,40 +300,190 @@ void StateMachine::eventStopped()
 }
 
 /*
+ * StateMachineFactory
+ */
+StateMachineBuilder::StateMachineBuilder()
+{
+
+}
+
+StateMachineBuilder::~StateMachineBuilder()
+{
+
+}
+
+void StateMachineBuilder::addState(AbstractState* state)
+{
+    if (state->stateMachine != NULL)
+    {
+        qWarning() <<"can't add state: state is already part of another state machine";
+
+        return;
+    }
+
+    states.append(state);
+}
+
+void StateMachineBuilder::addTransition(AbstractTransition* transition)
+{
+    if (transition->stateMachine != NULL)
+    {
+        qWarning() <<"can't add transition: transition is already part of another state machine";
+
+        return;
+    }
+
+    transitions.append(transition);
+}
+
+StateMachine* StateMachineBuilder::create(const QString& initialStateId)
+{
+    qDebug() <<"create state machine";
+
+    StateMachine* stateMachine = new StateMachine(initialStateId);
+
+    //link states
+    qDebug() <<"link states";
+    for (int i = 0; i < states.size(); i++)
+    {
+        AbstractState* state = states[i];
+
+        //find parent state
+        AbstractState* parentState = (state->parentStateId.isEmpty()) ? stateMachine : getState(state->parentStateId);
+        if (parentState == NULL)
+        {
+            qWarning() <<"initialization failed: couldn't find parent state" <<state->parentStateId;
+
+            return NULL;
+        }
+
+        //link state
+        qDebug() <<"link child state" <<state->getId() <<"with parent state" <<parentState->getId();
+        state->stateMachine = stateMachine;
+        state->setParent(parentState);
+        state->getDelegate()->setParent(parentState->getDelegate());
+    }
+
+    //initialize states
+    qDebug() <<"initialize" <<states.size() <<"states";
+    for (int i = 0; i < states.size(); i++)
+    {
+        AbstractState* state = states[i];
+
+        //initialize state
+        qDebug() <<"[" <<i <<"]" <<"initialize state" <<state->getId();
+        if (!state->initialize())
+        {
+            qWarning() <<"initialization failed: initialization of states failed";
+
+            return NULL;
+        }
+    }
+
+    stateMachine->initialize();
+
+    //initialize transitions
+    qDebug() <<"initialize" <<transitions.size() <<"transitions";
+    for (int i = 0; i < transitions.size(); i++)
+    {
+        AbstractTransition* transition = transitions[i];
+
+        //find source state
+        AbstractState* sourceState = getState(transition->sourceStateId);
+        if (sourceState == NULL)
+        {
+            qWarning() <<"initialization failed: couldn't find transition source state" <<transition->sourceStateId;
+
+            return NULL;
+        }
+
+        //find target state
+        AbstractState* targetState = getState(transition->targetStateId);
+        if (targetState == NULL)
+        {
+            qWarning() <<"initialization failed: couldn't find transition source state" <<transition->targetStateId;
+
+            return NULL;
+        }
+
+        sourceState->transitions.append(transition);
+        transition->stateMachine = stateMachine;
+        transition->sourceState = sourceState;
+        transition->targetState = targetState;
+
+        qDebug() <<"[" <<i <<"]" <<"initialize transition" <<transition->getId();
+        if (!transition->initialize())
+        {
+            qWarning() <<"initialization failed: couldn't initialize all transitions";
+
+            return NULL;
+        }
+    }
+
+    qDebug() <<"created state machine successfully";
+
+    return stateMachine;
+}
+
+StateMachineBuilder& StateMachineBuilder::operator<<(AbstractState* state)
+{
+    addState(state);
+
+    return *this;
+}
+
+StateMachineBuilder &StateMachineBuilder::operator<<(AbstractTransition *transition)
+{
+    addTransition(transition);
+
+    return *this;
+}
+
+AbstractState* StateMachineBuilder::getState(const QString& stateId)
+{
+    for (int i = 0; i < states.size(); i++)
+    {
+        if (states[i]->getId() == stateId)
+        {
+            return states[i];
+        }
+    }
+
+    return NULL;
+}
+
+/*
  * StateMachineTest
  */
 StateMachineTest::StateMachineTest()
 {
-    qDebug() <<"test";
+    StateMachineBuilder factory;
 
-    sm = new StateMachine("stateMachine1");
-    sm->setInitial("p1");
+    factory <<new ParallelState("p1");
+    factory <<new FinalState("f1");
 
-    ParallelState* p = new ParallelState("p1", sm);
+    factory <<new CompositeState("s1", "s1_1", "p1");
+    factory <<new CompositeState("s1_1", "", "s1");
+    factory <<new FinalState("f1_1", "s1");
 
-    CompositeState* s1 = new CompositeState("s1", p);
-    CompositeState* s1_1 = new CompositeState("s1_1", s1);
-    FinalState* f1_1 = new FinalState("fin1", s1);
+    factory <<new CompositeState("s2", "s2_1", "p1");
+    factory <<new CompositeState("s2_1", "", "s2");
+    factory <<new FinalState("f2_1", "s2");
 
-    s1->setInitial("s1_1");
-    s1_1->addTransition(new AbstractTransition(s1_1->getId(), f1_1->getId(), QString("f1")));
+    factory <<new StringTransition("t1", "p1", "f1", "f");
+    factory <<new StringTransition("t2", "s1_1", "f1_1", "f1");
+    factory <<new StringTransition("t3", "s2_1", "f2_1", "f2");
 
-    CompositeState* s2 = new CompositeState("s2", p);
-    CompositeState* s2_1 = new CompositeState("s2_1", s2);
-    FinalState* f2_1 = new FinalState("fin2", s2);
-
-    s2->setInitial("s2_1");
-    s2_1->addTransition(new AbstractTransition(s2_1->getId(), f2_1->getId(), QString("f2")));
-
-
-    sm->initialize();
+    sm = factory.create("p1");
     sm->start();
 
-    QTimer::singleShot(0, this, SLOT(triggerEvents()));
+    QTimer::singleShot(100, this, SLOT(triggerEvents()));
 }
 
 void StateMachineTest::triggerEvents()
 {
-    sm->postDelayedEvent(new StringEvent("f1"), 5000);
-    sm->postDelayedEvent(new StringEvent("f2"), 10000);
+    qDebug() <<"event";
+    sm->postDelayedEvent(new StringEvent("f1"), 2000);
+    sm->postDelayedEvent(new StringEvent("f2"), 4000);
+    sm->postDelayedEvent(new StringEvent("f"), 4500);
 }

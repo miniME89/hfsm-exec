@@ -10,8 +10,9 @@ int main(int argc, char **argv)
 {
     QCoreApplication qtApplication(argc, argv);
 
-    WebApiTest();
+    //WebApiTest();
+    new StateMachineTest();
 
-    return 0; //TODO
+    //return 0; //TODO
     return qtApplication.exec();
 }

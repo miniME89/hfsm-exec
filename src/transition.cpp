@@ -6,10 +6,21 @@
 using namespace hfsmexec;
 
 /*
+ * AbstractEvent
+ */
+AbstractEvent::AbstractEvent(Type type) :
+    QEvent(type)
+{
+
+}
+
+/*
  * StringEvent
  */
+const QEvent::Type StringEvent::typeId = QEvent::Type(QEvent::User + 1);
+
 StringEvent::StringEvent(const QString &value) :
-        QEvent(QEvent::Type(QEvent::User + 1))
+    AbstractEvent(typeId)
 {
     this->value = value;
 }
@@ -19,25 +30,21 @@ StringEvent::~StringEvent()
 
 }
 
+QString StringEvent::toString() const
+{
+    return "StringEvent [value: " + value + "]";
+}
+
 /*
  * AbstractTransition
  */
-AbstractTransition::AbstractTransition(const QString sourceId, const QString targetId, const QString &value) :
-        initialized(false),
-        sourceId(sourceId),
-        targetId(targetId),
+AbstractTransition::AbstractTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId) :
+        transitionId(transitionId),
+        sourceStateId(sourceStateId),
+        targetStateId(targetStateId),
         sourceState(NULL),
-        targetState(NULL)
-{
-    this->value = value;
-}
-
-AbstractTransition::AbstractTransition(const QString sourceId, const QString targetId) :
-        initialized(false),
-        sourceId(sourceId),
-        targetId(targetId),
-        sourceState(NULL),
-        targetState(NULL)
+        targetState(NULL),
+        stateMachine(NULL)
 {
 }
 
@@ -46,62 +53,41 @@ AbstractTransition::~AbstractTransition()
 
 }
 
-const bool& AbstractTransition::isInitialized() const
+const QString& AbstractTransition::getId() const
 {
-    return initialized;
+    return transitionId;
 }
 
-const QString AbstractTransition::getSourceId() const
-{
-    return sourceId;
-}
-
-const QString AbstractTransition::getTargetId() const
-{
-    return targetId;
-}
-
-const AbstractState* AbstractTransition::getSourceState() const
+AbstractState* AbstractTransition::getSourceState() const
 {
     return sourceState;
 }
 
-const AbstractState* AbstractTransition::getTargetState() const
+AbstractState *AbstractTransition::getTargetState() const
 {
     return targetState;
 }
 
-bool AbstractTransition::initialize(const StateMachine* stateMachine)
+StateMachine* AbstractTransition::getStateMachine()
 {
-    if (initialized)
+    return stateMachine;
+}
+
+bool AbstractTransition::initialize()
+{
+    if (sourceState == NULL)
     {
-        qWarning() <<"transition already initialized";
-
-        return true;
-    }
-
-    qDebug() <<"initialize transition";
-
-    //find source state
-    const AbstractState* source = stateMachine->findState(sourceId);
-    if (source == NULL)
-    {
-        qWarning() <<"transition initialization failed: couldn't find source state \"" <<sourceId <<"\"";
+        qWarning() <<"transition initialization failed: couldn't find source state \"" <<sourceStateId <<"\"";
 
         return false;
     }
 
-    //find target state
-    const AbstractState* target = stateMachine->findState(targetId);
-    if (target == NULL)
+    if (targetState == NULL)
     {
-        qWarning() <<"transition initialization failed: couldn't find target state \"" <<targetId <<"\"";
+        qWarning() <<"transition initialization failed: couldn't find target state \"" <<targetStateId <<"\"";
 
         return false;
     }
-
-    sourceState = source;
-    targetState = target;
 
     //cast abstract state
     QState* state = dynamic_cast<QState*>(sourceState->getDelegate());
@@ -112,19 +98,37 @@ bool AbstractTransition::initialize(const StateMachine* stateMachine)
         return false;
     }
 
-    qDebug() <<"add transition from " <<source->getId() <<" to " <<target->getId();
+    qDebug() <<"add transition from " <<sourceState->getId() <<" to " <<targetState->getId();
 
     setTargetState(targetState->getDelegate());
     state->addTransition(this);
 
-    initialized = true;
-
     return true;
 }
 
-bool AbstractTransition::eventTest(QEvent* e)
+void AbstractTransition::onTransition(QEvent* e)
 {
-    if (e->type() != QEvent::Type(QEvent::User + 1))
+    qDebug() <<"triggered transition" <<transitionId;
+}
+
+
+/*
+ * StringTransition
+ */
+StringTransition::StringTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId, const QString &value) :
+        AbstractTransition(transitionId, sourceStateId, targetStateId)
+{
+    this->value = value;
+}
+
+QString StringTransition::toString() const
+{
+    return "StringTransition [transitionId: " + transitionId + "]";
+}
+
+bool StringTransition::eventTest(QEvent* e)
+{
+    if (e->type() != StringEvent::typeId)
     {
         return false;
     }
@@ -132,9 +136,4 @@ bool AbstractTransition::eventTest(QEvent* e)
     StringEvent* event = static_cast<StringEvent*>(e);
 
     return event->value == value;
-}
-
-void AbstractTransition::onTransition(QEvent* e)
-{
-
 }

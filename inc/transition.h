@@ -9,42 +9,67 @@ namespace hfsmexec
     class AbstractState;
     class StateMachine;
 
-    class StringEvent : public QEvent
+    class AbstractEvent : public QEvent
     {
         public:
+            AbstractEvent(Type type);
+
+            virtual QString toString() const = 0;
+    };
+
+    class StringEvent : public AbstractEvent
+    {
+        public:
+            static const QEvent::Type typeId;
+
             StringEvent(const QString &value);
             ~StringEvent();
+
+            virtual QString toString() const;
 
             QString value;
     };
 
     class AbstractTransition : public QAbstractTransition
     {
+        friend class StateMachineBuilder;
+
         public:
-            AbstractTransition(const QString sourceId, const QString targetId, const QString &value);
-            AbstractTransition(const QString sourceId = "", const QString targetId = "");
+            AbstractTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId);
             ~AbstractTransition();
 
-            const bool& isInitialized() const;
+            const QString& getId() const;
+            AbstractState* getSourceState() const;
+            AbstractState* getTargetState() const;
+            StateMachine* getStateMachine();
 
-            const QString getSourceId() const;
-            const QString getTargetId() const;
-            const AbstractState* getSourceState() const;
-            const AbstractState* getTargetState() const;
+            bool initialize();
 
-            bool initialize(const StateMachine* stateMachine);
+            virtual QString toString() const = 0;
+
+        protected:
+            QString transitionId;
+            QString sourceStateId;
+            QString targetStateId;
+            AbstractState* sourceState;
+            AbstractState* targetState;
+            StateMachine* stateMachine;
+
+            virtual bool eventTest(QEvent* e) = 0;
+            void onTransition(QEvent* e);
+    };
+
+    class StringTransition : public AbstractTransition
+    {
+        public:
+            StringTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId, const QString &value);
+
+            virtual QString toString() const;
 
         protected:
             virtual bool eventTest(QEvent* e);
-            virtual void onTransition(QEvent* e);
 
         private:
-            bool initialized;
-            QString sourceId;
-            QString targetId;
-            const AbstractState* sourceState;
-            const AbstractState* targetState;
-
             QString value;
     };
 }
