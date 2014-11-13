@@ -101,14 +101,14 @@ Api::~Api()
 
 bool Api::getParameter(const std::string& path, std::string& json)
 {
-    json = parameterServer.toJSON(QString(path.c_str())).toStdString();
+    json = parameterServer.toJson(QString(path.c_str())).toStdString();
 
     return true;
 }
 
 bool Api::setParameter(const std::string& path, const std::string& json)
 {
-    return parameterServer.fromJSON(QString(path.c_str()), QString(json.c_str()));
+    return parameterServer.fromJson(QString(path.c_str()), QString(json.c_str()));
 }
 
 bool Api::deleteParameter(const std::string& path)

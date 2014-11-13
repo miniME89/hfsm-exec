@@ -111,21 +111,7 @@ void ParameterServer::deleteParameter(const QString& path)
     }
 }
 
-QString ParameterServer::toJSON(const QString &path)
-{
-    QString json;
-
-    Value const* value;
-    if (getValue(path, value))
-    {
-        std::string jsonStr = value->save(cppcms::json::readable);
-        json.append(jsonStr.c_str());
-    }
-
-    return json;
-}
-
-QString ParameterServer::toXML(const QString &path)
+QString ParameterServer::toXml(const QString &path)
 {
     QString xml;
 
@@ -155,7 +141,7 @@ QString ParameterServer::toXML(const QString &path)
                 QString key = QString(it->first.str().c_str());
                 QString type = QString(typeName[it->second.type()].c_str());
                 xml.append(QString("<parameter type=\"%1\" name=\"%2\">").arg(type).arg(key));
-                xml.append(toXML(QString(path).append("/").append(key)));
+                xml.append(toXml(QString(path).append("/").append(key)));
                 xml.append(QString("</parameter>"));
             }
         }
@@ -166,7 +152,7 @@ QString ParameterServer::toXML(const QString &path)
             {
                 QString type = QString(typeName[(int)arr[i].type()].c_str());
                 xml.append(QString("<item type=\"%1\">").arg(type));
-                xml.append(toXML(QString(path).append("[").append(QString::number(i)).append("]")));
+                xml.append(toXml(QString(path).append("[").append(QString::number(i)).append("]")));
                 xml.append(QString("</item>"));
             }
         }
@@ -175,7 +161,48 @@ QString ParameterServer::toXML(const QString &path)
     return xml;
 }
 
-bool ParameterServer::fromJSON(const QString& path, const QString& json)
+QString ParameterServer::toJson(const QString &path)
+{
+    QString json;
+
+    Value const* value;
+    if (getValue(path, value))
+    {
+        std::string jsonStr = value->save(cppcms::json::readable);
+        json.append(jsonStr.c_str());
+    }
+
+    return json;
+}
+
+QString ParameterServer::toYaml(const QString &path)
+{
+
+}
+
+bool ParameterServer::fromXml(const QString& path, const QString& xml)
+{
+    Value* value;
+    if (getValue(path, value))
+    {
+        if (value->type() == cppcms::json::is_undefined)
+        {
+            value->set_value<Object>(Object());
+        }
+
+        //TODO
+
+        return false;
+    }
+    else
+    {
+        qWarning() <<"couldn't set parameters from JSON string: unable to get parameter from parameter path" <<path;
+
+        return false;
+    }
+}
+
+bool ParameterServer::fromJson(const QString& path, const QString& json)
 {
     Value* value;
     if (getValue(path, value))
@@ -204,26 +231,9 @@ bool ParameterServer::fromJSON(const QString& path, const QString& json)
     }
 }
 
-bool ParameterServer::fromXML(const QString& path, const QString& xml)
+bool ParameterServer::fromYaml(const QString &path, const QString &json)
 {
-    Value* value;
-    if (getValue(path, value))
-    {
-        if (value->type() == cppcms::json::is_undefined)
-        {
-            value->set_value<Object>(Object());
-        }
 
-        //TODO
-
-        return false;
-    }
-    else
-    {
-        qWarning() <<"couldn't set parameters from JSON string: unable to get parameter from parameter path" <<path;
-
-        return false;
-    }
 }
 
 bool ParameterServer::getValue(const QString &path, Value*& value)

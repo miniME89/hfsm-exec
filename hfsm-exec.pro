@@ -10,14 +10,18 @@ TEMPLATE = app
 
 SOURCES +=  src/main.cpp \
             src/statemachine.cpp \
-            src/transition.cpp \
+            src/statemachine_impl.cpp \
+            src/decoder.cpp \
+            src/decoder_impl.cpp \
             src/parameter_server.cpp \
-    src/api.cpp
+            src/api.cpp
 
 HEADERS += inc/statemachine.h \
-           inc/transition.h \
+           inc/statemachine_impl.h \
+           inc/decoder.h \
+           inc/decoder_impl.h \
            inc/parameter_server.h \
-    inc/api.h
+           inc/api.h
 
 INCLUDEPATH += inc
 

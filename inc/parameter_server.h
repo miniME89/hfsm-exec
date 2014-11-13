@@ -41,11 +41,13 @@ namespace hfsmexec
 
             void deleteParameter(const QString& path);
 
-            QString toJSON(const QString& path);
-            QString toXML(const QString& path);
+            QString toXml(const QString& path);
+            QString toJson(const QString& path);
+            QString toYaml(const QString& path);
 
-            bool fromJSON(const QString& path, const QString& json);
-            bool fromXML(const QString& path, const QString& xml);
+            bool fromXml(const QString& path, const QString& xml);
+            bool fromJson(const QString& path, const QString& json);
+            bool fromYaml(const QString& path, const QString& json);
 
         private:
             Value parameters;
