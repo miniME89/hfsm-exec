@@ -24,18 +24,18 @@
 using namespace hfsmexec;
 
 /*
- * InvokeStatePluginLoader
+ * CommunicationPluginLoader
  */
-InvokeStatePluginLoader::InvokeStatePluginLoader()
+CommunicationPluginLoader::CommunicationPluginLoader()
 {
 }
 
-bool InvokeStatePluginLoader::load(QMap<QString, InvokeStatePlugin*>& plugins)
+bool CommunicationPluginLoader::load(QMap<QString, CommunicationPlugin*>& plugins)
 {
     return load(QCoreApplication::instance()->applicationDirPath(), plugins);
 }
 
-bool InvokeStatePluginLoader::load(const QString& path, QMap<QString, InvokeStatePlugin*>& plugins)
+bool CommunicationPluginLoader::load(const QString& path, QMap<QString, CommunicationPlugin*>& plugins)
 {
     QDir pluginsDir = QDir(path);
     pluginsDir.setNameFilters(QStringList("*.so"));
@@ -57,10 +57,10 @@ bool InvokeStatePluginLoader::load(const QString& path, QMap<QString, InvokeStat
         }
 
         //cast plugin
-        InvokeStatePlugin* instance = qobject_cast<InvokeStatePlugin*>(plugin);
+        CommunicationPlugin* instance = qobject_cast<CommunicationPlugin*>(plugin);
         if (!instance)
         {
-            qDebug() <<"invalid plugin: plugin is not of type" <<QString("InvokeStatePlugin");
+            qDebug() <<"invalid plugin: plugin is not of type" <<QString("CommunicationPlugin");
 
             continue;
         }
@@ -92,19 +92,19 @@ bool InvokeStatePluginLoader::load(const QString& path, QMap<QString, InvokeStat
 }
 
 /*
- * InvokeStatePlugin
+ * CommunicationPlugin
  */
-const QString& InvokeStatePlugin::getPluginId() const
+const QString& CommunicationPlugin::getPluginId() const
 {
     return pluginId;
 }
 
 /*
- * InvokeStatePluginLoaderTest
+ * CommunicationPluginLoaderTest
  */
-InvokeStatePluginLoaderTest::InvokeStatePluginLoaderTest()
+CommunicationPluginLoaderTest::CommunicationPluginLoaderTest()
 {
-    InvokeStatePluginLoader loader;
-    QMap<QString, InvokeStatePlugin*> plugins;
+    CommunicationPluginLoader loader;
+    QMap<QString, CommunicationPlugin*> plugins;
     loader.load("/home/marcel/Programming/hfsm-exec/plugins/build-plugin-rest-Desktop-Debug/", plugins);
 }

@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     //WebApiTest;
     //new StateMachineTest;
     //XmlDecoderFactoryTest f;
-    InvokeStatePluginLoaderTest t;
+    CommunicationPluginLoaderTest t;
     //ParameterServerTest p;
 
     return 0; //TODO

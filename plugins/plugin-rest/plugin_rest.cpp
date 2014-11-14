@@ -18,28 +18,28 @@
 #include "plugin_rest.h"
 #include <QDebug>
 
-RestInvokePlugin::RestInvokePlugin()
+RestCommunicationPlugin::RestCommunicationPlugin()
 {
     pluginId = "REST";
 }
 
-RestInvokePlugin::~RestInvokePlugin()
+RestCommunicationPlugin::~RestCommunicationPlugin()
 {
 
 }
 
-bool RestInvokePlugin::invoke()
+bool RestCommunicationPlugin::invoke()
 {
     qDebug() <<"invoke";
 
     return true;
 }
 
-bool RestInvokePlugin::cancel()
+bool RestCommunicationPlugin::cancel()
 {
     qDebug() <<"cancel";
 
     return true;
 }
 
-Q_EXPORT_PLUGIN2(plugin-rest, RestInvokePlugin)
+Q_EXPORT_PLUGIN2(plugin-rest, RestCommunicationPlugin)

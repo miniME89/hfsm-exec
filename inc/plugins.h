@@ -15,18 +15,18 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PLUGIN_LOADER_H
-#define PLUGIN_LOADER_H
+#ifndef PLUGINS_H
+#define PLUGINS_H
 
 #include <statemachine.h>
 #include <QMap>
 
 namespace hfsmexec
 {
-    class InvokeStatePlugin
+    class CommunicationPlugin
     {
         public:
-            virtual ~InvokeStatePlugin() {}
+            virtual ~CommunicationPlugin() {}
             virtual bool invoke() = 0;
             virtual bool cancel() = 0;
 
@@ -36,22 +36,22 @@ namespace hfsmexec
             QString pluginId;
     };
 
-    class InvokeStatePluginLoader
+    class CommunicationPluginLoader
     {
         public:
-            InvokeStatePluginLoader();
+            CommunicationPluginLoader();
 
-            bool load(QMap<QString, InvokeStatePlugin*>& plugins);
-            bool load(const QString& path, QMap<QString, InvokeStatePlugin*>& plugins);
+            bool load(QMap<QString, CommunicationPlugin*>& plugins);
+            bool load(const QString& path, QMap<QString, CommunicationPlugin*>& plugins);
     };
 
-    class InvokeStatePluginLoaderTest
+    class CommunicationPluginLoaderTest
     {
         public:
-            InvokeStatePluginLoaderTest();
+            CommunicationPluginLoaderTest();
     };
 }
 
-Q_DECLARE_INTERFACE(hfsmexec::InvokeStatePlugin, "InvokeStatePlugin")
+Q_DECLARE_INTERFACE(hfsmexec::CommunicationPlugin, "CommunicationPlugin")
 
 #endif

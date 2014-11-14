@@ -23,14 +23,14 @@
 
 #include <QtPlugin>
 
-class RestInvokePlugin : public QObject, public hfsmexec::InvokeStatePlugin
+class RestCommunicationPlugin : public QObject, public hfsmexec::CommunicationPlugin
 {
     Q_OBJECT
-    Q_INTERFACES(hfsmexec::InvokeStatePlugin)
+    Q_INTERFACES(hfsmexec::CommunicationPlugin)
 
     public:
-        RestInvokePlugin();
-        virtual ~RestInvokePlugin();
+        RestCommunicationPlugin();
+        virtual ~RestCommunicationPlugin();
 
         virtual bool invoke();
         virtual bool cancel();
