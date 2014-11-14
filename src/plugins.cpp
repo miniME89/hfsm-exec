@@ -51,7 +51,7 @@ bool CommunicationPluginLoader::load(const QString& path, QMap<QString, Communic
         QObject* plugin = pluginLoader.instance();
         if (!plugin)
         {
-            qDebug() <<"invalid plugin:" <<pluginLoader.errorString();
+            qWarning() <<"invalid plugin:" <<pluginLoader.errorString();
 
             continue;
         }
@@ -60,7 +60,7 @@ bool CommunicationPluginLoader::load(const QString& path, QMap<QString, Communic
         CommunicationPlugin* instance = qobject_cast<CommunicationPlugin*>(plugin);
         if (!instance)
         {
-            qDebug() <<"invalid plugin: plugin is not of type" <<QString("CommunicationPlugin");
+            qWarning() <<"invalid plugin: plugin is not of type" <<QString("CommunicationPlugin");
 
             continue;
         }
@@ -70,7 +70,7 @@ bool CommunicationPluginLoader::load(const QString& path, QMap<QString, Communic
         //validate plugin id
         if (pluginId.isEmpty())
         {
-            qDebug() <<"invalid plugin id";
+            qWarning() <<"invalid plugin id";
 
             continue;
         }
@@ -78,7 +78,7 @@ bool CommunicationPluginLoader::load(const QString& path, QMap<QString, Communic
         //verify unique plugin id
         if (plugins.contains(pluginId))
         {
-            qDebug() <<"invalid plugin id: plugin with plugin id" <<pluginId <<"already loaded";
+            qWarning() <<"invalid plugin id: plugin with plugin id" <<pluginId <<"already loaded";
 
             continue;
         }

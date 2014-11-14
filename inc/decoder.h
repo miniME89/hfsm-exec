@@ -44,12 +44,12 @@ namespace hfsmexec
 
             static DecoderBuilderProvider* getInstance();
 
-            AbstractDecoderBuilder* getDecoderFactory(const QString& encoding);
-            void addDecoderFactory(AbstractDecoderBuilder* factory);
-            void removeDecoderFactory(AbstractDecoderBuilder* factory);
+            AbstractDecoderBuilder* getDecoderBuilder(const QString& encoding);
+            void addDecoderBuilder(AbstractDecoderBuilder* builder);
+            void removeDecoderBuilder(AbstractDecoderBuilder* builder);
 
         private:
-            QList<AbstractDecoderBuilder*> factories;
+            QMap<QString, AbstractDecoderBuilder*> builders;
 
             DecoderBuilderProvider();
     };

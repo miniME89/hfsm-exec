@@ -53,25 +53,17 @@ DecoderBuilderProvider::DecoderBuilderProvider()
 
 }
 
-AbstractDecoderBuilder* DecoderBuilderProvider::getDecoderFactory(const QString &encoding)
+AbstractDecoderBuilder* DecoderBuilderProvider::getDecoderBuilder(const QString &encoding)
 {
-    for (int i = 0; i < factories.size(); i++)
-    {
-        if (factories[i]->getEncoding() == encoding)
-        {
-            return factories[i];
-        }
-    }
-
-    return NULL;
+    return builders[encoding];
 }
 
-void DecoderBuilderProvider::addDecoderFactory(AbstractDecoderBuilder* factory)
+void DecoderBuilderProvider::addDecoderBuilder(AbstractDecoderBuilder* builder)
 {
-    factories.append(factory);
+    builders[builder->getEncoding()] = builder;
 }
 
-void DecoderBuilderProvider::removeDecoderFactory(AbstractDecoderBuilder* factory)
+void DecoderBuilderProvider::removeDecoderBuilder(AbstractDecoderBuilder* builder)
 {
     //TODO
 }

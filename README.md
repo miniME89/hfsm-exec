@@ -31,8 +31,8 @@
     - TODO: Realtime interface for monitoring and notification service (?)
 
 ### Dependencies
-- QT
+- Qt
 - CppCMS
 
 ### License
-TODO
+GNU General Public License
