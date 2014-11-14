@@ -25,7 +25,7 @@ namespace hfsmexec
 
         public:
             AbstractTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId);
-            ~AbstractTransition();
+            virtual ~AbstractTransition();
 
             const QString& getId() const;
             AbstractState* getSourceState() const;
@@ -82,7 +82,7 @@ namespace hfsmexec
 
         public:
             AbstractComplexState(const QString& stateId, const QString& parentStateId = "");
-            ~AbstractComplexState();
+            virtual ~AbstractComplexState();
 
             const QList<AbstractState*> getChildStates() const;
             virtual AbstractState* getState(const QString& stateId);

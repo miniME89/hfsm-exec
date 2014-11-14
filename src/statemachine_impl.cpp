@@ -142,6 +142,31 @@ QString ParallelState::toString() const
 }
 
 /*
+ * InvokeState
+ */
+InvokeState::InvokeState(const QString &stateId, const QString& type, const QString &parentStateId) :
+    AbstractComplexState(stateId, parentStateId),
+    type(type)
+{
+
+}
+
+InvokeState::~InvokeState()
+{
+
+}
+
+bool InvokeState::initialize()
+{
+    return true;
+}
+
+QString InvokeState::toString() const
+{
+    return "Invoke [stateId: " + stateId + "]";
+}
+
+/*
  * StateMachine
  */
 StateMachine::StateMachine(const QString &initialId) :

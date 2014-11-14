@@ -28,15 +28,12 @@ bool ParameterServer::getParameter(const QString &path, T& value)
 
             return true;
         }
-        else
-        {
-            return false;
-        }
     }
     catch(...)
     {
-        return false;
     }
+
+    return false;
 }
 
 bool ParameterServer::getParameter(const QString& path, Bool& value)
@@ -64,13 +61,32 @@ bool ParameterServer::getParameter(const QString& path, Object& value)
     return getParameter<Object>(path, value);
 }
 
+bool ParameterServer::getParameter(const QString& path, Value& value)
+{
+    try
+    {
+        Value const* parameter;
+        if (getValue(path, parameter))
+        {
+            value = *parameter;
+
+            return true;
+        }
+    }
+    catch(...)
+    {
+    }
+
+    return false;
+}
+
 template<typename T>
 void ParameterServer::setParameter(const QString &path, const T &value)
 {
     Value* parameter;
     if (getValue(path, parameter))
     {
-        if (parameter != & parameters)
+        if (parameter != &parameters)
         {
             *parameter = value;
         }
@@ -100,6 +116,11 @@ void ParameterServer::setParameter(const QString& path, Array& value)
 void ParameterServer::setParameter(const QString& path, Object& value)
 {
     setParameter<Object>(path, value);
+}
+
+void ParameterServer::setParameter(const QString &path, Value& value)
+{
+    setParameter<Value>(path, value);
 }
 
 void ParameterServer::deleteParameter(const QString& path)
@@ -177,7 +198,7 @@ QString ParameterServer::toJson(const QString &path)
 
 QString ParameterServer::toYaml(const QString &path)
 {
-
+    //TODO
 }
 
 bool ParameterServer::fromXml(const QString& path, const QString& xml)
@@ -233,7 +254,7 @@ bool ParameterServer::fromJson(const QString& path, const QString& json)
 
 bool ParameterServer::fromYaml(const QString &path, const QString &json)
 {
-
+    //TODO
 }
 
 bool ParameterServer::getValue(const QString &path, Value*& value)
@@ -261,7 +282,7 @@ bool ParameterServer::getValue(const QString &path, Value*& value)
     return true;
 }
 
-bool ParameterServer::getValue(const QString &path, const Value*& value)
+bool ParameterServer::getValue(const QString &path, Value const*& value)
 {
     QString replacePath = path.trimmed().replace("[", "/[");
     QStringList splitPath = replacePath.split("/", QString::SkipEmptyParts);
@@ -295,5 +316,15 @@ bool ParameterServer::getValue(const QString &path, const Value*& value)
 
 ParameterServerTest::ParameterServerTest()
 {
-    //TODO tests
+    ParameterServer server;
+    server.setParameter("/some/foo", Value("test2"));
+    server.setParameter("/some/path/x", 5);
+    server.setParameter("/some/path/y", 2);
+    server.setParameter("/some/path/test/str", "some string");
+
+    qDebug() <<server.toJson("/");
+
+    Value v;
+    server.getParameter("/some/foo", v);
+    qDebug() <<QString(v.str().c_str());
 }

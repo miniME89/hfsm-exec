@@ -2,6 +2,7 @@
 #include <decoder_impl.h>
 #include <parameter_server.h>
 #include <api.h>
+#include <plugins.h>
 
 #include <QCoreApplication>
 
@@ -12,8 +13,10 @@ int main(int argc, char **argv)
     QCoreApplication qtApplication(argc, argv);
 
     //WebApiTest;
-    new StateMachineTest;
+    //new StateMachineTest;
     //XmlDecoderFactoryTest f;
+    InvokeStatePluginLoaderTest t;
+    //ParameterServerTest p;
 
     return 0; //TODO
     return qtApplication.exec();

@@ -80,6 +80,21 @@ namespace hfsmexec
             virtual QString toString() const;
     };
 
+    class InvokeState : public AbstractComplexState
+    {
+        Q_OBJECT
+
+        public:
+            InvokeState(const QString& stateId, const QString& type, const QString& parentStateId = "");
+            virtual ~InvokeState();
+
+            virtual bool initialize();
+            virtual QString toString() const;
+
+        private:
+            QString type;
+    };
+
     class StateMachine : public AbstractComplexState
     {
         Q_OBJECT

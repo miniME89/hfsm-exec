@@ -30,6 +30,7 @@ namespace hfsmexec
             bool getParameter(const QString& path, String& value);
             bool getParameter(const QString& path, Array& value);
             bool getParameter(const QString& path, Object& value);
+            bool getParameter(const QString& path, Value& value);
 
             template<typename T>
             void setParameter(const QString& path, T const& value);
@@ -38,6 +39,7 @@ namespace hfsmexec
             void setParameter(const QString& path, String& value);
             void setParameter(const QString& path, Array& value);
             void setParameter(const QString& path, Object& value);
+            void setParameter(const QString& path, Value& value);
 
             void deleteParameter(const QString& path);
 

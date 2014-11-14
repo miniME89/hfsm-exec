@@ -135,7 +135,7 @@ StateMachine* AbstractState::getStateMachine()
 }
 
 /*
- * State
+ * AbstractComplexState
  */
 AbstractComplexState::AbstractComplexState(const QString &stateId, const QString& parentStateId) :
     AbstractState(stateId, parentStateId),
