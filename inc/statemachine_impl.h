@@ -23,26 +23,39 @@
 #include <QFinalState>
 #include <QState>
 #include <QStateMachine>
+#include <QMutex>
 
 namespace hfsmexec
 {
-    class StringEvent : public AbstractEvent
+    class NamedEvent : public AbstractEvent
     {
         public:
             static const QEvent::Type typeId;
 
-            StringEvent(const QString &value);
-            ~StringEvent();
+            NamedEvent(const QString& name);
+            ~NamedEvent();
+
+            const QString& getName() const;
+            void setName(const QString& name);
+
+            const QString& getOrigin() const;
+            void setOrigin(const QString& origin);
+
+            const QString& getMessage() const;
+            void setMessage(const QString& message);
 
             virtual QString toString() const;
 
-            QString value;
+        private:
+            QString name;
+            QString origin;
+            QString message;
     };
 
-    class StringTransition : public AbstractTransition
+    class NamedTransition : public AbstractTransition
     {
         public:
-            StringTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId, const QString &value);
+            NamedTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId, const QString &eventName);
 
             virtual QString toString() const;
 
@@ -50,7 +63,7 @@ namespace hfsmexec
             virtual bool eventTest(QEvent* e);
 
         private:
-            QString value;
+            QString eventName;
     };
 
     class FinalState : public AbstractState
@@ -108,6 +121,11 @@ namespace hfsmexec
             virtual bool initialize();
             virtual QString toString() const;
 
+        protected slots:
+            virtual void eventEntered();
+            virtual void eventExited();
+            virtual void eventFinished();
+
         private:
             QString type;
     };
@@ -135,6 +153,9 @@ namespace hfsmexec
             virtual QString toString() const;
 
         protected slots:
+            virtual void eventEntered();
+            virtual void eventExited();
+            virtual void eventFinished();
             virtual void eventStarted();
             virtual void eventStopped();
 
@@ -167,6 +188,27 @@ namespace hfsmexec
             QList<AbstractTransition*> transitions;
 
             AbstractState* getState(const QString& stateId);
+    };
+
+    class StateMachinePool
+    {
+        public:
+            static StateMachinePool* getInstance();
+
+            ~StateMachinePool();
+
+            QList<StateMachine*> getPool() const;
+
+            void registerStateMachine(StateMachine* stateMachine);
+            void deregisterStateMachine(StateMachine* stateMachine);
+            bool isRegistered(StateMachine* stateMachine);
+
+        private:
+            static StateMachinePool* instance;
+            QList<StateMachine*> pool;
+            QMutex mutexList;
+
+            StateMachinePool();
     };
 
     class StateMachineTest : public QObject

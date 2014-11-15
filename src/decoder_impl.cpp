@@ -22,15 +22,15 @@
 using namespace hfsmexec;
 
 /*
- * XmlDecoderFactory
+ * XmlDecoder
  */
-XmlDecoderBuilder::XmlDecoderBuilder() :
-    AbstractDecoderBuilder("XML")
+XmlDecoder::XmlDecoder() :
+    AbstractDecoder("XML")
 {
 
 }
 
-StateMachine* XmlDecoderBuilder::decode(const QString& data)
+StateMachine* XmlDecoder::decode(const QString& data)
 {
     //parse XML
     QString errorMessage;
@@ -60,7 +60,7 @@ StateMachine* XmlDecoderBuilder::decode(const QString& data)
     return builder.build();
 }
 
-bool XmlDecoderBuilder::decodeChilds(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
+bool XmlDecoder::decodeChilds(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
     qDebug() <<"decode childs";
 
@@ -103,7 +103,7 @@ bool XmlDecoderBuilder::decodeChilds(QDomElement& node, StateMachineBuilder& bui
     return true;
 }
 
-bool XmlDecoderBuilder::decodeTransitions(QDomElement& node, StateMachineBuilder& builder, AbstractState* sourceState)
+bool XmlDecoder::decodeTransitions(QDomElement& node, StateMachineBuilder& builder, AbstractState* sourceState)
 {
     qDebug() <<"decode transitions";
 
@@ -112,7 +112,7 @@ bool XmlDecoderBuilder::decodeTransitions(QDomElement& node, StateMachineBuilder
     {
         QString target = transitionElement.attribute("target");
 
-        StringTransition* transition = new StringTransition("TODO", sourceState->getId(), target, "TODO");
+        NamedTransition* transition = new NamedTransition("TODO", sourceState->getId(), target, "TODO");
         builder <<transition;
 
         transitionElement = transitionElement.nextSiblingElement("transition");
@@ -121,7 +121,7 @@ bool XmlDecoderBuilder::decodeTransitions(QDomElement& node, StateMachineBuilder
     return true;
 }
 
-bool XmlDecoderBuilder::decodeStateMachine(QDomElement& node, StateMachineBuilder& builder)
+bool XmlDecoder::decodeStateMachine(QDomElement& node, StateMachineBuilder& builder)
 {
     qDebug() <<"decode stateMachine";
 
@@ -139,7 +139,7 @@ bool XmlDecoderBuilder::decodeStateMachine(QDomElement& node, StateMachineBuilde
     return true;
 }
 
-bool XmlDecoderBuilder::decodeComposite(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
+bool XmlDecoder::decodeComposite(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
     qDebug() <<"decode composite";
 
@@ -164,7 +164,7 @@ bool XmlDecoderBuilder::decodeComposite(QDomElement& node, StateMachineBuilder& 
     return true;
 }
 
-bool XmlDecoderBuilder::decodeParallel(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
+bool XmlDecoder::decodeParallel(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
     qDebug() <<"decode parallel";
 
@@ -189,7 +189,7 @@ bool XmlDecoderBuilder::decodeParallel(QDomElement& node, StateMachineBuilder& b
     return true;
 }
 
-bool XmlDecoderBuilder::decodeInvoke(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
+bool XmlDecoder::decodeInvoke(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
     qDebug() <<"decode invoke";
 
@@ -198,7 +198,7 @@ bool XmlDecoderBuilder::decodeInvoke(QDomElement& node, StateMachineBuilder& bui
     return true;
 }
 
-bool XmlDecoderBuilder::decodeFinal(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
+bool XmlDecoder::decodeFinal(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
     qDebug() <<"decode final";
 
@@ -211,50 +211,52 @@ bool XmlDecoderBuilder::decodeFinal(QDomElement& node, StateMachineBuilder& buil
 }
 
 /*
- * XmlDecoderFactoryTest
+ * JsonDecoder
+ */
+JsonDecoder::JsonDecoder() :
+    AbstractDecoder("JSON")
+{
+
+}
+
+StateMachine* JsonDecoder::decode(const QString& data)
+{
+
+}
+
+/*
+ * YamlDecoder
+ */
+YamlDecoder::YamlDecoder() :
+    AbstractDecoder("YAML")
+{
+
+}
+
+StateMachine* YamlDecoder::decode(const QString &data)
+{
+
+}
+
+/*
+ * DecoderTest
  */
 #include <QFile>
-DecoderFactoryTest::DecoderFactoryTest()
+DecoderTest::DecoderTest()
 {
-    qDebug() <<"XmlDecoderFactoryTest";
+    qDebug() <<"DecoderTest";
 
     QFile file("/home/marcel/Programming/hfsm-exec/state_machine.xml");
     if (!file.open(QFile::ReadOnly | QFile::Text))
     {
         qWarning() <<"couldn't open file";
+
+        return;
     }
 
     QTextStream stream(&file);
     QString data = stream.readAll();
 
-    XmlDecoderBuilder f;
+    XmlDecoder f;
     f.decode(data);
-}
-
-/*
- * JsonDecoderBuilder
- */
-JsonDecoderBuilder::JsonDecoderBuilder() :
-    AbstractDecoderBuilder("JSON")
-{
-
-}
-
-StateMachine* JsonDecoderBuilder::decode(const QString& data)
-{
-
-}
-
-/*
- * YamlDecoderBuilder
- */
-YamlDecoderBuilder::YamlDecoderBuilder() :
-    AbstractDecoderBuilder("YAML")
-{
-
-}
-
-StateMachine *YamlDecoderBuilder::decode(const QString &data)
-{
-
 }

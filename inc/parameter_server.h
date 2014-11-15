@@ -36,6 +36,12 @@ namespace hfsmexec
     class ParameterServer
     {
         public:
+            enum XmlFormat
+            {
+                KEY_TAG,
+                PARAMETER_TAG
+            };
+
             static const std::string typeName[7];
 
             ParameterServer();
@@ -60,13 +66,13 @@ namespace hfsmexec
 
             void deleteParameter(const QString& path);
 
-            QString toXml(const QString& path);
-            QString toJson(const QString& path);
-            QString toYaml(const QString& path);
+            bool toXml(const QString& path, QString& xml, XmlFormat format = KEY_TAG);
+            bool toJson(const QString& path, QString& json);
+            bool toYaml(const QString& path, QString& yaml);
 
-            bool fromXml(const QString& path, const QString& xml);
+            bool fromXml(const QString& path, const QString& xml, XmlFormat format = KEY_TAG);
             bool fromJson(const QString& path, const QString& json);
-            bool fromYaml(const QString& path, const QString& json);
+            bool fromYaml(const QString& path, const QString& yaml);
 
         private:
             Value parameters;

@@ -24,10 +24,10 @@
 
 namespace hfsmexec
 {
-    class AbstractDecoderBuilder
+    class AbstractDecoder
     {
         public:
-            AbstractDecoderBuilder(const QString& encoding);
+            AbstractDecoder(const QString& encoding);
 
             const QString& getEncoding() const;
 
@@ -37,21 +37,18 @@ namespace hfsmexec
             QString encoding;
     };
 
-    class DecoderBuilderProvider
+    class DecoderProvider
     {
         public:
-            static DecoderBuilderProvider* instance;
+            DecoderProvider();
+            ~DecoderProvider();
 
-            static DecoderBuilderProvider* getInstance();
-
-            AbstractDecoderBuilder* getDecoderBuilder(const QString& encoding);
-            void addDecoderBuilder(AbstractDecoderBuilder* builder);
-            void removeDecoderBuilder(AbstractDecoderBuilder* builder);
+            AbstractDecoder* getDecoder(const QString& encoding);
+            void addDecoder(AbstractDecoder* decoder);
+            void removeDecoder(AbstractDecoder* decoder);
 
         private:
-            QMap<QString, AbstractDecoderBuilder*> builders;
-
-            DecoderBuilderProvider();
+            QMap<QString, AbstractDecoder*> decoders;
     };
 }
 

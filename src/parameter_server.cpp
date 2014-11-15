@@ -34,7 +34,7 @@ ParameterServer::ParameterServer()
 }
 
 template<typename T>
-bool ParameterServer::getParameter(const QString &path, T& value)
+bool ParameterServer::getParameter(const QString& path, T& value)
 {
     try
     {
@@ -98,7 +98,7 @@ bool ParameterServer::getParameter(const QString& path, Value& value)
 }
 
 template<typename T>
-void ParameterServer::setParameter(const QString &path, const T &value)
+void ParameterServer::setParameter(const QString& path, const T& value)
 {
     Value* parameter;
     if (getValue(path, parameter))
@@ -135,7 +135,7 @@ void ParameterServer::setParameter(const QString& path, Object& value)
     setParameter<Object>(path, value);
 }
 
-void ParameterServer::setParameter(const QString &path, Value& value)
+void ParameterServer::setParameter(const QString& path, Value& value)
 {
     setParameter<Value>(path, value);
 }
@@ -149,10 +149,8 @@ void ParameterServer::deleteParameter(const QString& path)
     }
 }
 
-QString ParameterServer::toXml(const QString &path)
+bool ParameterServer::toXml(const QString& path, QString& xml, XmlFormat format)
 {
-    QString xml;
-
     Value const* value;
     if (getValue(path, value))
     {
@@ -178,9 +176,24 @@ QString ParameterServer::toXml(const QString &path)
             {
                 QString key = QString(it->first.str().c_str());
                 QString type = QString(typeName[it->second.type()].c_str());
-                xml.append(QString("<parameter type=\"%1\" name=\"%2\">").arg(type).arg(key));
-                xml.append(toXml(QString(path).append("/").append(key)));
-                xml.append(QString("</parameter>"));
+                QString tagOpen;
+                QString tagClose;
+
+                if (format == KEY_TAG)
+                {
+                    tagOpen = QString("<%1 type=\"%2\">").arg(key).arg(type);
+                    tagClose = QString("</%1>").arg(key);
+
+                }
+                else if (format == PARAMETER_TAG)
+                {
+                    tagOpen = QString("<parameter name=\"%1\" type=\"%2\">").arg(key).arg(type);
+                    tagClose = QString("</parameter>");
+                }
+
+                xml.append(tagOpen);
+                toXml(QString(path).append("/").append(key), xml, format);
+                xml.append(tagClose);
             }
         }
         else if (value->type() == cppcms::json::is_array)
@@ -189,20 +202,21 @@ QString ParameterServer::toXml(const QString &path)
             for (unsigned int i = 0; i != arr.size(); i++)
             {
                 QString type = QString(typeName[(int)arr[i].type()].c_str());
-                xml.append(QString("<item type=\"%1\">").arg(type));
-                xml.append(toXml(QString(path).append("[").append(QString::number(i)).append("]")));
-                xml.append(QString("</item>"));
+                QString tagOpen = QString("<item type=\"%1\">").arg(type);
+                QString tagClose = QString("</item>");
+
+                xml.append(tagOpen);
+                toXml(QString(path).append("[").append(QString::number(i)).append("]"), xml, format);
+                xml.append(tagClose);
             }
         }
     }
 
-    return xml;
+    return true;
 }
 
-QString ParameterServer::toJson(const QString &path)
+bool ParameterServer::toJson(const QString& path, QString& json)
 {
-    QString json;
-
     Value const* value;
     if (getValue(path, value))
     {
@@ -210,15 +224,15 @@ QString ParameterServer::toJson(const QString &path)
         json.append(jsonStr.c_str());
     }
 
-    return json;
+    return true;
 }
 
-QString ParameterServer::toYaml(const QString &path)
+bool ParameterServer::toYaml(const QString& path, QString& yaml)
 {
     //TODO
 }
 
-bool ParameterServer::fromXml(const QString& path, const QString& xml)
+bool ParameterServer::fromXml(const QString& path, const QString& xml, XmlFormat format)
 {
     Value* value;
     if (getValue(path, value))
@@ -269,12 +283,12 @@ bool ParameterServer::fromJson(const QString& path, const QString& json)
     }
 }
 
-bool ParameterServer::fromYaml(const QString &path, const QString &json)
+bool ParameterServer::fromYaml(const QString& path, const QString& yaml)
 {
     //TODO
 }
 
-bool ParameterServer::getValue(const QString &path, Value*& value)
+bool ParameterServer::getValue(const QString& path, Value*& value)
 {
     QString replacePath = path.trimmed().replace("[", "/[");
     QStringList splitPath = replacePath.split("/", QString::SkipEmptyParts);
@@ -299,7 +313,7 @@ bool ParameterServer::getValue(const QString &path, Value*& value)
     return true;
 }
 
-bool ParameterServer::getValue(const QString &path, Value const*& value)
+bool ParameterServer::getValue(const QString& path, Value const*& value)
 {
     QString replacePath = path.trimmed().replace("[", "/[");
     QStringList splitPath = replacePath.split("/", QString::SkipEmptyParts);
@@ -339,7 +353,12 @@ ParameterServerTest::ParameterServerTest()
     server.setParameter("/some/path/y", 2);
     server.setParameter("/some/path/test/str", "some string");
 
-    qDebug() <<server.toJson("/");
+    QString str;
+    server.toXml("/", str, ParameterServer::PARAMETER_TAG);
+    qDebug() <<str;
+
+    server.toJson("/", str);
+    qDebug() <<str;
 
     Value v;
     server.getParameter("/some/foo", v);

@@ -9,20 +9,22 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 SOURCES +=  src/main.cpp \
+            src/application.cpp \
+            src/api.cpp \
             src/statemachine.cpp \
             src/statemachine_impl.cpp \
             src/decoder.cpp \
             src/decoder_impl.cpp \
             src/parameter_server.cpp \
-            src/api.cpp \
             src/plugins.cpp
 
-HEADERS += inc/statemachine.h \
+HEADERS += inc/application.h \
+           inc/api.h \
+           inc/statemachine.h \
            inc/statemachine_impl.h \
            inc/decoder.h \
-           inc/decoder_impl.h \
+           inc/decoder_impl.h  \
            inc/parameter_server.h \
-           inc/api.h \
            inc/plugins.h
 
 INCLUDEPATH += inc

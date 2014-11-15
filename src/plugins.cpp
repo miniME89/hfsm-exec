@@ -16,10 +16,11 @@
  */
 
 #include <plugins.h>
+#include <application.h>
+
 #include <QDebug>
 #include <QDir>
 #include <QPluginLoader>
-#include <QCoreApplication>
 
 using namespace hfsmexec;
 
@@ -32,7 +33,7 @@ CommunicationPluginLoader::CommunicationPluginLoader()
 
 bool CommunicationPluginLoader::load(QMap<QString, CommunicationPlugin*>& plugins)
 {
-    return load(QCoreApplication::instance()->applicationDirPath(), plugins);
+    return load(Application::instance()->getQtApplication()->applicationDirPath(), plugins);
 }
 
 bool CommunicationPluginLoader::load(const QString& path, QMap<QString, CommunicationPlugin*>& plugins)

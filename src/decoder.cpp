@@ -20,50 +20,43 @@
 using namespace hfsmexec;
 
 /*
- * AbstractDecoderFactory
+ * AbstractDecoder
  */
-AbstractDecoderBuilder::AbstractDecoderBuilder(const QString &encoding) :
+AbstractDecoder::AbstractDecoder(const QString &encoding) :
     encoding(encoding)
 {
 
 }
 
-const QString& AbstractDecoderBuilder::getEncoding() const
+const QString& AbstractDecoder::getEncoding() const
 {
     return encoding;
 }
 
 /*
- * DecoderFactoryProvider
+ * DecoderProvider
  */
-DecoderBuilderProvider* DecoderBuilderProvider::instance = NULL;
-
-DecoderBuilderProvider* DecoderBuilderProvider::getInstance()
-{
-    if (instance == NULL)
-    {
-        instance = new DecoderBuilderProvider();
-    }
-
-    return instance;
-}
-
-DecoderBuilderProvider::DecoderBuilderProvider()
+DecoderProvider::DecoderProvider()
 {
 
 }
 
-AbstractDecoderBuilder* DecoderBuilderProvider::getDecoderBuilder(const QString &encoding)
+DecoderProvider::~DecoderProvider()
 {
-    return builders[encoding];
+
 }
 
-void DecoderBuilderProvider::addDecoderBuilder(AbstractDecoderBuilder* builder)
+AbstractDecoder* DecoderProvider::getDecoder(const QString &encoding)
 {
-    builders[builder->getEncoding()] = builder;
+    return decoders[encoding];
 }
 
-void DecoderBuilderProvider::removeDecoderBuilder(AbstractDecoderBuilder* builder)
+void DecoderProvider::addDecoder(AbstractDecoder* decoder)
+{
+    decoders[decoder->getEncoding()] = decoder;
+}
+
+void DecoderProvider::removeDecoder(AbstractDecoder* decoder)
 {
     //TODO
 }

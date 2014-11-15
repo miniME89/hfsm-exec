@@ -1,6 +1,22 @@
 ### Concept Overview
 ![Design Overview](https://cdn.rawgit.com/miniME89/hfsm-exec/master/doc/design.png "Design Overview")
 
+### API
+A RESTful API using HTTP provides an interface for interacting with the executor.
+
+| Status  | Method | Location              | Description                                 |
+|---------|--------|-----------------------|---------------------------------------------|
+| TESTING | GET    | /parameters/{path}    | Get parameters from the parameter server    |
+| TESTING | PUT    | /parameters/{path}    | Set parameters on the parameter server      |
+| TESTING | DELETE | /parameters/{path}    | Delete parameters from the parameter server |
+| TODO    | GET    | /statemachine         | Get state machine status                    |
+| TODO    | PUT    | /statemachine/load    | Load state machine                          |
+| TODO    | PUT    | /statemachine/unload  | Unload state machine                        |
+| TODO    | PUT    | /statemachine/start   | Start loaded state machine                  |
+| TODO    | PUT    | /statemachine/stop    | Stop loaded state machine                   |
+| DONE    | PUT    | /statemachine/event   | Post an event to the running state machine  |
+| ...     |        |                       |                                             |
+
 ### Status
 - [60%] State machine execution
     - DONE: Core state machine components are working

@@ -15,26 +15,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <statemachine_impl.h>
-#include <decoder_impl.h>
-#include <parameter_server.h>
-#include <api.h>
-#include <plugins.h>
-
-#include <QCoreApplication>
+#include <application.h>
 
 using namespace hfsmexec;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    QCoreApplication qtApplication(argc, argv);
+    Application application(argc, argv);
+    application.start();
 
-    //WebApiTest;
-    //new StateMachineTest;
-    //XmlDecoderFactoryTest f;
-    CommunicationPluginLoaderTest t;
-    //ParameterServerTest p;
-
-    return 0; //TODO
-    return qtApplication.exec();
+    return 0;
 }

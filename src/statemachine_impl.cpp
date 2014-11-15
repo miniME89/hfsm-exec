@@ -22,50 +22,78 @@
 using namespace hfsmexec;
 
 /*
- * StringEvent
+ * NamedEvent
  */
-const QEvent::Type StringEvent::typeId = QEvent::Type(QEvent::User + 1);
+const QEvent::Type NamedEvent::typeId = QEvent::Type(QEvent::User + 1);
 
-StringEvent::StringEvent(const QString &value) :
-    AbstractEvent(typeId)
+NamedEvent::NamedEvent(const QString &name) :
+    AbstractEvent(typeId),
+    name(name)
 {
-    this->value = value;
 }
 
-StringEvent::~StringEvent()
+NamedEvent::~NamedEvent()
 {
 
 }
 
-QString StringEvent::toString() const
+const QString& NamedEvent::getName() const
 {
-    return "StringEvent [value: " + value + "]";
+    return name;
+}
+
+void NamedEvent::setName(const QString& name)
+{
+    this->name = name;
+}
+const QString& NamedEvent::getOrigin() const
+{
+    return origin;
+}
+
+void NamedEvent::setOrigin(const QString& origin)
+{
+    this->origin = origin;
+}
+const QString& NamedEvent::getMessage() const
+{
+    return message;
+}
+
+void NamedEvent::setMessage(const QString& message)
+{
+    this->message = message;
+}
+
+QString NamedEvent::toString() const
+{
+    return "StringEvent [value: " + name + "]";
 }
 
 /*
- * StringTransition
+ * NamedTransition
  */
-StringTransition::StringTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId, const QString &value) :
-        AbstractTransition(transitionId, sourceStateId, targetStateId)
+NamedTransition::NamedTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId, const QString& eventName) :
+    AbstractTransition(transitionId, sourceStateId, targetStateId)
 {
-    this->value = value;
+    this->eventName = eventName;
 }
 
-QString StringTransition::toString() const
+QString NamedTransition::toString() const
 {
     return "StringTransition [transitionId: " + transitionId + "]";
 }
 
-bool StringTransition::eventTest(QEvent* e)
+bool NamedTransition::eventTest(QEvent* e)
 {
-    if (e->type() != StringEvent::typeId)
+    if (e->type() != NamedEvent::typeId)
     {
         return false;
     }
 
-    StringEvent* event = static_cast<StringEvent*>(e);
+    NamedEvent* namedEvent = static_cast<NamedEvent*>(e);
 
-    return event->value == value;
+    return namedEvent->getName() == eventName;
 }
 
 /*
@@ -101,8 +129,8 @@ QString FinalState::toString() const
  * CompositeState
  */
 CompositeState::CompositeState(const QString& stateId, const QString &initialId, const QString& parentStateId) :
-        AbstractComplexState(stateId, parentStateId),
-        initialStateId(initialId)
+    AbstractComplexState(stateId, parentStateId),
+    initialStateId(initialId)
 {
     delegate->setChildMode(QState::ExclusiveStates);
 }
@@ -139,7 +167,7 @@ QString CompositeState::toString() const
  * ParallelState
  */
 ParallelState::ParallelState(const QString& stateId, const QString& parentStateId) :
-        AbstractComplexState(stateId, parentStateId)
+    AbstractComplexState(stateId, parentStateId)
 {
     delegate->setChildMode(QState::ParallelStates);
 }
@@ -183,6 +211,21 @@ QString InvokeState::toString() const
     return "Invoke [stateId: " + stateId + "]";
 }
 
+void InvokeState::eventEntered()
+{
+    AbstractComplexState::eventEntered();
+}
+
+void InvokeState::eventExited()
+{
+    AbstractComplexState::eventExited();
+}
+
+void InvokeState::eventFinished()
+{
+    AbstractComplexState::eventFinished();
+}
+
 /*
  * StateMachine
  */
@@ -197,6 +240,7 @@ StateMachine::StateMachine(const QString &initialId) :
     connect(delegate, SIGNAL(entered()), this, SLOT(eventEntered()));
     connect(delegate, SIGNAL(exited()), this, SLOT(eventExited()));
     connect(delegate, SIGNAL(finished()), this, SLOT(eventFinished()));
+
     connect(delegate, SIGNAL(started()), this, SLOT(eventStarted()));
     connect(delegate, SIGNAL(stopped()), this, SLOT(eventStopped()));
 }
@@ -256,14 +300,39 @@ QString StateMachine::toString() const
     return "StateMachine [stateId: " + stateId + "]";
 }
 
+void StateMachine::eventEntered()
+{
+    AbstractComplexState::eventEntered();
+
+    StateMachinePool::getInstance()->registerStateMachine(this);
+}
+
+void StateMachine::eventExited()
+{
+    AbstractComplexState::eventExited();
+
+    StateMachinePool::getInstance()->deregisterStateMachine(this);
+}
+
+void StateMachine::eventFinished()
+{
+    AbstractComplexState::eventFinished();
+
+    StateMachinePool::getInstance()->deregisterStateMachine(this);
+}
+
 void StateMachine::eventStarted()
 {
     qDebug() <<toString() <<"--> started state machine";
+
+    StateMachinePool::getInstance()->registerStateMachine(this);
 }
 
 void StateMachine::eventStopped()
 {
     qDebug() <<toString() <<"--> stopped state machine";
+
+    StateMachinePool::getInstance()->deregisterStateMachine(this);
 }
 
 /*
@@ -485,9 +554,9 @@ StateMachineTest::StateMachineTest()
     builder <<new CompositeState("s2_1", "", "s2");
     builder <<new FinalState("f2_1", "s2");
 
-    builder <<new StringTransition("t1", "p1", "f1", "f");
-    builder <<new StringTransition("t2", "s1_1", "f1_1", "f1");
-    builder <<new StringTransition("t3", "s2_1", "f2_1", "f2");
+    builder <<new NamedTransition("t1", "p1", "f1", "f");
+    builder <<new NamedTransition("t2", "s1_1", "f1_1", "f1");
+    builder <<new NamedTransition("t3", "s2_1", "f2_1", "f2");
 
     sm = builder.build();
     if (sm != NULL)
@@ -499,7 +568,63 @@ StateMachineTest::StateMachineTest()
 
 void StateMachineTest::triggerEvents()
 {
-    sm->postDelayedEvent(new StringEvent("f1"), 2000);
-    sm->postDelayedEvent(new StringEvent("f2"), 4000);
-    sm->postDelayedEvent(new StringEvent("f"), 4500);
+    sm->postDelayedEvent(new NamedEvent("f1"), 2000);
+    sm->postDelayedEvent(new NamedEvent("f2"), 4000);
+    sm->postDelayedEvent(new NamedEvent("f"), 4500);
+}
+
+/*
+ * StateMachinePool
+ */
+StateMachinePool* StateMachinePool::instance = NULL;
+
+StateMachinePool* StateMachinePool::getInstance()
+{
+    if (instance == NULL)
+    {
+        instance = new StateMachinePool();
+    }
+
+    return instance;
+}
+
+StateMachinePool::StateMachinePool()
+{
+
+}
+
+StateMachinePool::~StateMachinePool()
+{
+
+}
+
+QList<StateMachine*> StateMachinePool::getPool() const
+{
+    return pool;
+}
+
+void StateMachinePool::registerStateMachine(StateMachine* stateMachine)
+{
+    mutexList.lock();
+    if (!pool.contains(stateMachine))
+    {
+        pool.append(stateMachine);
+    }
+    mutexList.unlock();
+}
+
+void StateMachinePool::deregisterStateMachine(StateMachine* stateMachine)
+{
+    mutexList.lock();
+    pool.removeOne(stateMachine);
+    mutexList.unlock();
+}
+
+bool StateMachinePool::isRegistered(StateMachine* stateMachine)
+{
+    mutexList.lock();
+    bool contains = pool.contains(stateMachine);
+    mutexList.unlock();
+
+    return contains;
 }

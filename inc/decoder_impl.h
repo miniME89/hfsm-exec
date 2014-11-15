@@ -23,10 +23,10 @@
 
 namespace hfsmexec
 {
-    class XmlDecoderBuilder : public AbstractDecoderBuilder
+    class XmlDecoder : public AbstractDecoder
     {
         public:
-            XmlDecoderBuilder();
+            XmlDecoder();
 
             StateMachine* decode(const QString &data);
 
@@ -40,10 +40,10 @@ namespace hfsmexec
             bool decodeFinal(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState);
     };
 
-    class JsonDecoderBuilder : public AbstractDecoderBuilder
+    class JsonDecoder : public AbstractDecoder
     {
         public:
-            JsonDecoderBuilder();
+            JsonDecoder();
 
             StateMachine* decode(const QString &data);
 
@@ -51,10 +51,10 @@ namespace hfsmexec
 
     };
 
-    class YamlDecoderBuilder : public AbstractDecoderBuilder
+    class YamlDecoder : public AbstractDecoder
     {
         public:
-            YamlDecoderBuilder();
+            YamlDecoder();
 
             StateMachine* decode(const QString &data);
 
@@ -62,10 +62,10 @@ namespace hfsmexec
 
     };
 
-    class DecoderFactoryTest
+    class DecoderTest
     {
         public:
-            DecoderFactoryTest();
+            DecoderTest();
     };
 }
 

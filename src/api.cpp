@@ -16,6 +16,7 @@
  */
 
 #include <api.h>
+#include <application.h>
 
 #include <QDebug>
 
@@ -28,41 +29,54 @@
 using namespace hfsmexec;
 
 /*
- * WebApi
+ * Api
  */
-WebApi::WebApi(cppcms::service &srv) :
-    cppcms::application(srv)
+Api::Api(cppcms::service &srv) :
+    cppcms::application(srv),
+    application(Application::instance())
 {
-    dispatcher().assign("/parameters/(.*)", &WebApi::handlerParameters, this, 1);
+    dispatcher().assign("/parameters/(.*)", &Api::handlerParameters, this, 1);
     mapper().assign("parameters", "/parameters/{1}");
+
+    dispatcher().assign("/statemachine/event", &Api::handlerEvent, this);
+    mapper().assign("events", "/statemachine/event");
 }
 
-void WebApi::main(std::string url)
+Api::~Api()
+{
+
+}
+
+void Api::main(std::string url)
 {
     qDebug() <<QString(request().request_method().c_str()) <<QString(url.c_str());
     cppcms::application::main(url);
 }
 
-std::string WebApi::content()
+std::string Api::content()
 {
     std::pair<void*, size_t> body = request().raw_post_data();
 
     return std::string((const char *)body.first, body.second);
 }
 
-void WebApi::handlerParameters(std::string path)
+void Api::handlerParameters(std::string path)
 {
     if (request().request_method() == "GET")
     {
-        handlerParametersGet(path);
+        QString data;
+        if (application->getParameter(path.c_str(), data))
+        {
+            response().out() <<data.toStdString();
+        }
     }
     else if (request().request_method() == "PUT")
     {
-        handlerParametersPut(path);
+        application->setParameter(path.c_str(), content().c_str());
     }
     else if (request().request_method() == "DELETE")
     {
-        handlerParametersDelete(path);
+        application->deleteParameter(path.c_str());
     }
     else
     {
@@ -70,88 +84,71 @@ void WebApi::handlerParameters(std::string path)
     }
 }
 
-void WebApi::handlerParametersGet(std::string path)
+void Api::handlerEvent()
 {
-    std::string parameters;
-    if (Api::getInstance().getParameter(path, parameters))
+    if (request().request_method() == "PUT")
     {
-        response().out() <<parameters;
+        //parse JSON
+        cppcms::json::value event;
+        std::istringstream stream(content());
+        if (!event.load(stream, true))
+        {
+            response().out() <<"invalid JSON";
+
+            return;
+        }
+
+        //validate structure
+        if (event.type() != cppcms::json::is_object)
+        {
+            response().out() <<"invalid event structure";
+
+            return;
+        }
+
+        if (event["name"].type() != cppcms::json::is_string)
+        {
+            response().out() <<"invalid event structure";
+
+            return;
+        }
+
+        NamedEvent* namedEvent = new NamedEvent(event["name"].str().c_str());
+        application->postEvent(namedEvent);
     }
     else
     {
-
+        response().make_error_response(403);
     }
 }
 
-void WebApi::handlerParametersPut(std::string path)
-{
-    Api::getInstance().setParameter(path, content());
-}
-
-void WebApi::handlerParametersDelete(std::string path)
-{
-    Api::getInstance().deleteParameter(path);
-}
-
 /*
- * Api
+ * ApiExecutor
  */
-Api* Api::instance = NULL;
-
-Api& Api::getInstance()
+ApiExecutor::ApiExecutor()
 {
-    if (instance == NULL)
-    {
-        instance = new Api();
-    }
 
-    return *instance;
 }
 
-Api::Api()
+ApiExecutor::~ApiExecutor()
 {
+
 }
 
-Api::~Api()
-{
-}
-
-bool Api::getParameter(const std::string& path, std::string& json)
-{
-    json = parameterServer.toJson(QString(path.c_str())).toStdString();
-
-    return true;
-}
-
-bool Api::setParameter(const std::string& path, const std::string& json)
-{
-    return parameterServer.fromJson(QString(path.c_str()), QString(json.c_str()));
-}
-
-bool Api::deleteParameter(const std::string& path)
-{
-    parameterServer.deleteParameter(QString(path.c_str()));
-
-    return true;
-}
-
-/*
- * WebApiTest
- */
-WebApiTest::WebApiTest()
+void ApiExecutor::run()
 {
     try
-        {
-            cppcms::json::value config;
-            config["service"]["api"] = "http";
-            config["service"]["port"] = 8080;
+    {
+        cppcms::json::value config;
+        config["service"]["api"] = "http";
+        config["service"]["port"] = 8080;
 
-            cppcms::service srv(config);
-            srv.applications_pool().mount(cppcms::applications_factory<WebApi>());
-            srv.run();
-        }
-        catch(std::exception const &e)
-        {
-            std::cerr << e.what() << std::endl;
-        }
+        cppcms::service service(config);
+        service.applications_pool().mount(cppcms::applications_factory<Api>());
+        service.run();
+    }
+    catch(std::exception const& e)
+    {
+        qCritical() <<e.what();
+    }
 }

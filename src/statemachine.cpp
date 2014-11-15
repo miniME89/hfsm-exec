@@ -204,7 +204,7 @@ AbstractState* AbstractComplexState::getState(const QString& stateId)
 
 QState* AbstractComplexState::getDelegate() const
 {
-    return NULL;
+    return delegate;
 }
 
 void AbstractComplexState::eventEntered()

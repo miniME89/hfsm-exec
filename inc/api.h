@@ -18,7 +18,7 @@
 #ifndef API_H
 #define API_H
 
-#include <parameter_server.h>
+#include <QThread>
 
 #include <cppcms/application.h>
 #include <cppcms/service.h>
@@ -26,42 +26,33 @@
 
 namespace hfsmexec
 {
-    class Api
+    class Application;
+
+    class Api : public cppcms::application
     {
         public:
-            static Api& getInstance();
-
-            ~Api();
-
-            bool getParameter(const std::string& path, std::string& json);
-            bool setParameter(const std::string& path, const std::string& json);
-            bool deleteParameter(const std::string& path);
-
-        private:
-            static Api* instance;
-            ParameterServer parameterServer; //TODO temp
-
-            Api();
-    };
-
-    class WebApi : public cppcms::application {
-        public:
-            WebApi(cppcms::service &srv);
+            Api(cppcms::service &srv);
+            virtual ~Api();
 
             virtual void main(std::string url);
 
             std::string content();
 
             void handlerParameters(std::string path);
-            void handlerParametersGet(std::string path);
-            void handlerParametersPut(std::string path);
-            void handlerParametersDelete(std::string path);
+            void handlerEvent();
+
+        private:
+            Application* application;
     };
 
-    class WebApiTest
+    class ApiExecutor : public QThread
     {
         public:
-            WebApiTest();
+            ApiExecutor();
+            virtual ~ApiExecutor();
+
+        protected:
+            void run();
     };
 }
 
