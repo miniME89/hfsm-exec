@@ -20,17 +20,15 @@
 #include <QDebug>
 #include <QList>
 #include <QRegExp>
-#include <QtXml>
 
 #include <sstream>
 
 using namespace hfsmexec;
 
-const std::string ParameterServer::typeName[7] = {"undefined", "null", "boolean", "number", "string", "object", "array"};
+const QString ParameterServer::typeName[7] = {"undefined", "null", "boolean", "number", "string", "object", "array"};
 
 ParameterServer::ParameterServer()
 {
-    parameters.set_value<Object>(Object());
 }
 
 template<typename T>
@@ -175,15 +173,14 @@ bool ParameterServer::toXml(const QString& path, QString& xml, XmlFormat format)
             for (Object::const_iterator it = obj.begin(); it != obj.end(); it++)
             {
                 QString key = QString(it->first.str().c_str());
-                QString type = QString(typeName[it->second.type()].c_str());
+                QString type = typeName[it->second.type()];
                 QString tagOpen;
                 QString tagClose;
 
-                if (format == KEY_TAG)
+                if (format == NAME_TAG)
                 {
                     tagOpen = QString("<%1 type=\"%2\">").arg(key).arg(type);
                     tagClose = QString("</%1>").arg(key);
-
                 }
                 else if (format == PARAMETER_TAG)
                 {
@@ -201,7 +198,7 @@ bool ParameterServer::toXml(const QString& path, QString& xml, XmlFormat format)
             Array const& arr = value->array();
             for (unsigned int i = 0; i != arr.size(); i++)
             {
-                QString type = QString(typeName[(int)arr[i].type()].c_str());
+                QString type = typeName[(int)arr[i].type()];
                 QString tagOpen = QString("<item type=\"%1\">").arg(type);
                 QString tagClose = QString("</item>");
 
@@ -220,8 +217,15 @@ bool ParameterServer::toJson(const QString& path, QString& json)
     Value const* value;
     if (getValue(path, value))
     {
-        std::string jsonStr = value->save(cppcms::json::readable);
-        json.append(jsonStr.c_str());
+        try
+        {
+            std::string jsonStr = value->save(cppcms::json::readable);
+            json.append(jsonStr.c_str());
+        }
+        catch(...)
+        {
+            return false;
+        }
     }
 
     return true;
@@ -242,9 +246,28 @@ bool ParameterServer::fromXml(const QString& path, const QString& xml, XmlFormat
             value->set_value<Object>(Object());
         }
 
-        //TODO
+        QString errorMessage;
+        int errorLine;
+        QDomDocument doc;
+        if (!doc.setContent(xml, &errorMessage, &errorLine))
+        {
+            qWarning() <<"couldn't set parameters from XML string:" <<errorMessage <<"[line: " <<errorLine <<"]";
 
-        return false;
+            return false;
+        }
+
+        QDomElement element = doc.documentElement();
+        Value newValue;
+        if (fromXml(newValue, element, format))
+        {
+            qWarning() <<"couldn't set parameters from XML string: invalid parameter structure";
+
+            return false;
+        }
+
+        *value = newValue;
+
+        return true;
     }
     else
     {
@@ -345,6 +368,56 @@ bool ParameterServer::getValue(const QString& path, Value const*& value)
     return true;
 }
 
+bool ParameterServer::fromXml(Value& value, QDomElement& element, ParameterServer::XmlFormat format)
+{
+    QString name;
+    QString type = element.attribute("type");
+    QString content = element.nodeValue();
+    if (format == NAME_TAG)
+    {
+        name = element.attribute("name");
+    }
+    else if (format == PARAMETER_TAG)
+    {
+        name = element.tagName();
+    }
+
+    Value& newValue = value[name.toStdString()];
+
+    if (type == typeName[2])
+    {
+        newValue = (content == "true") ? true : false;
+    }
+    else if (type == typeName[3])
+    {
+        newValue = content.toDouble();
+    }
+    else if (type == typeName[4])
+    {
+        newValue = content.toStdString();
+    }
+    else if (type == typeName[5])
+    {
+        QDomElement child = element.firstChild().toElement();
+        while (!child.isNull())
+        {
+            fromXml(newValue, child, format);
+
+            child = child.nextSibling().toElement();
+        }
+    }
+    else if (type == typeName[6])
+    {
+        QDomElement child = element.firstChild().toElement();
+        while (!child.isNull())
+        {
+            fromXml(newValue, child, format);
+
+            child = child.nextSibling().toElement();
+        }
+    }
+}
+
 ParameterServerTest::ParameterServerTest()
 {
     ParameterServer server;
@@ -353,14 +426,16 @@ ParameterServerTest::ParameterServerTest()
     server.setParameter("/some/path/y", 2);
     server.setParameter("/some/path/test/str", "some string");
 
-    QString str;
-    server.toXml("/", str, ParameterServer::PARAMETER_TAG);
-    qDebug() <<str;
+    QString in("<parameter name=\"some\" type=\"object\"><parameter name=\"foo\" type=\"string\">test2</parameter><parameter name=\"path\" type=\"object\">"
+               "<parameter name=\"test\" type=\"object\"><parameter name=\"str\" type=\"string\">some string</parameter></parameter>"
+               "<parameter name=\"x\" type=\"number\">5</parameter><parameter name=\"y\" type=\"number\">2</parameter></parameter></parameter>");
+    server.fromXml("/", in);
 
-    server.toJson("/", str);
-    qDebug() <<str;
+    QString xml;
+    server.toXml("/", xml, ParameterServer::PARAMETER_TAG);
+    qDebug() <<xml;
 
-    Value v;
-    server.getParameter("/some/foo", v);
-    qDebug() <<QString(v.str().c_str());
+    QString json;
+    server.toJson("/", json);
+    qDebug() <<json;
 }

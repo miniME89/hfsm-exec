@@ -28,6 +28,7 @@ namespace hfsmexec
     {
         public:
             AbstractDecoder(const QString& encoding);
+            virtual ~AbstractDecoder();
 
             const QString& getEncoding() const;
 

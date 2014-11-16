@@ -28,6 +28,11 @@ AbstractDecoder::AbstractDecoder(const QString &encoding) :
 
 }
 
+AbstractDecoder::~AbstractDecoder()
+{
+
+}
+
 const QString& AbstractDecoder::getEncoding() const
 {
     return encoding;

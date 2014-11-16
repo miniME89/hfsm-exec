@@ -19,10 +19,9 @@
 #define PARAMETER_SERVER_H
 
 #include <QString>
+#include <QtXml>
 
 #include <cppcms/json.h>
-
-#include <string>
 
 namespace hfsmexec
 {
@@ -38,11 +37,9 @@ namespace hfsmexec
         public:
             enum XmlFormat
             {
-                KEY_TAG,
+                NAME_TAG,
                 PARAMETER_TAG
             };
-
-            static const std::string typeName[7];
 
             ParameterServer();
 
@@ -66,19 +63,23 @@ namespace hfsmexec
 
             void deleteParameter(const QString& path);
 
-            bool toXml(const QString& path, QString& xml, XmlFormat format = KEY_TAG);
+            bool toXml(const QString& path, QString& xml, XmlFormat format = NAME_TAG);
             bool toJson(const QString& path, QString& json);
             bool toYaml(const QString& path, QString& yaml);
 
-            bool fromXml(const QString& path, const QString& xml, XmlFormat format = KEY_TAG);
+            bool fromXml(const QString& path, const QString& xml, XmlFormat format = NAME_TAG);
             bool fromJson(const QString& path, const QString& json);
             bool fromYaml(const QString& path, const QString& yaml);
 
         private:
+            static const QString typeName[7];
+
             Value parameters;
 
             bool getValue(const QString& path, Value*& value);
             bool getValue(const QString& path, Value const*& value);
+
+            bool fromXml(Value& value, QDomElement& element, XmlFormat format = NAME_TAG);
     };
 
     class ParameterServerTest
