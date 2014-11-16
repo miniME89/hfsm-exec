@@ -16,12 +16,12 @@
  */
 
 #include <application.h>
-#include <parameter_server.h>
+#include <parameter_container.h>
 #include <plugins.h>
 
 using namespace hfsmexec;
 
-ParameterServer parameterServer; //TODO remove
+ParameterContainer parameterServer; //TODO remove
 
 /*
  * Application
@@ -61,10 +61,10 @@ DecoderProvider* Application::getDecoderProvider()
 
 void Application::start()
 {
-    StateMachineTest stateMachineTest;
+    //StateMachineTest stateMachineTest;
     ParameterServerTest parameterServerTest;
-    DecoderTest decoderTest;
-    CommunicationPluginLoaderTest pluginTest;
+    //DecoderTest decoderTest;
+    //CommunicationPluginLoaderTest pluginTest;
 
     apiExecutor.start();
     qtApplication.exec();
@@ -87,7 +87,7 @@ bool Application::setParameter(const QString& path, const QString& data)
 
 bool Application::deleteParameter(const QString& path)
 {
-    parameterServer.deleteParameter(path);
+    parameterServer.remove(path);
 
     return true;
 }

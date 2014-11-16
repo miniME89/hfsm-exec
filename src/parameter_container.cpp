@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <parameter_server.h>
+#include <parameter_container.h>
 
 #include <QDebug>
 #include <QList>
@@ -25,14 +25,74 @@
 
 using namespace hfsmexec;
 
-const QString ParameterServer::typeName[7] = {"undefined", "null", "boolean", "number", "string", "object", "array"};
+const QString ParameterContainer::typeName[7] = {"undefined", "null", "boolean", "number", "string", "object", "array"};
 
-ParameterServer::ParameterServer()
+ParameterContainer::ParameterContainer() :
+    value(new Value())
 {
+
+}
+
+ParameterContainer::ParameterContainer(const ParameterContainer& other) :
+    value(new Value(*other.getValue()))
+{
+
+}
+
+ParameterContainer::~ParameterContainer()
+{
+    delete value;
+}
+
+const Value* ParameterContainer::getValue() const
+{
+    return value;
 }
 
 template<typename T>
-bool ParameterServer::getParameter(const QString& path, T& value)
+T ParameterContainer::get(const QString& path, T defaultValue) const
+{
+    T value;
+    get<T>(path, value, defaultValue);
+
+    return value;
+}
+
+Bool ParameterContainer::get(const QString& path, Bool defaultValue) const
+{
+    return get<Bool>(path, defaultValue);
+}
+
+Number ParameterContainer::get(const QString& path, Number defaultValue) const
+{
+    return get<Number>(path, defaultValue);
+}
+
+String ParameterContainer::get(const QString& path, String defaultValue) const
+{
+    return get<String>(path, defaultValue);
+}
+
+Array ParameterContainer::get(const QString& path, Array defaultValue) const
+{
+    return get<Array>(path, defaultValue);
+}
+
+Object ParameterContainer::get(const QString& path, Object defaultValue) const
+{
+    return get<Object>(path, defaultValue);
+}
+
+Value ParameterContainer::get(const QString& path, Value defaultValue) const
+{
+    Value value;
+    get(path, value, defaultValue);
+
+    return value;
+}
+
+template<typename T>
+bool ParameterContainer::get(const QString& path, T& value, T defaultValue) const
 {
     try
     {
@@ -43,6 +103,10 @@ bool ParameterServer::getParameter(const QString& path, T& value)
 
             return true;
         }
+        else
+        {
+            value = defaultValue;
+        }
     }
     catch(...)
     {
@@ -51,32 +115,32 @@ bool ParameterServer::getParameter(const QString& path, T& value)
     return false;
 }
 
-bool ParameterServer::getParameter(const QString& path, Bool& value)
+bool ParameterContainer::get(const QString& path, Bool& value, Bool defaultValue) const
 {
-    return getParameter<Bool>(path, value);
+    return get<Bool>(path, value, defaultValue);
 }
 
-bool ParameterServer::getParameter(const QString& path, Number& value)
+bool ParameterContainer::get(const QString& path, Number& value, Number defaultValue) const
 {
-    return getParameter<Number>(path, value);
+    return get<Number>(path, value, defaultValue);
 }
 
-bool ParameterServer::getParameter(const QString& path, String& value)
+bool ParameterContainer::get(const QString& path, String& value, String defaultValue) const
 {
-    return getParameter<String>(path, value);
+    return get<String>(path, value, defaultValue);
 }
 
-bool ParameterServer::getParameter(const QString& path, Array& value)
+bool ParameterContainer::get(const QString& path, Array& value, Array defaultValue) const
 {
-    return getParameter<Array>(path, value);
+    return get<Array>(path, value, defaultValue);
 }
 
-bool ParameterServer::getParameter(const QString& path, Object& value)
+bool ParameterContainer::get(const QString& path, Object& value, Object defaultValue) const
 {
-    return getParameter<Object>(path, value);
+    return get<Object>(path, value, defaultValue);
 }
 
-bool ParameterServer::getParameter(const QString& path, Value& value)
+bool ParameterContainer::get(const QString& path, Value& value, Value defaultValue) const
 {
     try
     {
@@ -87,6 +151,10 @@ bool ParameterServer::getParameter(const QString& path, Value& value)
 
             return true;
         }
+        else
+        {
+            value = defaultValue;
+        }
     }
     catch(...)
     {
@@ -96,49 +164,49 @@ bool ParameterServer::getParameter(const QString& path, Value& value)
 }
 
 template<typename T>
-void ParameterServer::setParameter(const QString& path, const T& value)
+void ParameterContainer::set(const QString& path, const T& value)
 {
     Value* parameter;
     if (getValue(path, parameter))
     {
-        if (parameter != &parameters)
+        if (parameter != this->value)
         {
             *parameter = value;
         }
     }
 }
 
-void ParameterServer::setParameter(const QString& path, Bool& value)
+void ParameterContainer::set(const QString& path, const Bool& value)
 {
-    setParameter<Bool>(path, value);
+    set<Bool>(path, value);
 }
 
-void ParameterServer::setParameter(const QString& path, Number& value)
+void ParameterContainer::set(const QString& path, const Number& value)
 {
-    setParameter<Number>(path, value);
+    set<Number>(path, value);
 }
 
-void ParameterServer::setParameter(const QString& path, String& value)
+void ParameterContainer::set(const QString& path, const String& value)
 {
-    setParameter<String>(path, value);
+    set<String>(path, value);
 }
 
-void ParameterServer::setParameter(const QString& path, Array& value)
+void ParameterContainer::set(const QString& path, const Array& value)
 {
-    setParameter<Array>(path, value);
+    set<Array>(path, value);
 }
 
-void ParameterServer::setParameter(const QString& path, Object& value)
+void ParameterContainer::set(const QString& path, const Object& value)
 {
-    setParameter<Object>(path, value);
+    set<Object>(path, value);
 }
 
-void ParameterServer::setParameter(const QString& path, Value& value)
+void ParameterContainer::set(const QString& path, const Value& value)
 {
-    setParameter<Value>(path, value);
+    set<Value>(path, value);
 }
 
-void ParameterServer::deleteParameter(const QString& path)
+void ParameterContainer::remove(const QString& path)
 {
     Value* parameter;
     if (getValue(path, parameter))
@@ -147,29 +215,29 @@ void ParameterServer::deleteParameter(const QString& path)
     }
 }
 
-bool ParameterServer::toXml(const QString& path, QString& xml, XmlFormat format)
+bool ParameterContainer::toXml(const QString& path, QString& xml, XmlFormat format) const
 {
-    Value const* value;
-    if (getValue(path, value))
+    Value const* parameter;
+    if (getValue(path, parameter))
     {
-        if (value->type() == cppcms::json::is_boolean)
+        if (parameter->type() == cppcms::json::is_boolean)
         {
-            Bool b = value->boolean();
+            Bool b = parameter->boolean();
             xml.append((b) ? "true" : "false");
         }
-        else if (value->type() == cppcms::json::is_number)
+        else if (parameter->type() == cppcms::json::is_number)
         {
-            Number num = value->number();
+            Number num = parameter->number();
             xml.append(QString::number(num));
         }
-        else if (value->type() == cppcms::json::is_string)
+        else if (parameter->type() == cppcms::json::is_string)
         {
-            String str = value->str();
+            String str = parameter->str();
             xml.append(QString(str.c_str()));
         }
-        else if (value->type() == cppcms::json::is_object)
+        else if (parameter->type() == cppcms::json::is_object)
         {
-            Object const& obj = value->object();
+            Object const& obj = parameter->object();
             for (Object::const_iterator it = obj.begin(); it != obj.end(); it++)
             {
                 QString key = QString(it->first.str().c_str());
@@ -193,9 +261,9 @@ bool ParameterServer::toXml(const QString& path, QString& xml, XmlFormat format)
                 xml.append(tagClose);
             }
         }
-        else if (value->type() == cppcms::json::is_array)
+        else if (parameter->type() == cppcms::json::is_array)
         {
-            Array const& arr = value->array();
+            Array const& arr = parameter->array();
             for (unsigned int i = 0; i != arr.size(); i++)
             {
                 QString type = typeName[(int)arr[i].type()];
@@ -212,7 +280,7 @@ bool ParameterServer::toXml(const QString& path, QString& xml, XmlFormat format)
     return true;
 }
 
-bool ParameterServer::toJson(const QString& path, QString& json)
+bool ParameterContainer::toJson(const QString& path, QString& json) const
 {
     Value const* value;
     if (getValue(path, value))
@@ -231,12 +299,12 @@ bool ParameterServer::toJson(const QString& path, QString& json)
     return true;
 }
 
-bool ParameterServer::toYaml(const QString& path, QString& yaml)
+bool ParameterContainer::toYaml(const QString& path, QString& yaml) const
 {
     //TODO
 }
 
-bool ParameterServer::fromXml(const QString& path, const QString& xml, XmlFormat format)
+bool ParameterContainer::fromXml(const QString& path, const QString& xml, XmlFormat format)
 {
     Value* value;
     if (getValue(path, value))
@@ -277,7 +345,7 @@ bool ParameterServer::fromXml(const QString& path, const QString& xml, XmlFormat
     }
 }
 
-bool ParameterServer::fromJson(const QString& path, const QString& json)
+bool ParameterContainer::fromJson(const QString& path, const QString& json)
 {
     Value* value;
     if (getValue(path, value))
@@ -306,17 +374,17 @@ bool ParameterServer::fromJson(const QString& path, const QString& json)
     }
 }
 
-bool ParameterServer::fromYaml(const QString& path, const QString& yaml)
+bool ParameterContainer::fromYaml(const QString& path, const QString& yaml)
 {
     //TODO
 }
 
-bool ParameterServer::getValue(const QString& path, Value*& value)
+bool ParameterContainer::getValue(const QString& path, Value*& value)
 {
     QString replacePath = path.trimmed().replace("[", "/[");
     QStringList splitPath = replacePath.split("/", QString::SkipEmptyParts);
 
-    value = &parameters;
+    value = this->value;
     for (int i = 0; i < splitPath.size(); i++)
     {
         //access array value
@@ -336,14 +404,14 @@ bool ParameterServer::getValue(const QString& path, Value*& value)
     return true;
 }
 
-bool ParameterServer::getValue(const QString& path, Value const*& value)
+bool ParameterContainer::getValue(const QString& path, Value const*& value) const
 {
     QString replacePath = path.trimmed().replace("[", "/[");
     QStringList splitPath = replacePath.split("/", QString::SkipEmptyParts);
 
     try
     {
-        value = &parameters;
+        value = this->value;
         for (int i = 0; i < splitPath.size(); i++)
         {
             //access array value
@@ -368,7 +436,7 @@ bool ParameterServer::getValue(const QString& path, Value const*& value)
     return true;
 }
 
-bool ParameterServer::fromXml(Value& value, QDomElement& element, ParameterServer::XmlFormat format)
+bool ParameterContainer::fromXml(Value& value, QDomElement& element, ParameterContainer::XmlFormat format)
 {
     QString name;
     QString type = element.attribute("type");
@@ -420,22 +488,35 @@ bool ParameterServer::fromXml(Value& value, QDomElement& element, ParameterServe
 
 ParameterServerTest::ParameterServerTest()
 {
-    ParameterServer server;
-    server.setParameter("/some/foo", Value("test2"));
-    server.setParameter("/some/path/x", 5);
-    server.setParameter("/some/path/y", 2);
-    server.setParameter("/some/path/test/str", "some string");
+    ParameterContainer container;
+    container.set("/some/foo", Value("test2"));
+    container.set("/some/path/x", 5);
+    container.set("/some/path/y", 2);
+    container.set("/some/path/test/str", "some string");
 
+    //set from xml
     QString in("<parameter name=\"some\" type=\"object\"><parameter name=\"foo\" type=\"string\">test2</parameter><parameter name=\"path\" type=\"object\">"
                "<parameter name=\"test\" type=\"object\"><parameter name=\"str\" type=\"string\">some string</parameter></parameter>"
                "<parameter name=\"x\" type=\"number\">5</parameter><parameter name=\"y\" type=\"number\">2</parameter></parameter></parameter>");
-    server.fromXml("/", in);
+    container.fromXml("/", in);
 
+    //to xml
     QString xml;
-    server.toXml("/", xml, ParameterServer::PARAMETER_TAG);
+    container.toXml("/", xml, ParameterContainer::PARAMETER_TAG);
     qDebug() <<xml;
 
+    //to json
     QString json;
-    server.toJson("/", json);
+    container.toJson("/", json);
     qDebug() <<json;
+
+    //copy test
+    qDebug() <<"test parameter container copy";
+    ParameterContainer c1;
+    c1.set("/some_value", 123456);
+    ParameterContainer c2(c1);
+
+    qDebug() <<c1.get("/some_value", 0) <<c2.get("/some_value", 0);
+    c1.set("/some_value", 654321);
+    qDebug() <<c1.get("/some_value", 0) <<c2.get("/some_value", 0);
 }
