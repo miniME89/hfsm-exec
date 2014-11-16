@@ -440,29 +440,28 @@ bool ParameterContainer::fromXml(Value& value, QDomElement& element, ParameterCo
 {
     QString name;
     QString type = element.attribute("type");
-    QString content = element.nodeValue();
     if (format == NAME_TAG)
     {
-        name = element.attribute("name");
+        name = element.tagName();
     }
     else if (format == PARAMETER_TAG)
     {
-        name = element.tagName();
+        name = element.attribute("name");
     }
 
     Value& newValue = value[name.toStdString()];
 
     if (type == typeName[2])
     {
-        newValue = (content == "true") ? true : false;
+        newValue = (element.text() == "true") ? true : false;
     }
     else if (type == typeName[3])
     {
-        newValue = content.toDouble();
+        newValue = element.text().toDouble();
     }
     else if (type == typeName[4])
     {
-        newValue = content.toStdString();
+        newValue = element.text().toStdString();
     }
     else if (type == typeName[5])
     {
