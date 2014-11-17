@@ -15,22 +15,22 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PLUGIN_REST_H
-#define PLUGIN_REST_H
+#ifndef PLUGIN_HTTP_H
+#define PLUGIN_HTTP_H
 
 #include <statemachine.h>
 #include <plugins.h>
 
 #include <QtPlugin>
 
-class RestCommunicationPlugin : public QObject, public hfsmexec::CommunicationPlugin
+class HTTPCommunicationPlugin : public QObject, public hfsmexec::CommunicationPlugin
 {
     Q_OBJECT
     Q_INTERFACES(hfsmexec::CommunicationPlugin)
 
     public:
-        RestCommunicationPlugin();
-        virtual ~RestCommunicationPlugin();
+        HTTPCommunicationPlugin();
+        virtual ~HTTPCommunicationPlugin();
 
         virtual bool invoke();
         virtual bool cancel();

@@ -15,31 +15,31 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "plugin_rest.h"
+#include "plugin_http.h"
 #include <QDebug>
 
-RestCommunicationPlugin::RestCommunicationPlugin()
+HTTPCommunicationPlugin::HTTPCommunicationPlugin()
 {
-    pluginId = "REST";
+    pluginId = "HTTP";
 }
 
-RestCommunicationPlugin::~RestCommunicationPlugin()
+HTTPCommunicationPlugin::~HTTPCommunicationPlugin()
 {
 
 }
 
-bool RestCommunicationPlugin::invoke()
+bool HTTPCommunicationPlugin::invoke()
 {
     qDebug() <<"invoke";
 
     return true;
 }
 
-bool RestCommunicationPlugin::cancel()
+bool HTTPCommunicationPlugin::cancel()
 {
     qDebug() <<"cancel";
 
     return true;
 }
 
-Q_EXPORT_PLUGIN2(plugin-rest, RestCommunicationPlugin)
+Q_EXPORT_PLUGIN2(plugin-http, HTTPCommunicationPlugin)

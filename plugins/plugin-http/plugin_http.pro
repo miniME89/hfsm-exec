@@ -1,15 +1,15 @@
 QT -= gui
 
-TARGET = plugin-rest
+TARGET = plugin-http
 TEMPLATE = lib
 
-DEFINES += REST_LIBRARY
+DEFINES += HTTP_LIBRARY
 
 SOURCES += \
-    plugin_rest.cpp
+    plugin_http.cpp
 
 HEADERS += \
-    plugin_rest.h
+    plugin_http.h
 
 INCLUDEPATH += ../../inc/
 

@@ -107,5 +107,5 @@ CommunicationPluginLoaderTest::CommunicationPluginLoaderTest()
 {
     CommunicationPluginLoader loader;
     QMap<QString, CommunicationPlugin*> plugins;
-    loader.load("/home/marcel/Programming/hfsm-exec/plugins/build-plugin-rest-Desktop-Debug/", plugins);
+    loader.load("/home/marcel/Programming/hfsm-exec/plugins/build-plugin-http-Desktop-Debug", plugins);
 }
