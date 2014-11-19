@@ -18,6 +18,8 @@
 #include "plugin_http.h"
 #include <QDebug>
 
+using namespace hfsmexec;
+
 HTTPCommunicationPlugin::HTTPCommunicationPlugin()
 {
     pluginId = "HTTP";
@@ -28,9 +30,11 @@ HTTPCommunicationPlugin::~HTTPCommunicationPlugin()
 
 }
 
-bool HTTPCommunicationPlugin::invoke()
+bool HTTPCommunicationPlugin::invoke(ParameterContainer& inputParameters, ParameterContainer& outputParameters)
 {
     qDebug() <<"invoke";
+
+    inputParameters.set("/some/test/value", 5);
 
     return true;
 }

@@ -5,11 +5,9 @@ TEMPLATE = lib
 
 DEFINES += HTTP_LIBRARY
 
-SOURCES += \
-    plugin_http.cpp
+SOURCES += plugin_http.cpp
 
-HEADERS += \
-    plugin_http.h
+HEADERS += plugin_http.h
 
 INCLUDEPATH += ../../inc/
 

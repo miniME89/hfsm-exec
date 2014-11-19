@@ -16,6 +16,7 @@
  */
 
 #include <decoder_impl.h>
+#include <parameter_container.h>
 
 #include <QDebug>
 
@@ -193,7 +194,22 @@ bool XmlDecoder::decodeInvoke(QDomElement& node, StateMachineBuilder& builder, A
 {
     qDebug() <<"decode invoke";
 
-    //TODO
+    QString id = node.attribute("id");
+    QDomElement endpoint = node.firstChildElement("endpoint");
+
+    QString endPointStr;
+    QTextStream endpointStream(&endPointStr);
+    endpoint.save(endpointStream, 4);
+    qDebug() <<endPointStr;
+
+    ParameterContainer endpointParameter;
+    endpointParameter.fromXml("/", endPointStr);
+    QString test;
+    qDebug() <<endpointParameter.toJson("/", test);
+    qDebug() <<test;
+
+    InvokeState* invoke = new InvokeState(id, parentState->getId());
+    builder <<invoke;
 
     return true;
 }

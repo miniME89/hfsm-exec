@@ -151,6 +151,16 @@ StateMachine* AbstractState::getStateMachine()
     return stateMachine;
 }
 
+ParameterContainer& AbstractState::getInputParameters()
+{
+    return inputParameters;
+}
+
+ParameterContainer& AbstractState::getOutputParameters()
+{
+    return outputParameters;
+}
+
 /*
  * AbstractComplexState
  */

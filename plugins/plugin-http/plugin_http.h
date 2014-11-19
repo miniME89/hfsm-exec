@@ -23,17 +23,20 @@
 
 #include <QtPlugin>
 
-class HTTPCommunicationPlugin : public QObject, public hfsmexec::CommunicationPlugin
+namespace hfsmexec
 {
-    Q_OBJECT
-    Q_INTERFACES(hfsmexec::CommunicationPlugin)
+    class HTTPCommunicationPlugin : public QObject, public CommunicationPlugin
+    {
+        Q_OBJECT
+        Q_INTERFACES(hfsmexec::CommunicationPlugin)
 
-    public:
-        HTTPCommunicationPlugin();
-        virtual ~HTTPCommunicationPlugin();
+        public:
+            HTTPCommunicationPlugin();
+            virtual ~HTTPCommunicationPlugin();
 
-        virtual bool invoke();
-        virtual bool cancel();
-};
+            virtual bool invoke(ParameterContainer& inputParameters, ParameterContainer& outputParameters);
+            virtual bool cancel();
+    };
+}
 
 #endif

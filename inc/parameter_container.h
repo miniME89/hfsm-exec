@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PARAMETER_SERVER_H
-#define PARAMETER_SERVER_H
+#ifndef PARAMETER_CONTAINER_H
+#define PARAMETER_CONTAINER_H
 
 #include <QString>
 #include <QtXml>
@@ -44,8 +44,6 @@ namespace hfsmexec
             ParameterContainer();
             ParameterContainer(const ParameterContainer& other);
             ~ParameterContainer();
-
-            const Value* getValue() const;
 
             template<typename T>
             T get(const QString& path, T defaultValue) const;
@@ -87,10 +85,10 @@ namespace hfsmexec
         private:
             static const QString typeName[7];
 
-            Value* value;
+            Value* rootValue;
 
-            bool getValue(const QString& path, Value*& value);
-            bool getValue(const QString& path, Value const*& value) const;
+            bool find(const QString& path, Value*& value);
+            bool find(const QString& path, Value const*& value) const;
 
             bool fromXml(Value& value, QDomElement& element, XmlFormat format = NAME_TAG);
     };

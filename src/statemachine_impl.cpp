@@ -206,14 +206,23 @@ bool InvokeState::initialize()
     return true;
 }
 
-QString InvokeState::toString() const
-{
-    return "Invoke [stateId: " + stateId + "]";
-}
-
+#include <plugins.h>
 void InvokeState::eventEntered()
 {
     AbstractComplexState::eventEntered();
+    CommunicationPluginLoader loader;
+    QMap<QString, CommunicationPlugin*> plugins;
+    loader.load("/home/marcel/Programming/hfsm-exec/plugins/build-plugin-http-Desktop-Debug", plugins);
+    if (plugins.size() > 0)
+    {
+        QString json;
+        inputParameters.toJson("/", json);
+        qDebug() <<json;
+        plugins["HTTP"]->invoke(inputParameters, outputParameters);
+        QString json2;
+        inputParameters.toJson("/", json2);
+        qDebug() <<json2;
+    }
 }
 
 void InvokeState::eventExited()
@@ -224,6 +233,11 @@ void InvokeState::eventExited()
 void InvokeState::eventFinished()
 {
     AbstractComplexState::eventFinished();
+}
+
+QString InvokeState::toString() const
+{
+    return "Invoke [stateId: " + stateId + "]";
 }
 
 /*
@@ -545,6 +559,8 @@ StateMachineTest::StateMachineTest()
 
     builder <<new ParallelState("p1");
     builder <<new FinalState("f1");
+
+    builder <<new InvokeState("invoke1", "HTTP", "p1");
 
     builder <<new CompositeState("s1", "s1_1", "p1");
     builder <<new CompositeState("s1_1", "", "s1");

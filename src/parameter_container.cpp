@@ -28,25 +28,20 @@ using namespace hfsmexec;
 const QString ParameterContainer::typeName[7] = {"undefined", "null", "boolean", "number", "string", "object", "array"};
 
 ParameterContainer::ParameterContainer() :
-    value(new Value())
+    rootValue(new Value())
 {
 
 }
 
 ParameterContainer::ParameterContainer(const ParameterContainer& other) :
-    value(new Value(*other.getValue()))
+    rootValue(new Value(*other.rootValue))
 {
 
 }
 
 ParameterContainer::~ParameterContainer()
 {
-    delete value;
-}
-
-const Value* ParameterContainer::getValue() const
-{
-    return value;
+    delete rootValue;
 }
 
 template<typename T>
@@ -97,7 +92,7 @@ bool ParameterContainer::get(const QString& path, T& value, T defaultValue) cons
     try
     {
         Value const* parameter;
-        if (getValue(path, parameter))
+        if (find(path, parameter))
         {
             value = (*parameter).get_value<T>();
 
@@ -145,7 +140,7 @@ bool ParameterContainer::get(const QString& path, Value& value, Value defaultVal
     try
     {
         Value const* parameter;
-        if (getValue(path, parameter))
+        if (find(path, parameter))
         {
             value = *parameter;
 
@@ -167,9 +162,9 @@ template<typename T>
 void ParameterContainer::set(const QString& path, const T& value)
 {
     Value* parameter;
-    if (getValue(path, parameter))
+    if (find(path, parameter))
     {
-        if (parameter != this->value)
+        if (parameter != rootValue)
         {
             *parameter = value;
         }
@@ -209,7 +204,7 @@ void ParameterContainer::set(const QString& path, const Value& value)
 void ParameterContainer::remove(const QString& path)
 {
     Value* parameter;
-    if (getValue(path, parameter))
+    if (find(path, parameter))
     {
         parameter->undefined(); //TODO
     }
@@ -218,7 +213,7 @@ void ParameterContainer::remove(const QString& path)
 bool ParameterContainer::toXml(const QString& path, QString& xml, XmlFormat format) const
 {
     Value const* parameter;
-    if (getValue(path, parameter))
+    if (find(path, parameter))
     {
         if (parameter->type() == cppcms::json::is_boolean)
         {
@@ -283,7 +278,7 @@ bool ParameterContainer::toXml(const QString& path, QString& xml, XmlFormat form
 bool ParameterContainer::toJson(const QString& path, QString& json) const
 {
     Value const* value;
-    if (getValue(path, value))
+    if (find(path, value))
     {
         try
         {
@@ -307,7 +302,7 @@ bool ParameterContainer::toYaml(const QString& path, QString& yaml) const
 bool ParameterContainer::fromXml(const QString& path, const QString& xml, XmlFormat format)
 {
     Value* value;
-    if (getValue(path, value))
+    if (find(path, value))
     {
         if (value->type() == cppcms::json::is_undefined)
         {
@@ -348,7 +343,7 @@ bool ParameterContainer::fromXml(const QString& path, const QString& xml, XmlFor
 bool ParameterContainer::fromJson(const QString& path, const QString& json)
 {
     Value* value;
-    if (getValue(path, value))
+    if (find(path, value))
     {
         if (value->type() != cppcms::json::is_object)
         {
@@ -379,39 +374,39 @@ bool ParameterContainer::fromYaml(const QString& path, const QString& yaml)
     //TODO
 }
 
-bool ParameterContainer::getValue(const QString& path, Value*& value)
+bool ParameterContainer::find(const QString& path, Value*& value)
 {
     QString replacePath = path.trimmed().replace("[", "/[");
     QStringList splitPath = replacePath.split("/", QString::SkipEmptyParts);
 
-    value = this->value;
+    value = rootValue;
     for (int i = 0; i < splitPath.size(); i++)
     {
         //access array value
         if (splitPath[i].at(0) == '[')
         {
             int index = splitPath[i].mid(1, 1).toInt();
-            value = &(*value)[index];
+            value = value[index];
         }
         //access other value
         else
         {
             std::string key = splitPath[i].toStdString();
-            value = &(*value)[key];
+            value = value[key];
         }
     }
 
     return true;
 }
 
-bool ParameterContainer::getValue(const QString& path, Value const*& value) const
+bool ParameterContainer::find(const QString& path, Value const*& value) const
 {
     QString replacePath = path.trimmed().replace("[", "/[");
     QStringList splitPath = replacePath.split("/", QString::SkipEmptyParts);
 
     try
     {
-        value = this->value;
+        value = rootValue;
         for (int i = 0; i < splitPath.size(); i++)
         {
             //access array value
