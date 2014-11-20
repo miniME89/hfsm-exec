@@ -16,12 +16,12 @@
  */
 
 #include <application.h>
-#include <parameter_container.h>
+#include <value_container.h>
 #include <plugins.h>
 
 using namespace hfsmexec;
 
-ParameterContainer parameterServer; //TODO remove
+ValueContainer parameterServer; //TODO remove
 
 /*
  * Application
@@ -62,7 +62,7 @@ DecoderProvider* Application::getDecoderProvider()
 void Application::start()
 {
     //StateMachineTest stateMachineTest;
-    ParameterServerTest parameterServerTest;
+    ValueContainerTest valueContainerTest;
     //DecoderTest decoderTest;
     //CommunicationPluginLoaderTest pluginTest;
 
@@ -77,17 +77,17 @@ void Application::stop()
 
 bool Application::getParameter(const QString& path, QString& data)
 {
-    return parameterServer.toJson(path, data);
+    //return parameterServer.toJson(path, data);
 }
 
 bool Application::setParameter(const QString& path, const QString& data)
 {
-    return parameterServer.fromJson(path, data);;
+    //return parameterServer.fromJson(path, data);;
 }
 
 bool Application::deleteParameter(const QString& path)
 {
-    parameterServer.remove(path);
+    //parameterServer.remove(path);
 
     return true;
 }

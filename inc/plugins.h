@@ -27,7 +27,7 @@ namespace hfsmexec
     {
         public:
             virtual ~CommunicationPlugin() {}
-            virtual bool invoke(ParameterContainer& inputParameters, ParameterContainer& outputParameters) = 0;
+            virtual bool invoke(ValueContainer& inputParameters, ValueContainer& outputParameters) = 0;
             virtual bool cancel() = 0;
 
             const QString& getPluginId() const;

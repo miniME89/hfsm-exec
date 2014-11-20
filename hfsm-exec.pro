@@ -15,7 +15,7 @@ SOURCES += src/main.cpp \
            src/statemachine_impl.cpp \
            src/decoder.cpp \
            src/decoder_impl.cpp \
-           src/parameter_container.cpp \
+           src/value_container.cpp \
            src/plugins.cpp
 
 HEADERS += inc/application.h \
@@ -24,7 +24,7 @@ HEADERS += inc/application.h \
            inc/statemachine_impl.h \
            inc/decoder.h \
            inc/decoder_impl.h \
-           inc/parameter_container.h \
+           inc/value_container.h \
            inc/plugins.h
 
 INCLUDEPATH += inc
@@ -32,6 +32,8 @@ INCLUDEPATH += inc
 LIBS += -L/usr/local/lib/ -lbooster -lcppcms
 
 INCLUDEPATH += /usr/local/include/
+
+QMAKE_LFLAGS += -export-dynamic
 
 release: DESTDIR = build/release
 debug: DESTDIR = build/debug

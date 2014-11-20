@@ -16,7 +16,7 @@
  */
 
 #include <decoder_impl.h>
-#include <parameter_container.h>
+#include <value_container.h>
 
 #include <QDebug>
 
@@ -202,7 +202,7 @@ bool XmlDecoder::decodeInvoke(QDomElement& node, StateMachineBuilder& builder, A
     endpoint.save(endpointStream, 4);
     qDebug() <<endPointStr;
 
-    ParameterContainer endpointParameter;
+    ValueContainer endpointParameter;
     endpointParameter.fromXml("/", endPointStr);
     QString test;
     qDebug() <<endpointParameter.toJson("/", test);

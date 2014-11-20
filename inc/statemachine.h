@@ -18,7 +18,7 @@
 #ifndef STATEMACHINE_H
 #define STATEMACHINE_H
 
-#include <parameter_container.h>
+#include <value_container.h>
 
 #include <QEvent>
 #include <QAbstractTransition>
@@ -88,16 +88,16 @@ namespace hfsmexec
             virtual bool initialize() = 0;
             virtual QString toString() const = 0;
 
-            ParameterContainer& getInputParameters();
-            ParameterContainer& getOutputParameters();
+            ValueContainer& getInputParameters();
+            ValueContainer& getOutputParameters();
 
         protected:
             QString stateId;
             QString parentStateId;
             StateMachine* stateMachine;
             QList<AbstractTransition*> transitions;
-            ParameterContainer inputParameters;
-            ParameterContainer outputParameters;
+            ValueContainer inputParameters;
+            ValueContainer outputParameters;
     };
 
     class AbstractComplexState : public AbstractState

@@ -151,12 +151,12 @@ StateMachine* AbstractState::getStateMachine()
     return stateMachine;
 }
 
-ParameterContainer& AbstractState::getInputParameters()
+ValueContainer& AbstractState::getInputParameters()
 {
     return inputParameters;
 }
 
-ParameterContainer& AbstractState::getOutputParameters()
+ValueContainer& AbstractState::getOutputParameters()
 {
     return outputParameters;
 }
