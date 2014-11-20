@@ -15,28 +15,35 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PLUGIN_HTTP_H
-#define PLUGIN_HTTP_H
+#include "plugin_http.h"
+#include <QDebug>
 
-#include <statemachine.h>
-#include <plugins.h>
+using namespace hfsmexec;
 
-#include <QtPlugin>
-
-namespace hfsmexec
+HTTPCommunicationPlugin::HTTPCommunicationPlugin()
 {
-    class HTTPCommunicationPlugin : public QObject, public CommunicationPlugin
-    {
-        Q_OBJECT
-        Q_INTERFACES(hfsmexec::CommunicationPlugin)
-
-        public:
-            HTTPCommunicationPlugin();
-            virtual ~HTTPCommunicationPlugin();
-
-            virtual bool invoke(ParameterContainer& inputParameters, ParameterContainer& outputParameters);
-            virtual bool cancel();
-    };
+    pluginId = "HTTP";
 }
 
-#endif
+HTTPCommunicationPlugin::~HTTPCommunicationPlugin()
+{
+
+}
+
+bool HTTPCommunicationPlugin::invoke(ValueContainer& inputParameters, ValueContainer& outputParameters)
+{
+    qDebug() <<"invoke";
+
+    inputParameters.set("/some/test/value", 5);
+
+    return true;
+}
+
+bool HTTPCommunicationPlugin::cancel()
+{
+    qDebug() <<"cancel";
+
+    return true;
+}
+
+Q_EXPORT_PLUGIN2(plugin-http, HTTPCommunicationPlugin)

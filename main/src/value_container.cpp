@@ -2,6 +2,10 @@
 #include <QStringList>
 #include <QDebug>
 
+#include <pugixml.hpp>
+#include <jsoncpp.h>
+#include <yaml.h>
+
 using namespace hfsmexec;
 
 template<typename T>
@@ -59,7 +63,7 @@ struct ArbitraryValueTypeContainer<Object>
  * ArbitraryValueException
  */
 ArbitraryValueException::ArbitraryValueException() :
-    message("")
+    message("ArbitraryValueException")
 {
 
 }
