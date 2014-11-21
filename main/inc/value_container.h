@@ -18,8 +18,8 @@ namespace hfsmexec
         TYPE_INTEGER,
         TYPE_FLOAT,
         TYPE_STRING,
-        TYPE_OBJECT,
-        TYPE_ARRAY
+        TYPE_ARRAY,
+        TYPE_OBJECT
     } ArbitraryValueType;
 
     struct Undefined {};
@@ -29,7 +29,7 @@ namespace hfsmexec
     typedef double Float;
     typedef QString String;
     typedef QList<ValueContainer> Array;
-    typedef QMap<QString, ValueContainer> Object;
+    typedef QMap<String, ValueContainer> Object;
 
     class ArbitraryValueException : public std::exception
     {
@@ -108,6 +108,9 @@ namespace hfsmexec
 
             const ArbitraryValueType& getType() const;
 
+            void undefined();
+            void null();
+
             bool get(Boolean& value, Boolean defaultValue = false) const;
             bool get(Integer& value, Integer defaultValue = 0) const;
             bool get(Float& value, Float defaultValue = 0) const;
@@ -121,33 +124,44 @@ namespace hfsmexec
             bool get(const QString& path, String& value, String defaultValue = "") const;
             bool get(const QString& path, Array& value, Array defaultValue = Array()) const;
             bool get(const QString& path, Object& value, Object defaultValue = Object()) const;
-            bool get(const QString& path, ValueContainer& value, ValueContainer defaultValue) const;
+            bool get(const QString& path, ValueContainer& value, ValueContainer defaultValue = ValueContainer()) const;
 
             void set(const Boolean& value);
             void set(const Integer& value);
             void set(const Float& value);
+            void set(const char* value);
             void set(const String& value);
             void set(const Array& value);
             void set(const Object& value);
+            void set(const ValueContainer& value);
 
             void set(const QString& path, const Boolean& value);
             void set(const QString& path, const Integer& value);
             void set(const QString& path, const Float& value);
+            void set(const QString& path, const char* value);
             void set(const QString& path, const String& value);
             void set(const QString& path, const Array& value);
             void set(const QString& path, const Object& value);
             void set(const QString& path, const ValueContainer& value);
 
-            void remove();
             void remove(const QString& path);
 
-            bool toXml(const QString& path, QString& xml, XmlFormat format = NAME_TAG) const;
-            bool toJson(const QString& path, QString& json) const;
-            bool toYaml(const QString& path, QString& yaml) const;
+            bool isUndefined() const;
+            bool isNull() const;
+            bool isBoolean() const;
+            bool isInteger() const;
+            bool isFloat() const;
+            bool isString() const;
+            bool isArray() const;
+            bool isObject() const;
 
-            bool fromXml(const QString& path, const QString& xml, XmlFormat format = NAME_TAG);
-            bool fromJson(const QString& path, const QString& json);
-            bool fromYaml(const QString& path, const QString& yaml);
+            bool toXml(QString& xml) const;
+            bool toJson(QString& json) const;
+            bool toYaml(QString& yaml) const;
+
+            bool fromXml(const QString& xml);
+            bool fromJson(const QString& json);
+            bool fromYaml(const QString& yaml);
 
             const ValueContainer& operator=(const ValueContainer& other);
             bool operator==(const ValueContainer& other) const;
@@ -171,8 +185,16 @@ namespace hfsmexec
             template <typename T>
             void setValue(const QString& path, const T& value);
 
-            bool find(const QString& path, const ValueContainer*& value) const;
-            bool find(const QString& path, ValueContainer*& value);
+            bool findValue(const QString& path, const ValueContainer*& value) const;
+            bool findValue(const QString& path, ValueContainer*& value);
+
+            bool buildToXml(const ValueContainer* value, void* data) const;
+            bool buildToJson(const ValueContainer* value, void* data) const;
+            bool buildToYaml(const ValueContainer* value, void* data) const;
+
+            bool buildFromXml(ValueContainer* value, void* data);
+            bool buildFromJson(ValueContainer* value, void* data);
+            bool buildFromYaml(ValueContainer* value, void* data);
     };
 
     class ValueContainerTest

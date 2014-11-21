@@ -203,9 +203,9 @@ bool XmlDecoder::decodeInvoke(QDomElement& node, StateMachineBuilder& builder, A
     qDebug() <<endPointStr;
 
     ValueContainer endpointParameter;
-    endpointParameter.fromXml("/", endPointStr);
+    endpointParameter.fromXml(endPointStr);
     QString test;
-    qDebug() <<endpointParameter.toJson("/", test);
+    qDebug() <<endpointParameter.toJson(test);
     qDebug() <<test;
 
     InvokeState* invoke = new InvokeState(id, parentState->getId());

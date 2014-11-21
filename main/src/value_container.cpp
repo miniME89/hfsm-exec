@@ -333,6 +333,16 @@ const ArbitraryValueType& ValueContainer::getType() const
     return value.getType();
 }
 
+void ValueContainer::undefined()
+{
+    value.set<Undefined>(Undefined());
+}
+
+void ValueContainer::null()
+{
+    value.set<Null>(Null());
+}
+
 bool ValueContainer::get(Boolean& value, Boolean defaultValue) const
 {
     return getValue<Boolean>(value, defaultValue);
@@ -395,7 +405,17 @@ bool ValueContainer::get(const QString& path, Object& value, Object defaultValue
 
 bool ValueContainer::get(const QString& path, ValueContainer& value, ValueContainer defaultValue) const
 {
-    //TODO
+    const ValueContainer* v = this;
+    if (findValue(path, v))
+    {
+        value = *v;
+
+        return true;
+    }
+
+    value = defaultValue;
+
+    return false;
 }
 
 void ValueContainer::set(const Boolean& value)
@@ -413,6 +433,11 @@ void ValueContainer::set(const Float& value)
     setValue<Float>(value);
 }
 
+void ValueContainer::set(const char* value)
+{
+    set(String(value));
+}
+
 void ValueContainer::set(const String& value)
 {
     setValue<String>(value);
@@ -428,6 +453,11 @@ void ValueContainer::set(const Object& value)
     setValue<Object>(value);
 }
 
+void ValueContainer::set(const ValueContainer& value)
+{
+    *this = value;
+}
+
 void ValueContainer::set(const QString& path, const Boolean& value)
 {
     setValue<Boolean>(path, value);
@@ -441,6 +471,11 @@ void ValueContainer::set(const QString& path, const Integer& value)
 void ValueContainer::set(const QString& path, const Float& value)
 {
     setValue<Float>(path, value);
+}
+
+void ValueContainer::set(const QString& path, const char* value)
+{
+    set(path, String(value));
 }
 
 void ValueContainer::set(const QString& path, const String& value)
@@ -460,12 +495,11 @@ void ValueContainer::set(const QString& path, const Object& value)
 
 void ValueContainer::set(const QString& path, const ValueContainer& value)
 {
-    //TODO
-}
-
-void ValueContainer::remove()
-{
-    //TODO
+    ValueContainer* v = this;
+    if (findValue(path, v))
+    {
+        *v = value;
+    }
 }
 
 void ValueContainer::remove(const QString& path)
@@ -473,34 +507,163 @@ void ValueContainer::remove(const QString& path)
     //TODO
 }
 
-bool ValueContainer::toXml(const QString& path, QString& xml, XmlFormat format) const
+bool ValueContainer::isUndefined() const
 {
-    //TODO
+    return getType() == TYPE_UNDEFINED;
 }
 
-bool ValueContainer::toJson(const QString& path, QString& json) const
+bool ValueContainer::isNull() const
 {
-    //TODO
+    return getType() == TYPE_NULL;
 }
 
-bool ValueContainer::toYaml(const QString& path, QString& yaml) const
+bool ValueContainer::isBoolean() const
 {
-    //TODO
+    return getType() == TYPE_BOOLEAN;
 }
 
-bool ValueContainer::fromXml(const QString& path, const QString& xml, XmlFormat format)
+bool ValueContainer::isInteger() const
 {
-    //TODO
+    return getType() == TYPE_INTEGER;
 }
 
-bool ValueContainer::fromJson(const QString& path, const QString& json)
+bool ValueContainer::isFloat() const
 {
-    //TODO
+    return getType() == TYPE_FLOAT;
 }
 
-bool ValueContainer::fromYaml(const QString& path, const QString& yaml)
+bool ValueContainer::isString() const
 {
-    //TODO
+    return getType() == TYPE_STRING;
+}
+
+bool ValueContainer::isArray() const
+{
+    return getType() == TYPE_ARRAY;
+}
+
+bool ValueContainer::isObject() const
+{
+    return getType() == TYPE_OBJECT;
+}
+
+bool ValueContainer::toXml(QString& xml) const
+{
+    pugi::xml_document doc;
+    pugi::xml_node root = doc.root();
+    if (!buildToXml(this, &root))
+    {
+        qWarning() <<"couldn't build xml from value container";
+
+        return false;
+    }
+
+    std::stringstream stream;
+    pugi::xml_writer_stream writer(stream);
+    doc.save(writer);
+
+    xml = stream.str().c_str();
+
+    return true;
+}
+
+bool ValueContainer::toJson(QString& json) const
+{
+    Json::Value root;
+    if (!buildToJson(this, &root))
+    {
+        qWarning() <<"couldn't build json from value container";
+
+        return false;
+    }
+
+    Json::StyledWriter writer;
+    json = writer.write(root).c_str();
+
+    return true;
+}
+
+bool ValueContainer::toYaml(QString& yaml) const
+{
+    YAML::Node root;
+    if (!buildToYaml(this, &root))
+    {
+        qWarning() <<"couldn't build yaml from value container";
+
+        return false;
+    }
+
+    YAML::Emitter writer;
+    writer <<root;
+    yaml = writer.c_str();
+
+    return true;
+}
+
+bool ValueContainer::fromXml(const QString& xml)
+{
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_buffer(xml.toStdString().c_str(), xml.size());
+    if (result.status != pugi::status_ok)
+    {
+        qWarning() <<"couldn't set value container from xml";
+
+        return false;
+    }
+
+    pugi::xml_node root = doc.root();
+    if (!buildFromXml(this, &root))
+    {
+        qWarning() <<"couldn't set value container from xml";
+
+        return false;
+    }
+
+    return true;
+}
+
+bool ValueContainer::fromJson(const QString& json)
+{
+    Json::Value root;
+    Json::Reader reader;
+    if (!reader.parse(json.toStdString(), root))
+    {
+        qWarning() <<"couldn't set value container from json:" <<reader.getFormatedErrorMessages().c_str();
+
+        return false;
+    }
+
+    if (!buildFromJson(this, &root))
+    {
+        qWarning() <<"couldn't set value container from json";
+
+        return false;
+    }
+
+    return true;
+}
+
+bool ValueContainer::fromYaml(const QString& yaml)
+{
+    try
+    {
+        YAML::Node root = YAML::Load(yaml.toStdString());
+
+        if (!buildFromYaml(this, &root))
+        {
+            qWarning() <<"couldn't set value container from yaml";
+
+            return false;
+        }
+
+        return true;
+    }
+    catch (YAML::Exception e)
+    {
+        qWarning() <<"couldn't set value container from yaml:" <<e.msg.c_str();
+    }
+
+    return false;
 }
 
 const ValueContainer& ValueContainer::operator=(const ValueContainer& other)
@@ -523,11 +686,10 @@ ValueContainer& ValueContainer::operator[](const QString& name)
     }
 
     Object& object = value.get<Object>();
-    Object::iterator i = object.find(name);
+    Object::iterator i = object.find(name.toStdString().c_str());
     if (i == object.end())
     {
-        qDebug() <<"create!";
-        return object.insert(name, ValueContainer()).value();
+        return object.insert(name.toStdString().c_str(), ValueContainer()).value();
     }
 
     return i.value();
@@ -558,9 +720,9 @@ ValueContainer& ValueContainer::operator[](int i)
     }
 
     Array& array = value.get<Array>();
-    for (int j = array.size() - i; j < 0; j++)
+    for (int j = array.size() - i - 1; j < 0; j++)
     {
-        array.append(Null()); //TODO test
+        array.append(Null());
     }
 
     return array[i];
@@ -582,7 +744,7 @@ const ValueContainer& ValueContainer::operator[](int i) const
     return array[i];
 }
 
-bool ValueContainer::find(const QString& path, const ValueContainer*& value) const
+bool ValueContainer::findValue(const QString& path, const ValueContainer*& value) const
 {
     QString replacePath = path.trimmed().replace("[", "/[");
     QStringList splitPath = replacePath.split("/", QString::SkipEmptyParts);
@@ -614,7 +776,7 @@ bool ValueContainer::find(const QString& path, const ValueContainer*& value) con
     return false;
 }
 
-bool ValueContainer::find(const QString& path, ValueContainer*& value)
+bool ValueContainer::findValue(const QString& path, ValueContainer*& value)
 {
     QString replacePath = path.trimmed().replace("[", "/[");
     QStringList splitPath = replacePath.split("/", QString::SkipEmptyParts);
@@ -660,7 +822,7 @@ template<typename T>
 bool ValueContainer::getValue(const QString& path, T& value, T defaultValue) const
 {
     const ValueContainer* v = this;
-    if (find(path, v))
+    if (findValue(path, v))
     {
         return v->get(value, defaultValue);
     }
@@ -678,16 +840,460 @@ template<typename T>
 void ValueContainer::setValue(const QString& path, const T& value)
 {
     ValueContainer* v = this;
-    if (find(path, v))
+    if (findValue(path, v))
     {
         v->set(value);
     }
 }
 
+bool ValueContainer::buildToXml(const ValueContainer* value, void* data) const
+{
+    pugi::xml_node* xmlValue = static_cast<pugi::xml_node*>(data);
+
+    if (value->isUndefined())
+    {
+        return false;
+    }
+    else if (value->isNull())
+    {
+
+    }
+    else if (value->isBoolean())
+    {
+        Boolean v;
+        value->get(v);
+        xmlValue->text().set(v);
+    }
+    else if (value->isInteger())
+    {
+        Integer v;
+        value->get(v);
+        xmlValue->text().set(QString::number(v).toStdString().c_str());
+    }
+    else if (value->isFloat())
+    {
+        Float v;
+        value->get(v);
+        xmlValue->text().set(QString::number(v).toStdString().c_str());
+    }
+    else if (value->isString())
+    {
+        String v;
+        value->get(v);
+        xmlValue->text().set(v.toStdString().c_str());
+    }
+    else if (value->isArray())
+    {
+        Array v;
+        value->get(v);
+        for (int i = 0; i < v.size(); i++)
+        {
+            pugi::xml_node dataChild = xmlValue->append_child("item");
+            if (!buildToXml(&v[i], &dataChild))
+            {
+                return false;
+            }
+        }
+    }
+    else if (value->isObject())
+    {
+        Object v;
+        value->get(v);
+        for (Object::const_iterator it = v.begin(); it != v.end(); it++)
+        {
+            pugi::xml_node dataChild = xmlValue->append_child(it.key().toStdString().c_str());
+            if (!buildToXml(&it.value(), &dataChild))
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool ValueContainer::buildToJson(const ValueContainer* value, void* data) const
+{
+    Json::Value* jsonValue = static_cast<Json::Value*>(data);
+
+    if (value->isUndefined())
+    {
+        return false;
+    }
+    else if (value->isNull())
+    {
+
+    }
+    else if (value->isBoolean())
+    {
+        Boolean v;
+        value->get(v);
+        *jsonValue = v;
+    }
+    else if (value->isInteger())
+    {
+        Integer v;
+        value->get(v);
+        *jsonValue = v;
+    }
+    else if (value->isFloat())
+    {
+        Float v;
+        value->get(v);
+        *jsonValue = v;
+    }
+    else if (value->isString())
+    {
+        String v;
+        value->get(v);
+        *jsonValue = v.toStdString();
+    }
+    else if (value->isArray())
+    {
+        Array v;
+        value->get(v);
+        *jsonValue = Json::Value(Json::arrayValue);
+        for (int i = 0; i < v.size(); i++)
+        {
+            Json::Value dataChild;
+            if (!buildToJson(&v[i], &dataChild))
+            {
+                return false;
+            }
+            (*jsonValue)[i] = dataChild;
+        }
+    }
+    else if (value->isObject())
+    {
+        Object v;
+        value->get(v);
+        *jsonValue = Json::Value(Json::objectValue);
+        for (Object::const_iterator it = v.begin(); it != v.end(); it++)
+        {
+            Json::Value dataChild;
+            if (!buildToJson(&it.value(), &dataChild))
+            {
+                return false;
+            }
+            (*jsonValue)[it.key().toStdString()] = dataChild;
+        }
+    }
+
+    return true;
+}
+
+bool ValueContainer::buildToYaml(const ValueContainer* value, void* data) const
+{
+    YAML::Node* yamlValue = static_cast<YAML::Node*>(data);
+
+    if (value->isUndefined())
+    {
+        return false;
+    }
+    else if (value->isNull())
+    {
+
+    }
+    else if (value->isBoolean())
+    {
+        Boolean v;
+        value->get(v);
+        *yamlValue = v;
+    }
+    else if (value->isInteger())
+    {
+        Integer v;
+        value->get(v);
+        *yamlValue = v;
+    }
+    else if (value->isFloat())
+    {
+        Float v;
+        value->get(v);
+        *yamlValue = v;
+    }
+    else if (value->isString())
+    {
+        String v;
+        value->get(v);
+        *yamlValue = v.toStdString();
+    }
+    else if (value->isArray())
+    {
+        Array v;
+        value->get(v);
+        for (int i = 0; i < v.size(); i++)
+        {
+            YAML::Node dataChild;
+            if (!buildToYaml(&v[i], &dataChild))
+            {
+                return false;
+            }
+            yamlValue->push_back(dataChild);
+        }
+    }
+    else if (value->isObject())
+    {
+        Object v;
+        value->get(v);
+        for (Object::const_iterator it = v.begin(); it != v.end(); it++)
+        {
+            YAML::Node dataChild;
+            if (!buildToYaml(&it.value(), &dataChild))
+            {
+                return false;
+            }
+            (*yamlValue)[it.key().toStdString()] = dataChild;
+        }
+    }
+
+    return true;
+}
+
+bool ValueContainer::buildFromXml(ValueContainer* value, void* data)
+{
+    pugi::xml_node* xmlValue = static_cast<pugi::xml_node*>(data);
+    pugi::xml_text textContent = xmlValue->text();
+    if (textContent)
+    {
+        std::string text = textContent.get();
+
+        if (text.empty())
+        {
+            value->null();
+        }
+        else if (text == "true" || text == "false")
+        {
+            value->set(textContent.as_bool());
+        }
+        else if (strtod(text.c_str(), NULL) != 0.0 || text == "0" || text == "0.0")
+        {
+            if (text.find_first_of(".") == std::string::npos)
+            {
+                value->set(textContent.as_int());
+            }
+            else
+            {
+                value->set(textContent.as_double());
+            }
+        }
+        else
+        {
+            value->set(text.c_str());
+        }
+    }
+    else if (xmlValue->child("item"))   //TODO object or array?
+    {
+        Array array;
+        for (pugi::xml_node_iterator i = xmlValue->begin(); i != xmlValue->end(); i++)
+        {
+            ValueContainer v;
+            if (!buildFromXml(&v, &i))
+            {
+                return false;
+            }
+            array.append(v);
+        }
+        value->set(array);
+    }
+    else
+    {
+        Object object;
+        for (pugi::xml_node_iterator i = xmlValue->begin(); i != xmlValue->end(); i++)
+        {
+            ValueContainer v;
+            if (!buildFromXml(&v, &i))
+            {
+                return false;
+            }
+
+            object.insert(i->name(), v);
+        }
+        value->set(object);
+    }
+
+    return true;
+}
+
+bool ValueContainer::buildFromJson(ValueContainer* value, void* data)
+{
+    Json::Value* jsonValue = static_cast<Json::Value*>(data);
+
+    if (jsonValue->isNull())
+    {
+        value->null();
+    }
+    else if (jsonValue->isBool())
+    {
+        value->set(jsonValue->asBool());
+    }
+    else if (jsonValue->isInt() || jsonValue->isUInt())
+    {
+        value->set(jsonValue->asInt());
+    }
+    else if (jsonValue->isDouble())
+    {
+        value->set(jsonValue->asDouble());
+    }
+    else if (jsonValue->isString())
+    {
+        value->set(jsonValue->asString().c_str());
+    }
+    else if (jsonValue->isArray())
+    {
+        Array array;
+        for (unsigned int i = 0; i < jsonValue->size(); i++)
+        {
+            ValueContainer v;
+            if (!buildFromJson(&v, &jsonValue[i]))
+            {
+                return false;
+            }
+            array.append(v);
+        }
+        value->set(array);
+    }
+    else if (jsonValue->isObject())
+    {
+        Object object;
+        for (Json::ValueIterator i = jsonValue->begin(); i != jsonValue->end(); i++)
+        {
+            ValueContainer v;
+            if (!buildFromJson(&v, &*i))
+            {
+                return false;
+            }
+            object.insert(i.memberName(), v);
+        }
+        value->set(object);
+    }
+
+    return true;
+}
+
+bool ValueContainer::buildFromYaml(ValueContainer* value, void* data)
+{
+    YAML::Node* yamlValue = static_cast<YAML::Node*>(data);
+
+    if (yamlValue->IsNull())
+    {
+        value->null();
+    }
+    else if (yamlValue->IsScalar())
+    {
+        try
+        {
+            value->set(yamlValue->as<Boolean>());
+        }
+        catch (const YAML::BadConversion& e)
+        {
+            try
+            {
+                value->set(yamlValue->as<Integer>());
+            }
+            catch (const YAML::BadConversion& e)
+            {
+                try
+                {
+                    value->set(yamlValue->as<Float>());
+                }
+                catch (const YAML::BadConversion& e)
+                {
+                    std::string s = yamlValue->as<std::string>();
+                    value->set(s.c_str());
+                }
+            }
+        }
+    }
+    else if (yamlValue->IsSequence())
+    {
+        Array array;
+        for (unsigned int i = 0; i < yamlValue->size(); i++)
+        {
+            ValueContainer v;
+            YAML::Node n = (*yamlValue)[i];
+            if (!buildFromYaml(&v, &n))
+            {
+                return false;
+            }
+            array.append(v);
+        }
+        value->set(array);
+    }
+    else if (yamlValue->IsMap())
+    {
+        Object object;
+        for (YAML::iterator i = yamlValue->begin(); i != yamlValue->end(); i++)
+        {
+            ValueContainer v;
+            if (!buildFromYaml(&v, &i->second))
+            {
+                return false;
+            }
+            object.insert(i->first.as<std::string>().c_str(), v);
+        }
+        value->set(object);
+    }
+
+    return true;
+}
+
 /*
  * ValueContainerTest
  */
+#include <QFile>
 ValueContainerTest::ValueContainerTest()
 {
+    QString out;
 
+    ValueContainer c;
+
+    qDebug() <<"===================================";
+    c.fromJson("{ \"some\" : { \"test\" : { \"x\" : 5 } }, \"test\" : 1234 }");
+    c.set("/other/test/x", -50);
+    c.set("/array_test[5]/obj[2]", "foo");
+
+    ValueContainer sub;
+    c.get("/other/test/x", sub);
+    sub.null();
+
+    out = "";
+    c.toXml(out);
+    qDebug() <<out;
+    c.toJson(out);
+    qDebug() <<out;
+    c.toYaml(out);
+    qDebug() <<out;
+
+    qDebug() <<"===================================";
+    c.fromXml("<test><from_xml><x>1</x><y>2</y><z>3</z></from_xml><arr><item>5</item><item>6</item><item>7</item></arr></test>");
+
+    out = "";
+    c.toXml(out);
+    qDebug() <<out;
+    c.toJson(out);
+    qDebug() <<out;
+    c.toYaml(out);
+    qDebug() <<out;
+
+    qDebug() <<"===================================";
+    QFile file("/home/marcel/Programming/hfsm-exec/test.yaml");
+    if (!file.open(QFile::ReadOnly | QFile::Text))
+    {
+        qWarning() <<"couldn't open file";
+
+        return;
+    }
+    QTextStream stream(&file);
+    QString data = stream.readAll();
+
+    c.fromYaml(data.toStdString().c_str());
+
+    out = "";
+    c.toXml(out);
+    qDebug() <<out;
+    c.toJson(out);
+    qDebug() <<out;
+    c.toYaml(out);
+    qDebug() <<out;
 }

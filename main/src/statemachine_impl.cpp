@@ -216,11 +216,11 @@ void InvokeState::eventEntered()
     if (plugins.size() > 0)
     {
         QString json;
-        inputParameters.toJson("/", json);
+        inputParameters.toJson(json);
         qDebug() <<json;
         plugins["HTTP"]->invoke(inputParameters, outputParameters);
         QString json2;
-        inputParameters.toJson("/", json2);
+        inputParameters.toJson(json2);
         qDebug() <<json2;
     }
 }
