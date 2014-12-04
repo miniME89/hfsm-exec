@@ -17,6 +17,7 @@
 
 #include <decoder_impl.h>
 #include <value_container.h>
+#include <sstream>
 
 #include <QDebug>
 
@@ -34,41 +35,38 @@ XmlDecoder::XmlDecoder() :
 StateMachine* XmlDecoder::decode(const QString& data)
 {
     //parse XML
-    QString errorMessage;
-    int errorLine;
-    int errorColumn;
-    QDomDocument doc;
-    if (!doc.setContent(data, true, &errorMessage, &errorLine, &errorColumn))
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_buffer(data.toStdString().c_str(), data.size());
+    if (result.status != pugi::status_ok)
     {
-        qDebug() <<"couldn't parse XML: " <<errorMessage <<"(Line: " <<errorLine <<", Column: " <<errorColumn <<")";
+        qDebug() <<"couldn't parse XML: " <<result.description();
 
         return NULL;
     }
 
     //get root element
-    QDomElement node = doc.documentElement();
-    if (node.tagName() != "stateMachine")
+    pugi::xml_node root = doc.first_child();
+    if (std::string(root.name()) != "stateMachine")
     {
-        qDebug() <<"invalid XML encoding: root element needs to be of type" <<QString("stateMachine");
+        qDebug() <<"invalid XML encoding: root element needs to be" <<QString("stateMachine");
 
         return NULL;
     }
 
     //decode state machine recursively
     StateMachineBuilder builder;
-    decodeStateMachine(node, builder);
+    decodeStateMachine(root, builder);
 
     return builder.build();
 }
 
-bool XmlDecoder::decodeChilds(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
+bool XmlDecoder::decodeChilds(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
     qDebug() <<"decode childs";
 
-    QDomElement child = node.firstChild().toElement();
-    while (!child.isNull())
+    for (pugi::xml_node child = node.first_child(); child; child = child.next_sibling())
     {
-        QString tagName = child.tagName();
+        QString tagName = child.name();
         if (tagName == "composite")
         {
            if (!decodeComposite(child, builder, parentState))
@@ -97,37 +95,32 @@ bool XmlDecoder::decodeChilds(QDomElement& node, StateMachineBuilder& builder, A
                return false;
            }
         }
-
-        child = child.nextSibling().toElement();
     }
 
     return true;
 }
 
-bool XmlDecoder::decodeTransitions(QDomElement& node, StateMachineBuilder& builder, AbstractState* sourceState)
+bool XmlDecoder::decodeTransitions(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* sourceState)
 {
     qDebug() <<"decode transitions";
 
-    QDomElement transitionElement = node.firstChildElement("transition");
-    while (!transitionElement.isNull())
+    for (pugi::xml_node transitionElement = node.child("transition"); transitionElement; transitionElement = transitionElement.next_sibling())
     {
-        QString target = transitionElement.attribute("target");
+        QString target = transitionElement.attribute("target").value();
 
         NamedTransition* transition = new NamedTransition("TODO", sourceState->getId(), target, "TODO");
         builder <<transition;
-
-        transitionElement = transitionElement.nextSiblingElement("transition");
     }
 
     return true;
 }
 
-bool XmlDecoder::decodeStateMachine(QDomElement& node, StateMachineBuilder& builder)
+bool XmlDecoder::decodeStateMachine(pugi::xml_node& node, StateMachineBuilder& builder)
 {
     qDebug() <<"decode stateMachine";
 
-    QString initial = node.attribute("initial");
-    QDomElement childs = node.firstChildElement("childs");
+    QString initial = node.attribute("initial").value();
+    pugi::xml_node childs = node.child("childs");
 
     StateMachine* stateMachine = new StateMachine(initial);
     builder <<stateMachine;
@@ -140,14 +133,14 @@ bool XmlDecoder::decodeStateMachine(QDomElement& node, StateMachineBuilder& buil
     return true;
 }
 
-bool XmlDecoder::decodeComposite(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
+bool XmlDecoder::decodeComposite(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
     qDebug() <<"decode composite";
 
-    QString id = node.attribute("id");
-    QString initial = node.attribute("initial");
-    QDomElement transitions = node.firstChildElement("transitions");
-    QDomElement childs = node.firstChildElement("childs");
+    QString id = node.attribute("id").value();
+    QString initial = node.attribute("initial").value();
+    pugi::xml_node transitions = node.child("transitions");
+    pugi::xml_node childs = node.child("childs");
 
     CompositeState* composite = new CompositeState(id, initial, parentState->getId());
     builder <<composite;
@@ -165,14 +158,13 @@ bool XmlDecoder::decodeComposite(QDomElement& node, StateMachineBuilder& builder
     return true;
 }
 
-bool XmlDecoder::decodeParallel(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
+bool XmlDecoder::decodeParallel(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
     qDebug() <<"decode parallel";
 
-    QString id = node.attribute("id");
-    QString initial = node.attribute("initial");
-    QDomElement transitions = node.firstChildElement("transitions");
-    QDomElement childs = node.firstChildElement("childs");
+    QString id = node.attribute("id").value();
+    pugi::xml_node transitions = node.child("transitions");
+    pugi::xml_node childs = node.child("childs");
 
     ParallelState* parallel = new ParallelState(id, parentState->getId());
     builder <<parallel;
@@ -190,23 +182,27 @@ bool XmlDecoder::decodeParallel(QDomElement& node, StateMachineBuilder& builder,
     return true;
 }
 
-bool XmlDecoder::decodeInvoke(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
+bool XmlDecoder::decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
     qDebug() <<"decode invoke";
 
-    QString id = node.attribute("id");
-    QDomElement endpoint = node.firstChildElement("endpoint");
+    QString id = node.attribute("id").value();
+    pugi::xml_node endpoint = node.child("endpoint");
 
-    QString endPointStr;
-    QTextStream endpointStream(&endPointStr);
-    endpoint.save(endpointStream, 4);
-    qDebug() <<endPointStr;
+    std::ostringstream stream;
+    endpoint.print(stream);
+    QString endPointStr = stream.str().c_str();
 
     ValueContainer endpointParameter;
     endpointParameter.fromXml(endPointStr);
+
     QString test;
     qDebug() <<endpointParameter.toJson(test);
     qDebug() <<test;
+
+    QString url;
+    endpointParameter["url"].get(url);
+    qDebug() <<url;
 
     InvokeState* invoke = new InvokeState(id, parentState->getId());
     builder <<invoke;
@@ -214,11 +210,11 @@ bool XmlDecoder::decodeInvoke(QDomElement& node, StateMachineBuilder& builder, A
     return true;
 }
 
-bool XmlDecoder::decodeFinal(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState)
+bool XmlDecoder::decodeFinal(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
     qDebug() <<"decode final";
 
-    QString id = node.attribute("id");
+    QString id = node.attribute("id").value();
 
     FinalState* composite = new FinalState(id, parentState->getId());
     builder <<composite;

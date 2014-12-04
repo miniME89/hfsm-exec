@@ -19,7 +19,7 @@
 #define DECODER_IMPL_H
 
 #include <decoder.h>
-#include <QDomDocument>
+#include <pugixml.hpp>
 
 namespace hfsmexec
 {
@@ -31,13 +31,13 @@ namespace hfsmexec
             StateMachine* decode(const QString &data);
 
         private:
-            bool decodeChilds(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState);
-            bool decodeTransitions(QDomElement& node, StateMachineBuilder& builder, AbstractState* sourceState);
-            bool decodeStateMachine(QDomElement& node, StateMachineBuilder& builder);
-            bool decodeComposite(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState);
-            bool decodeParallel(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState);
-            bool decodeInvoke(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState);
-            bool decodeFinal(QDomElement& node, StateMachineBuilder& builder, AbstractState* parentState);
+            bool decodeChilds(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
+            bool decodeTransitions(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* sourceState);
+            bool decodeStateMachine(pugi::xml_node& node, StateMachineBuilder& builder);
+            bool decodeComposite(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
+            bool decodeParallel(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
+            bool decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
+            bool decodeFinal(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
     };
 
     class JsonDecoder : public AbstractDecoder
