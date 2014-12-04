@@ -17,7 +17,6 @@
 
 #include <application.h>
 #include <value_container.h>
-#include <plugins.h>
 
 using namespace hfsmexec;
 
@@ -34,62 +33,57 @@ Application* Application::instance()
 }
 
 Application::Application(int argc, char** argv) :
-    qtApplication(argc, argv)
+    qtApplication(new QCoreApplication(argc, argv)),
+    apiExecutor(new ApiExecutor()),
+    decoderProvider(new DecoderProvider()),
+    communicationPluginLoader(new CommunicationPluginLoader())
 {
     application = this;
+    communicationPluginLoader->load("plugins");
 }
 
 Application::~Application()
 {
-
+    delete qtApplication;
+    delete apiExecutor;
+    delete decoderProvider;
+    delete communicationPluginLoader;
 }
 
 QCoreApplication* Application::getQtApplication()
 {
-    return &qtApplication;
+    return qtApplication;
 }
 
 ApiExecutor* Application::getApiExecutor()
 {
-    return &apiExecutor;
+    return apiExecutor;
 }
 
 DecoderProvider* Application::getDecoderProvider()
 {
-    return &decoderProvider;
+    return decoderProvider;
+}
+
+CommunicationPluginLoader *Application::getCommunicationPluginLoader()
+{
+    return communicationPluginLoader;
 }
 
 void Application::start()
 {
-    //StateMachineTest stateMachineTest;
-    ValueContainerTest valueContainerTest;
+    StateMachineTest stateMachineTest;
+    //ValueContainerTest valueContainerTest;
     //DecoderTest decoderTest;
     //CommunicationPluginLoaderTest pluginTest;
 
-    apiExecutor.start();
-    qtApplication.exec();
+    apiExecutor->start();
+    qtApplication->exec();
 }
 
 void Application::stop()
 {
     //TODO
-}
-
-bool Application::getParameter(const QString& path, QString& data)
-{
-    //return parameterServer.toJson(path, data);
-}
-
-bool Application::setParameter(const QString& path, const QString& data)
-{
-    //return parameterServer.fromJson(path, data);;
-}
-
-bool Application::deleteParameter(const QString& path)
-{
-    //parameterServer.remove(path);
-
-    return true;
 }
 
 bool Application::postEvent(AbstractEvent* event)

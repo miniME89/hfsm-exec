@@ -19,30 +19,37 @@
 #define PLUGINS_H
 
 #include <statemachine.h>
-#include <QMap>
+#include <QList>
 
 namespace hfsmexec
 {
     class CommunicationPlugin
     {
         public:
+            CommunicationPlugin(const QString& pluginId) : pluginId(pluginId) {}
             virtual ~CommunicationPlugin() {}
-            virtual bool invoke(ValueContainer& inputParameters, ValueContainer& outputParameters) = 0;
+            virtual bool invoke(ValueContainer& endpoint, ValueContainer& inputParameters, ValueContainer& outputParameters) = 0;
             virtual bool cancel() = 0;
 
-            const QString& getPluginId() const;
+            QString getPluginId() const { return pluginId; }
 
         protected:
-            QString pluginId;
+            const QString pluginId;
     };
 
     class CommunicationPluginLoader
     {
         public:
             CommunicationPluginLoader();
+            ~CommunicationPluginLoader();
 
-            bool load(QMap<QString, CommunicationPlugin*>& plugins);
-            bool load(const QString& path, QMap<QString, CommunicationPlugin*>& plugins);
+            CommunicationPlugin* getPlugin(const QString& pluginId);
+            const QList<CommunicationPlugin*>& getPlugins() const;
+
+            bool load(const QString& path);
+
+        protected:
+            QList<CommunicationPlugin*> plugins;
     };
 
     class CommunicationPluginLoaderTest

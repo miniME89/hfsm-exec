@@ -19,6 +19,7 @@
 #define STATEMACHINE_IMPL_H
 
 #include <statemachine.h>
+#include <plugins.h>
 
 #include <QFinalState>
 #include <QState>
@@ -30,7 +31,7 @@ namespace hfsmexec
     class NamedEvent : public AbstractEvent
     {
         public:
-            static const QEvent::Type typeId;
+            static const QEvent::Type type;
 
             NamedEvent(const QString& name);
             ~NamedEvent();
@@ -118,16 +119,32 @@ namespace hfsmexec
             InvokeState(const QString& stateId, const QString& type, const QString& parentStateId = "");
             virtual ~InvokeState();
 
+            const ValueContainer& getEndpoint() const;
+            void setEndpoint(const ValueContainer& value);
+
+            const ValueContainer& getInputParameters() const;
+            void setInputParameters(const ValueContainer& value);
+
+            const ValueContainer& getOutputParameters() const;
+            void setOutputParameters(const ValueContainer& value);
+
+            CommunicationPlugin* getCommunicationPlugin() const;
+            void setCommunicationPlugin(CommunicationPlugin* value);
+
             virtual bool initialize();
             virtual QString toString() const;
 
-        protected slots:
+    protected slots:
             virtual void eventEntered();
             virtual void eventExited();
             virtual void eventFinished();
 
         private:
             QString type;
+            ValueContainer endpoint;
+            ValueContainer inputParameters;
+            ValueContainer outputParameters;
+            CommunicationPlugin* communicationPlugin;
     };
 
     class StateMachine : public AbstractComplexState

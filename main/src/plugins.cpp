@@ -25,23 +25,49 @@
 using namespace hfsmexec;
 
 /*
- * CommunicationPluginLoader
+ * CommunicationPlugin
  */
 CommunicationPluginLoader::CommunicationPluginLoader()
 {
+
 }
 
-bool CommunicationPluginLoader::load(QMap<QString, CommunicationPlugin*>& plugins)
+CommunicationPluginLoader::~CommunicationPluginLoader()
 {
-    return load(Application::instance()->getQtApplication()->applicationDirPath(), plugins);
+
 }
 
-bool CommunicationPluginLoader::load(const QString& path, QMap<QString, CommunicationPlugin*>& plugins)
+CommunicationPlugin* CommunicationPluginLoader::getPlugin(const QString& pluginId)
+{
+    for (int i = 0; i < plugins.size(); i++)
+    {
+        if (plugins[i]->getPluginId() == pluginId)
+        {
+            return plugins[i];
+        }
+    }
+
+    return NULL;
+}
+
+const QList<CommunicationPlugin*>& CommunicationPluginLoader::getPlugins() const
+{
+    return plugins;
+}
+
+bool CommunicationPluginLoader::load(const QString &path)
 {
     QDir pluginsDir = QDir(path);
     pluginsDir.setNameFilters(QStringList("*.so"));
 
-    qDebug() <<"loading all plugins in directory" <<pluginsDir.path();
+    if (!pluginsDir.exists())
+    {
+        qWarning() <<"couldn't load communication plugins in directory: directory doesn't exist";
+
+        return false;
+    }
+
+    qDebug() <<"loading all communication plugins in directory" <<pluginsDir.absolutePath();
 
     foreach (QString fileName, pluginsDir.entryList(QDir::Files))
     {
@@ -52,7 +78,7 @@ bool CommunicationPluginLoader::load(const QString& path, QMap<QString, Communic
         QObject* plugin = pluginLoader.instance();
         if (!plugin)
         {
-            qWarning() <<"invalid plugin:" <<pluginLoader.errorString();
+            qWarning() <<"invalid communication plugin:" <<pluginLoader.errorString();
 
             continue;
         }
@@ -61,7 +87,7 @@ bool CommunicationPluginLoader::load(const QString& path, QMap<QString, Communic
         CommunicationPlugin* instance = qobject_cast<CommunicationPlugin*>(plugin);
         if (!instance)
         {
-            qWarning() <<"invalid plugin: plugin is not of type" <<QString("CommunicationPlugin");
+            qWarning() <<"invalid communication plugin: plugin is not of type" <<QString("CommunicationPlugin");
 
             continue;
         }
@@ -71,33 +97,25 @@ bool CommunicationPluginLoader::load(const QString& path, QMap<QString, Communic
         //validate plugin id
         if (pluginId.isEmpty())
         {
-            qWarning() <<"invalid plugin id";
+            qWarning() <<"invalid communication plugin id: empty communication plugin id";
 
             continue;
         }
 
         //verify unique plugin id
-        if (plugins.contains(pluginId))
+        for (int i = 0; plugins.size(); i++)
         {
-            qWarning() <<"invalid plugin id: plugin with plugin id" <<pluginId <<"already loaded";
+            qWarning() <<"invalid communication plugin id: communication plugin with plugin id" <<pluginId <<"already loaded";
 
             continue;
         }
 
-        plugins[pluginId] = instance;
+        plugins.append(instance);
 
-        qDebug() <<"loaded plugin" <<pluginId;
+        qDebug() <<"loaded communication plugin with pluginId " <<pluginId;
     }
 
     return true;
-}
-
-/*
- * CommunicationPlugin
- */
-const QString& CommunicationPlugin::getPluginId() const
-{
-    return pluginId;
 }
 
 /*
@@ -106,6 +124,7 @@ const QString& CommunicationPlugin::getPluginId() const
 CommunicationPluginLoaderTest::CommunicationPluginLoaderTest()
 {
     CommunicationPluginLoader loader;
-    QMap<QString, CommunicationPlugin*> plugins;
-    loader.load("/home/marcel/Programming/hfsm-exec/plugins/build-plugin-http-Desktop-Debug", plugins);
+    QList<CommunicationPlugin*> plugins;
+    loader.load("plugins");
+    plugins = loader.getPlugins();
 }

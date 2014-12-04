@@ -16,6 +16,7 @@
  */
 
 #include <statemachine_impl.h>
+#include <application.h>
 
 #include <QDebug>
 
@@ -24,12 +25,13 @@ using namespace hfsmexec;
 /*
  * NamedEvent
  */
-const QEvent::Type NamedEvent::typeId = QEvent::Type(QEvent::User + 1);
+const QEvent::Type NamedEvent::type = QEvent::Type(QEvent::User + 1);
 
 NamedEvent::NamedEvent(const QString &name) :
-    AbstractEvent(typeId),
+    AbstractEvent(type),
     name(name)
 {
+
 }
 
 NamedEvent::~NamedEvent()
@@ -86,7 +88,7 @@ QString NamedTransition::toString() const
 
 bool NamedTransition::eventTest(QEvent* e)
 {
-    if (e->type() != NamedEvent::typeId)
+    if (e->type() != NamedEvent::type)
     {
         return false;
     }
@@ -191,7 +193,8 @@ QString ParallelState::toString() const
  */
 InvokeState::InvokeState(const QString &stateId, const QString& type, const QString &parentStateId) :
     AbstractComplexState(stateId, parentStateId),
-    type(type)
+    type(type),
+    communicationPlugin(Application::instance()->getCommunicationPluginLoader()->getPlugin(type))
 {
 
 }
@@ -201,28 +204,71 @@ InvokeState::~InvokeState()
 
 }
 
+const ValueContainer& InvokeState::getEndpoint() const
+{
+    return endpoint;
+}
+
+void InvokeState::setEndpoint(const ValueContainer& value)
+{
+    endpoint = value;
+}
+
+const ValueContainer& InvokeState::getInputParameters() const
+{
+    return inputParameters;
+}
+
+void InvokeState::setInputParameters(const ValueContainer& value)
+{
+    inputParameters = value;
+}
+
+const ValueContainer& InvokeState::getOutputParameters() const
+{
+    return outputParameters;
+}
+
+void InvokeState::setOutputParameters(const ValueContainer& value)
+{
+    outputParameters = value;
+}
+
+CommunicationPlugin* InvokeState::getCommunicationPlugin() const
+{
+    return communicationPlugin;
+}
+
+void InvokeState::setCommunicationPlugin(CommunicationPlugin* value)
+{
+    communicationPlugin = value;
+}
+
 bool InvokeState::initialize()
 {
     return true;
 }
 
-#include <plugins.h>
 void InvokeState::eventEntered()
 {
     AbstractComplexState::eventEntered();
-    CommunicationPluginLoader loader;
-    QMap<QString, CommunicationPlugin*> plugins;
-    loader.load("/home/marcel/Programming/hfsm-exec/plugins/build-plugin-http-Desktop-Debug", plugins);
-    if (plugins.size() > 0)
+
+    if (communicationPlugin == NULL)
     {
-        QString json;
-        inputParameters.toJson(json);
-        qDebug() <<json;
-        plugins["HTTP"]->invoke(inputParameters, outputParameters);
-        QString json2;
-        inputParameters.toJson(json2);
-        qDebug() <<json2;
+        qWarning() <<toString() <<"invalid communication plugin. Skip invocation.";
+
+        return;
     }
+
+    QString json;
+    inputParameters.toJson(json);
+    qDebug() <<json;
+
+    communicationPlugin->invoke(endpoint, inputParameters, outputParameters);
+
+    QString json2;
+    outputParameters.toJson(json2);
+    qDebug() <<json2;
 }
 
 void InvokeState::eventExited()

@@ -20,9 +20,10 @@
 
 using namespace hfsmexec;
 
-HTTPCommunicationPlugin::HTTPCommunicationPlugin()
+HTTPCommunicationPlugin::HTTPCommunicationPlugin() :
+    CommunicationPlugin("HTTP")
 {
-    pluginId = "HTTP";
+
 }
 
 HTTPCommunicationPlugin::~HTTPCommunicationPlugin()
@@ -30,11 +31,11 @@ HTTPCommunicationPlugin::~HTTPCommunicationPlugin()
 
 }
 
-bool HTTPCommunicationPlugin::invoke(ValueContainer& inputParameters, ValueContainer& outputParameters)
+bool HTTPCommunicationPlugin::invoke(ValueContainer& endpoint, ValueContainer& inputParameters, ValueContainer& outputParameters)
 {
     qDebug() <<"invoke";
 
-    inputParameters.set("/some/test/value", 5);
+    outputParameters["/some/test/value"].set(5);
 
     return true;
 }

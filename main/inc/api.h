@@ -34,15 +34,10 @@ namespace hfsmexec
             Api(cppcms::service &srv);
             virtual ~Api();
 
-            virtual void main(std::string url);
-
-            std::string content();
-
-            void handlerParameters(std::string path);
             void handlerEvent();
 
         private:
-            Application* application;
+            std::string content();
     };
 
     class ApiExecutor : public QThread

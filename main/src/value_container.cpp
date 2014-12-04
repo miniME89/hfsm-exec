@@ -308,7 +308,7 @@ void ArbitraryValue::destroy()
  */
 ValueContainer::ValueContainer()
 {
-
+    null();
 }
 
 ValueContainer::ValueContainer(const ValueContainer& value) :
@@ -326,185 +326,6 @@ ValueContainer::ValueContainer(const T& value)
 ValueContainer::~ValueContainer()
 {
 
-}
-
-const ArbitraryValueType& ValueContainer::getType() const
-{
-    return value.getType();
-}
-
-void ValueContainer::undefined()
-{
-    value.set<Undefined>(Undefined());
-}
-
-void ValueContainer::null()
-{
-    value.set<Null>(Null());
-}
-
-bool ValueContainer::get(Boolean& value, Boolean defaultValue) const
-{
-    return getValue<Boolean>(value, defaultValue);
-}
-
-bool ValueContainer::get(Integer& value, Integer defaultValue) const
-{
-    return getValue<Integer>(value, defaultValue);
-}
-
-bool ValueContainer::get(Float& value, Float defaultValue) const
-{
-    return getValue<Float>(value, defaultValue);
-}
-
-bool ValueContainer::get(String& value, String defaultValue) const
-{
-    return getValue<String>(value, defaultValue);
-}
-
-bool ValueContainer::get(Array& value, Array defaultValue) const
-{
-    return getValue<Array>(value, defaultValue);
-}
-
-bool ValueContainer::get(Object& value, Object defaultValue) const
-{
-    return getValue<Object>(value, defaultValue);
-}
-
-bool ValueContainer::get(const QString& path, Boolean& value, Boolean defaultValue) const
-{
-    return getValue<Boolean>(path, value, defaultValue);
-}
-
-bool ValueContainer::get(const QString& path, Integer& value, Integer defaultValue) const
-{
-    return getValue<Integer>(path, value, defaultValue);
-}
-
-bool ValueContainer::get(const QString& path, Float& value, Float defaultValue) const
-{
-    return getValue<Float>(path, value, defaultValue);
-}
-
-bool ValueContainer::get(const QString& path, String& value, String defaultValue) const
-{
-    return getValue<String>(path, value, defaultValue);
-}
-
-bool ValueContainer::get(const QString& path, Array& value, Array defaultValue) const
-{
-    return getValue<Array>(path, value, defaultValue);
-}
-
-bool ValueContainer::get(const QString& path, Object& value, Object defaultValue) const
-{
-    return getValue<Object>(path, value, defaultValue);
-}
-
-bool ValueContainer::get(const QString& path, ValueContainer& value, ValueContainer defaultValue) const
-{
-    const ValueContainer* v = this;
-    if (findValue(path, v))
-    {
-        value = *v;
-
-        return true;
-    }
-
-    value = defaultValue;
-
-    return false;
-}
-
-void ValueContainer::set(const Boolean& value)
-{
-    setValue<Boolean>(value);
-}
-
-void ValueContainer::set(const Integer& value)
-{
-    setValue<Integer>(value);
-}
-
-void ValueContainer::set(const Float& value)
-{
-    setValue<Float>(value);
-}
-
-void ValueContainer::set(const char* value)
-{
-    set(String(value));
-}
-
-void ValueContainer::set(const String& value)
-{
-    setValue<String>(value);
-}
-
-void ValueContainer::set(const Array& value)
-{
-    setValue<Array>(value);
-}
-
-void ValueContainer::set(const Object& value)
-{
-    setValue<Object>(value);
-}
-
-void ValueContainer::set(const ValueContainer& value)
-{
-    *this = value;
-}
-
-void ValueContainer::set(const QString& path, const Boolean& value)
-{
-    setValue<Boolean>(path, value);
-}
-
-void ValueContainer::set(const QString& path, const Integer& value)
-{
-    setValue<Integer>(path, value);
-}
-
-void ValueContainer::set(const QString& path, const Float& value)
-{
-    setValue<Float>(path, value);
-}
-
-void ValueContainer::set(const QString& path, const char* value)
-{
-    set(path, String(value));
-}
-
-void ValueContainer::set(const QString& path, const String& value)
-{
-    setValue<String>(path, value);
-}
-
-void ValueContainer::set(const QString& path, const Array& value)
-{
-    setValue<Array>(path, value);
-}
-
-void ValueContainer::set(const QString& path, const Object& value)
-{
-    setValue<Object>(path, value);
-}
-
-void ValueContainer::set(const QString& path, const ValueContainer& value)
-{
-    ValueContainer* v = this;
-    if (findValue(path, v))
-    {
-        *v = value;
-    }
-}
-
-void ValueContainer::remove(const QString& path)
-{
-    //TODO
 }
 
 bool ValueContainer::isUndefined() const
@@ -547,10 +368,138 @@ bool ValueContainer::isObject() const
     return getType() == TYPE_OBJECT;
 }
 
+Boolean ValueContainer::getBoolean(Boolean defaultValue) const
+{
+    Boolean value;
+    get(value, defaultValue);
+
+    return value;
+}
+
+Integer ValueContainer::getInteger(Integer defaultValue) const
+{
+    Integer value;
+    get(value, defaultValue);
+
+    return value;
+}
+
+Float ValueContainer::getFloat(Float defaultValue) const
+{
+    Float value;
+    get(value, defaultValue);
+
+    return value;
+}
+
+String ValueContainer::getString(String defaultValue) const
+{
+    String value;
+    get(value, defaultValue);
+
+    return value;
+}
+
+Array ValueContainer::getArray(Array defaultValue) const
+{
+    Array value;
+    get(value, defaultValue);
+
+    return value;
+}
+
+Object ValueContainer::getObject(Object defaultValue) const
+{
+    Object value;
+    get(value, defaultValue);
+
+    return value;
+}
+
+bool ValueContainer::get(Boolean& value, Boolean defaultValue) const
+{
+    return getValue<Boolean>(value, defaultValue);
+}
+
+bool ValueContainer::get(Integer& value, Integer defaultValue) const
+{
+    return getValue<Integer>(value, defaultValue);
+}
+
+bool ValueContainer::get(Float& value, Float defaultValue) const
+{
+    return getValue<Float>(value, defaultValue);
+}
+
+bool ValueContainer::get(String& value, String defaultValue) const
+{
+    return getValue<String>(value, defaultValue);
+}
+
+bool ValueContainer::get(Array& value, Array defaultValue) const
+{
+    return getValue<Array>(value, defaultValue);
+}
+
+bool ValueContainer::get(Object& value, Object defaultValue) const
+{
+    return getValue<Object>(value, defaultValue);
+}
+
+void ValueContainer::set(const Boolean& value)
+{
+    setValue<Boolean>(value);
+}
+
+void ValueContainer::set(const Integer& value)
+{
+    setValue<Integer>(value);
+}
+
+void ValueContainer::set(const Float& value)
+{
+    setValue<Float>(value);
+}
+
+void ValueContainer::set(const char* value)
+{
+    set(String(value));
+}
+
+void ValueContainer::set(const String& value)
+{
+    setValue<String>(value);
+}
+
+void ValueContainer::set(const Array& value)
+{
+    setValue<Array>(value);
+}
+
+void ValueContainer::set(const Object& value)
+{
+    setValue<Object>(value);
+}
+
+void ValueContainer::undefined()
+{
+    value.set<Undefined>(Undefined());
+}
+
+void ValueContainer::null()
+{
+    value.set<Null>(Null());
+}
+
+const ArbitraryValueType& ValueContainer::getType() const
+{
+    return value.getType();
+}
+
 bool ValueContainer::toXml(QString& xml) const
 {
     pugi::xml_document doc;
-    pugi::xml_node root = doc.root();
+    pugi::xml_node root = doc.append_child("value");
     if (!buildToXml(this, &root))
     {
         qWarning() <<"couldn't build xml from value container";
@@ -678,39 +627,69 @@ bool ValueContainer::operator==(const ValueContainer& other) const
     return value == other.value;
 }
 
-ValueContainer& ValueContainer::operator[](const QString& name)
+ValueContainer& ValueContainer::operator[](const QString& path)
 {
-    if (getType() != TYPE_OBJECT)
+    QStringList splitPath = path.trimmed().split("/", QString::SkipEmptyParts);
+
+    ValueContainer* value = this;
+    for (int i = 0; i < splitPath.size(); i++)
     {
-        set(Object());
+        QString name = splitPath[i];
+
+        if (value->getType() != TYPE_OBJECT)
+        {
+            value->set(Object());
+        }
+
+        Object& object = value->value.get<Object>();
+        Object::iterator it = object.find(name.toStdString().c_str());
+        //value does not exist
+        if (it == object.end())
+        {
+            value = &object.insert(name.toStdString().c_str(), ValueContainer()).value();
+            value->null();
+        }
+        //value already exist
+        else
+        {
+            value = &it.value();
+        }
     }
 
-    Object& object = value.get<Object>();
-    Object::iterator i = object.find(name.toStdString().c_str());
-    if (i == object.end())
-    {
-        return object.insert(name.toStdString().c_str(), ValueContainer()).value();
-    }
-
-    return i.value();
+    return *value;
 }
 
-const ValueContainer& ValueContainer::operator[](const QString& name) const
+const ValueContainer& ValueContainer::operator[](const QString& path) const
 {
-    if (getType() != TYPE_OBJECT)
+    QStringList splitPath = path.trimmed().split("/", QString::SkipEmptyParts);
+
+    const ValueContainer* value = this;
+    for (int i = 0; i < splitPath.size(); i++)
     {
-        throw ArbitraryValueException("value ist not of type object");
+        QString name = splitPath[i];
+
+        if (value->getType() != TYPE_OBJECT)
+        {
+            throw ArbitraryValueException("value ist not of type object");
+        }
+
+        const Object& object = value->value.get<Object>();
+        Object::const_iterator it = object.find(name.toStdString().c_str());
+        //value does not exist
+        if (it == object.end())
+        {
+            throw ArbitraryValueException("member " + name + " not found");
+        }
+        //value already exist
+        else
+        {
+            value = &it.value();
+        }
     }
 
-    const Object& object = value.get<Object>();
-    Object::const_iterator i = object.find(name);
-    if (i == object.end())
-    {
-        throw ArbitraryValueException("member " + name + " not found");
-    }
-
-    return i.value();
+    return *value;
 }
+
 
 ValueContainer& ValueContainer::operator[](int i)
 {
@@ -744,62 +723,6 @@ const ValueContainer& ValueContainer::operator[](int i) const
     return array[i];
 }
 
-bool ValueContainer::findValue(const QString& path, const ValueContainer*& value) const
-{
-    QString replacePath = path.trimmed().replace("[", "/[");
-    QStringList splitPath = replacePath.split("/", QString::SkipEmptyParts);
-
-    try
-    {
-        for (int i = 0; i < splitPath.size(); i++)
-        {
-            //access array value
-            if (splitPath[i].at(0) == '[')
-            {
-                int index = splitPath[i].mid(1, 1).toInt();
-                value = &(*value)[index];
-            }
-            //access other value
-            else
-            {
-                QString name = splitPath[i];
-                value = &(*value)[name];
-            }
-        }
-
-        return true;
-    }
-    catch (ArbitraryValueException e)
-    {
-    }
-
-    return false;
-}
-
-bool ValueContainer::findValue(const QString& path, ValueContainer*& value)
-{
-    QString replacePath = path.trimmed().replace("[", "/[");
-    QStringList splitPath = replacePath.split("/", QString::SkipEmptyParts);
-
-    for (int i = 0; i < splitPath.size(); i++)
-    {
-        //access array value
-        if (splitPath[i].at(0) == '[')
-        {
-            int index = splitPath[i].mid(1, 1).toInt();
-            value = &(*value)[index];
-        }
-        //access other value
-        else
-        {
-            QString name = splitPath[i];
-            value = &(*value)[name];
-        }
-    }
-
-    return true;
-}
-
 template<typename T>
 bool ValueContainer::getValue(T& value, T defaultValue) const
 {
@@ -819,31 +742,9 @@ bool ValueContainer::getValue(T& value, T defaultValue) const
 }
 
 template<typename T>
-bool ValueContainer::getValue(const QString& path, T& value, T defaultValue) const
-{
-    const ValueContainer* v = this;
-    if (findValue(path, v))
-    {
-        return v->get(value, defaultValue);
-    }
-
-    return false;
-}
-
-template<typename T>
 void ValueContainer::setValue(const T& value)
 {
     this->value.set<T>(value);
-}
-
-template<typename T>
-void ValueContainer::setValue(const QString& path, const T& value)
-{
-    ValueContainer* v = this;
-    if (findValue(path, v))
-    {
-        v->set(value);
-    }
 }
 
 bool ValueContainer::buildToXml(const ValueContainer* value, void* data) const
@@ -1250,12 +1151,10 @@ ValueContainerTest::ValueContainerTest()
 
     qDebug() <<"===================================";
     c.fromJson("{ \"some\" : { \"test\" : { \"x\" : 5 } }, \"test\" : 1234 }");
-    c.set("/other/test/x", -50);
-    c.set("/array_test[5]/obj[2]", "foo");
-
-    ValueContainer sub;
-    c.get("/other/test/x", sub);
-    sub.null();
+    c["/other/test/x"].set(-55);
+    c["/array_test[5]/obj[2]"].set("foo");
+    c["/array_test"][5]["obj"][2].set("bar");
+    c["abc"].set("xyz");
 
     out = "";
     c.toXml(out);

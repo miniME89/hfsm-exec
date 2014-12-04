@@ -32,12 +32,8 @@ using namespace hfsmexec;
  * Api
  */
 Api::Api(cppcms::service &srv) :
-    cppcms::application(srv),
-    application(Application::instance())
+    cppcms::application(srv)
 {
-    dispatcher().assign("/parameters/(.*)", &Api::handlerParameters, this, 1);
-    mapper().assign("parameters", "/parameters/{1}");
-
     dispatcher().assign("/statemachine/event", &Api::handlerEvent, this);
     mapper().assign("events", "/statemachine/event");
 }
@@ -45,43 +41,6 @@ Api::Api(cppcms::service &srv) :
 Api::~Api()
 {
 
-}
-
-void Api::main(std::string url)
-{
-    qDebug() <<QString(request().request_method().c_str()) <<QString(url.c_str());
-    cppcms::application::main(url);
-}
-
-std::string Api::content()
-{
-    std::pair<void*, size_t> body = request().raw_post_data();
-
-    return std::string((const char *)body.first, body.second);
-}
-
-void Api::handlerParameters(std::string path)
-{
-    if (request().request_method() == "GET")
-    {
-        QString data;
-        if (application->getParameter(path.c_str(), data))
-        {
-            response().out() <<data.toStdString();
-        }
-    }
-    else if (request().request_method() == "PUT")
-    {
-        application->setParameter(path.c_str(), content().c_str());
-    }
-    else if (request().request_method() == "DELETE")
-    {
-        application->deleteParameter(path.c_str());
-    }
-    else
-    {
-        response().make_error_response(403);
-    }
 }
 
 void Api::handlerEvent()
@@ -114,12 +73,19 @@ void Api::handlerEvent()
         }
 
         NamedEvent* namedEvent = new NamedEvent(event["name"].str().c_str());
-        application->postEvent(namedEvent);
+        Application::instance()->postEvent(namedEvent);
     }
     else
     {
         response().make_error_response(403);
     }
+}
+
+std::string Api::content()
+{
+    std::pair<void*, size_t> body = request().raw_post_data();
+
+    return std::string((const char *)body.first, body.second);
 }
 
 /*

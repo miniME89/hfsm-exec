@@ -21,6 +21,7 @@
 #include <api.h>
 #include <decoder_impl.h>
 #include <statemachine_impl.h>
+#include <plugins.h>
 
 #include <QCoreApplication>
 
@@ -37,13 +38,10 @@ namespace hfsmexec
             QCoreApplication* getQtApplication();
             ApiExecutor* getApiExecutor();
             DecoderProvider* getDecoderProvider();
+            CommunicationPluginLoader* getCommunicationPluginLoader();
 
             void start();
             void stop();
-
-            bool getParameter(const QString& path, QString& data);
-            bool setParameter(const QString& path, const QString& data);
-            bool deleteParameter(const QString& path);
 
             bool postEvent(AbstractEvent* event);
 
@@ -53,12 +51,13 @@ namespace hfsmexec
             bool stateMachineStart();
             bool stateMachineStop();
 
-    private:
+        private:
             static Application* application;
 
-            QCoreApplication qtApplication;
-            ApiExecutor apiExecutor;
-            DecoderProvider decoderProvider;
+            QCoreApplication* qtApplication;
+            ApiExecutor* apiExecutor;
+            DecoderProvider* decoderProvider;
+            CommunicationPluginLoader* communicationPluginLoader;
     };
 }
 
