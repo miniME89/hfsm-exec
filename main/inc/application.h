@@ -26,7 +26,6 @@
 
 #include <QCoreApplication>
 
-
 namespace hfsmexec
 {
     class Application

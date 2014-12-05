@@ -18,8 +18,6 @@
 #ifndef API_H
 #define API_H
 
-#include <QFuture>
-
 #include <cppcms/application.h>
 #include <cppcms/service.h>
 #include <cppcms/applications_pool.h>

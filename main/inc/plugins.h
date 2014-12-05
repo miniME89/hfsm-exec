@@ -18,9 +18,10 @@
 #ifndef PLUGINS_H
 #define PLUGINS_H
 
-#include <statemachine.h>
+#include <value_container.h>
 
 #include <QList>
+#include <QtPlugin>
 
 namespace hfsmexec
 {

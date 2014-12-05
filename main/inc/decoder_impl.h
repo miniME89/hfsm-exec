@@ -19,6 +19,7 @@
 #define DECODER_IMPL_H
 
 #include <decoder.h>
+
 #include <pugixml.hpp>
 
 namespace hfsmexec

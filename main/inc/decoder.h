@@ -19,7 +19,6 @@
 #define DECODER_H
 
 #include <statemachine.h>
-#include <statemachine_impl.h>
 
 #include <QString>
 

@@ -17,6 +17,7 @@
 
 #include <decoder_impl.h>
 #include <logger.h>
+#include <statemachine_impl.h>
 #include <value_container.h>
 
 #include <easylogging++.h>

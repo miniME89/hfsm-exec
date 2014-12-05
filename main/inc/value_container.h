@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PARAMETERCONTAINER_H
-#define PARAMETERCONTAINER_H
+#ifndef VALUECONTAINER_H
+#define VALUECONTAINER_H
 
 #include <QString>
 #include <QList>
@@ -199,4 +199,5 @@ namespace hfsmexec
             ValueContainerTest();
     };
 }
+
 #endif

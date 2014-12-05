@@ -183,30 +183,6 @@ namespace hfsmexec
             QString initialId;
     };
 
-    class StateMachineBuilder
-    {
-        public:
-            StateMachineBuilder();
-            ~StateMachineBuilder();
-
-            void addState(StateMachine* stateMachine);
-            void addState(AbstractState* state);
-            void addTransition(AbstractTransition* transition);
-
-            StateMachine* build();
-
-            StateMachineBuilder& operator<<(StateMachine* stateMachine);
-            StateMachineBuilder& operator<<(AbstractState* state);
-            StateMachineBuilder& operator<<(AbstractTransition* transition);
-
-        private:
-            StateMachine* stateMachine;
-            QList<AbstractState*> states;
-            QList<AbstractTransition*> transitions;
-
-            AbstractState* getState(const QString& stateId);
-    };
-
     class StateMachinePool
     {
         public:
