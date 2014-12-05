@@ -19,11 +19,13 @@
 #define APPLICATION_H
 
 #include <api.h>
+#include <logger.h>
 #include <decoder_impl.h>
 #include <statemachine_impl.h>
 #include <plugins.h>
 
 #include <QCoreApplication>
+
 
 namespace hfsmexec
 {
@@ -31,17 +33,14 @@ namespace hfsmexec
     {
         public:
             static Application* instance();
+            static void signalHandler(int signal);
+            static int exec(int argc, char** argv);
 
-            Application(int argc, char** argv);
             ~Application();
 
             QCoreApplication* getQtApplication();
-            ApiExecutor* getApiExecutor();
             DecoderProvider* getDecoderProvider();
             CommunicationPluginLoader* getCommunicationPluginLoader();
-
-            void start();
-            void stop();
 
             bool postEvent(AbstractEvent* event);
 
@@ -54,10 +53,15 @@ namespace hfsmexec
         private:
             static Application* application;
 
+            Logger* logger;
             QCoreApplication* qtApplication;
-            ApiExecutor* apiExecutor;
             DecoderProvider* decoderProvider;
             CommunicationPluginLoader* communicationPluginLoader;
+
+            Application(int argc, char** argv);
+
+            int exec();
+            int quit();
     };
 }
 

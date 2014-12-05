@@ -16,7 +16,9 @@
  */
 
 #include <statemachine.h>
-#include <QDebug>
+#include <logger.h>
+
+#include <easylogging++.h>
 
 using namespace hfsmexec;
 
@@ -33,13 +35,14 @@ AbstractEvent::AbstractEvent(Type type) :
  * AbstractTransition
  */
 AbstractTransition::AbstractTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId) :
-        transitionId(transitionId),
-        sourceStateId(sourceStateId),
-        targetStateId(targetStateId),
-        sourceState(NULL),
-        targetState(NULL),
-        stateMachine(NULL)
+    transitionId(transitionId),
+    sourceStateId(sourceStateId),
+    targetStateId(targetStateId),
+    sourceState(NULL),
+    targetState(NULL),
+    stateMachine(NULL)
 {
+
 }
 
 AbstractTransition::~AbstractTransition()
@@ -69,16 +72,18 @@ StateMachine* AbstractTransition::getStateMachine()
 
 bool AbstractTransition::initialize()
 {
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
+
     if (sourceState == NULL)
     {
-        qWarning() <<"transition initialization failed: couldn't find source state \"" <<sourceStateId <<"\"";
+        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" transition initialization failed: couldn't find source state \"" <<sourceStateId <<"\"";
 
         return false;
     }
 
     if (targetState == NULL)
     {
-        qWarning() <<"transition initialization failed: couldn't find target state \"" <<targetStateId <<"\"";
+        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" transition initialization failed: couldn't find target state \"" <<targetStateId <<"\"";
 
         return false;
     }
@@ -87,12 +92,12 @@ bool AbstractTransition::initialize()
     QState* state = dynamic_cast<QState*>(sourceState->getDelegate());
     if (state == NULL)
     {
-        qWarning() <<"transition initialization failed: source delegate is not of type QState";
+        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" transition initialization failed: source delegate is not of type QState";
 
         return false;
     }
 
-    qDebug() <<"add transition from " <<sourceState->getId() <<" to " <<targetState->getId();
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" add transition from \"" <<sourceState->getId() <<"\" to \"" <<targetState->getId() + "\"";
 
     setTargetState(targetState->getDelegate());
     state->addTransition(this);
@@ -102,7 +107,7 @@ bool AbstractTransition::initialize()
 
 void AbstractTransition::onTransition(QEvent* e)
 {
-    qDebug() <<"triggered transition" <<transitionId;
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" triggered transition \"" <<transitionId <<"\"";
 }
 
 /*
@@ -219,15 +224,15 @@ QState* AbstractComplexState::getDelegate() const
 
 void AbstractComplexState::eventEntered()
 {
-    qDebug() <<toString() <<"--> entered";
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> entered";
 }
 
 void AbstractComplexState::eventExited()
 {
-    qDebug() <<toString() <<"--> exited";
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> exited";
 }
 
 void AbstractComplexState::eventFinished()
 {
-    qDebug() <<toString() <<"--> finished";
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> finished";
 }

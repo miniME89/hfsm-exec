@@ -16,9 +16,10 @@
  */
 
 #include <statemachine_impl.h>
+#include <logger.h>
 #include <application.h>
 
-#include <QDebug>
+#include <easylogging++.h>
 
 using namespace hfsmexec;
 
@@ -69,7 +70,7 @@ void NamedEvent::setMessage(const QString& message)
 
 QString NamedEvent::toString() const
 {
-    return "StringEvent [value: " + name + "]";
+    return "[StringEvent: " + name + "]";
 }
 
 /*
@@ -83,7 +84,7 @@ NamedTransition::NamedTransition(const QString transitionId, const QString sourc
 
 QString NamedTransition::toString() const
 {
-    return "StringTransition [transitionId: " + transitionId + "]";
+    return "[StringTransition: " + transitionId + "]";
 }
 
 bool NamedTransition::eventTest(QEvent* e)
@@ -119,12 +120,14 @@ QFinalState* FinalState::getDelegate() const
 
 bool FinalState::initialize()
 {
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
+
     return true;
 }
 
 QString FinalState::toString() const
 {
-    return "Final [stateId: " + stateId + "]";
+    return "[Final: " + stateId + "]";
 }
 
 /*
@@ -143,13 +146,15 @@ CompositeState::~CompositeState()
 
 bool CompositeState::initialize()
 {
-    if (!initialStateId.isEmpty())
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
+
+    if (!initialStateId.isEmpty()) //TODO remove
     {
         //set initial state
         const AbstractState* initialState = getState(initialStateId);
         if (initialState == NULL)
         {
-            qWarning() <<toString() <<"initialization failed: couldn't find initial state" <<initialStateId;
+            CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" initialization failed: couldn't find initial state \"" <<initialStateId <<"\"";
 
             return false;
         }
@@ -162,7 +167,7 @@ bool CompositeState::initialize()
 
 QString CompositeState::toString() const
 {
-    return "CompositeState [stateId: " + stateId + "]";
+    return "[CompositeState: " + stateId + "]";
 }
 
 /*
@@ -180,12 +185,14 @@ ParallelState::~ParallelState()
 
 bool ParallelState::initialize()
 {
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
+
     return true;
 }
 
 QString ParallelState::toString() const
 {
-    return "Parallel [stateId: " + stateId + "]";
+    return "[Parallel: " + stateId + "]";
 }
 
 /*
@@ -246,6 +253,8 @@ void InvokeState::setCommunicationPlugin(CommunicationPlugin* value)
 
 bool InvokeState::initialize()
 {
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
+
     return true;
 }
 
@@ -255,20 +264,20 @@ void InvokeState::eventEntered()
 
     if (communicationPlugin == NULL)
     {
-        qWarning() <<toString() <<"invalid communication plugin. Skip invocation.";
+        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" invalid communication plugin. Skip invocation.";
 
         return;
     }
 
     QString json;
     inputParameters.toJson(json);
-    qDebug() <<json;
+    CLOG(INFO, LOG_STATEMACHINE) <<json;
 
     communicationPlugin->invoke(endpoint, inputParameters, outputParameters);
 
     QString json2;
     outputParameters.toJson(json2);
-    qDebug() <<json2;
+    CLOG(INFO, LOG_STATEMACHINE) <<json2;
 }
 
 void InvokeState::eventExited()
@@ -283,7 +292,7 @@ void InvokeState::eventFinished()
 
 QString InvokeState::toString() const
 {
-    return "Invoke [stateId: " + stateId + "]";
+    return "[Invoke: " + stateId + "]";
 }
 
 /*
@@ -341,11 +350,13 @@ QStateMachine* StateMachine::getDelegate() const
 
 bool StateMachine::initialize()
 {
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
+
     //set initial state
     const AbstractState* initialState = getState(initialId);
     if (initialState == NULL)
     {
-        qWarning() <<toString() <<"initialization failed: couldn't find initial state" <<initialId;
+        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" initialization failed: couldn't find initial state \"" <<initialId <<"\"";
 
         return false;
     }
@@ -357,7 +368,7 @@ bool StateMachine::initialize()
 
 QString StateMachine::toString() const
 {
-    return "StateMachine [stateId: " + stateId + "]";
+    return "[StateMachine: " + stateId + "]";
 }
 
 void StateMachine::eventEntered()
@@ -383,14 +394,14 @@ void StateMachine::eventFinished()
 
 void StateMachine::eventStarted()
 {
-    qDebug() <<toString() <<"--> started state machine";
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> started state machine";
 
     StateMachinePool::getInstance()->registerStateMachine(this);
 }
 
 void StateMachine::eventStopped()
 {
-    qDebug() <<toString() <<"--> stopped state machine";
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> stopped state machine";
 
     StateMachinePool::getInstance()->deregisterStateMachine(this);
 }
@@ -413,14 +424,14 @@ void StateMachineBuilder::addState(StateMachine* stateMachine)
 {
     if (this->stateMachine != NULL)
     {
-        qWarning() <<"can't add state machine: another state machine was already provided";
+        CLOG(WARNING, LOG_BUILDER) <<"can't add state machine: another state machine was already provided";
 
         return;
     }
 
     if (stateMachine->stateMachine != NULL)
     {
-        qWarning() <<"can't add state machine: state machine is already part of another state machine";
+        CLOG(WARNING, LOG_BUILDER) <<"can't add state machine: state machine is already part of another state machine";
 
         return;
     }
@@ -432,7 +443,7 @@ void StateMachineBuilder::addState(AbstractState* state)
 {
     if (state->stateMachine != NULL)
     {
-        qWarning() <<"can't add state: state is already part of another state machine";
+        CLOG(WARNING, LOG_BUILDER) <<"can't add state: state is already part of another state machine";
 
         return;
     }
@@ -444,7 +455,7 @@ void StateMachineBuilder::addTransition(AbstractTransition* transition)
 {
     if (transition->stateMachine != NULL)
     {
-        qWarning() <<"can't add transition: transition is already part of another state machine";
+        CLOG(WARNING, LOG_BUILDER) <<"can't add transition: transition is already part of another state machine";
 
         return;
     }
@@ -456,15 +467,15 @@ StateMachine* StateMachineBuilder::build()
 {
     if (stateMachine == NULL)
     {
-        qWarning() <<"can't build state machine: no instance of StateMachine was provided";
+        CLOG(WARNING, LOG_BUILDER) <<"can't build state machine: no instance of StateMachine was provided";
 
         return NULL;
     }
 
-    qDebug() <<"create state machine";
+    CLOG(INFO, LOG_BUILDER) <<"create state machine";
 
     //link states
-    qDebug() <<"link states";
+    CLOG(INFO, LOG_BUILDER) <<"link states";
     for (int i = 0; i < states.size(); i++)
     {
         AbstractState* state = states[i];
@@ -473,46 +484,46 @@ StateMachine* StateMachineBuilder::build()
         AbstractState* parentState = getState(state->parentStateId);
         if (parentState == NULL)
         {
-            qWarning() <<"initialization failed: couldn't find parent state" <<state->parentStateId;
+            CLOG(WARNING, LOG_BUILDER) <<"initialization failed: couldn't find parent state \"" <<state->parentStateId <<"\"";
 
             return NULL;
         }
 
         //link state
-        qDebug() <<"link child state" <<state->getId() <<"with parent state" <<parentState->getId();
+        CLOG(INFO, LOG_BUILDER) <<"link child state \"" <<state->getId() <<"\" with parent state \"" <<parentState->getId() <<"\"";
         state->stateMachine = stateMachine;
         state->setParent(parentState);
         state->getDelegate()->setParent(parentState->getDelegate());
     }
 
     //initialize state machine
-    qDebug() <<"initialize state machine";
+    CLOG(INFO, LOG_BUILDER) <<"initialize state machine";
     stateMachine->stateMachine = stateMachine;
     if (!stateMachine->initialize())
     {
-        qWarning() <<"initialization failed: initialization of state machine failed";
+        CLOG(WARNING, LOG_BUILDER) <<"initialization failed: initialization of state machine failed";
 
         return NULL;
     }
 
     //initialize states
-    qDebug() <<"initialize" <<states.size() <<"states";
+    CLOG(INFO, LOG_BUILDER) <<"initialize " <<states.size() <<" states";
     for (int i = 0; i < states.size(); i++)
     {
         AbstractState* state = states[i];
 
         //initialize state
-        qDebug() <<"[" <<i <<"]" <<"initialize state" <<state->getId();
+        CLOG(INFO, LOG_BUILDER) <<"[" <<i <<"] initialize state \"" <<state->getId() <<"\"";
         if (!state->initialize())
         {
-            qWarning() <<"initialization failed: initialization of states failed";
+            CLOG(WARNING, LOG_BUILDER) <<"initialization failed: initialization of states failed";
 
             return NULL;
         }
     }
 
     //initialize transitions
-    qDebug() <<"initialize" <<transitions.size() <<"transitions";
+    CLOG(INFO, LOG_BUILDER) <<"initialize " <<transitions.size() <<" transitions";
     for (int i = 0; i < transitions.size(); i++)
     {
         AbstractTransition* transition = transitions[i];
@@ -521,7 +532,7 @@ StateMachine* StateMachineBuilder::build()
         AbstractState* sourceState = getState(transition->sourceStateId);
         if (sourceState == NULL)
         {
-            qWarning() <<"initialization failed: couldn't find transition source state" <<transition->sourceStateId;
+            CLOG(WARNING, LOG_BUILDER) <<"initialization failed: couldn't find transition source state \"" <<transition->sourceStateId <<"\"";
 
             return NULL;
         }
@@ -530,7 +541,7 @@ StateMachine* StateMachineBuilder::build()
         AbstractState* targetState = getState(transition->targetStateId);
         if (targetState == NULL)
         {
-            qWarning() <<"initialization failed: couldn't find transition source state" <<transition->targetStateId;
+            CLOG(WARNING, LOG_BUILDER) <<"initialization failed: couldn't find transition source state \"" <<transition->targetStateId <<"\"";
 
             return NULL;
         }
@@ -540,16 +551,16 @@ StateMachine* StateMachineBuilder::build()
         transition->sourceState = sourceState;
         transition->targetState = targetState;
 
-        qDebug() <<"[" <<i <<"]" <<"initialize transition" <<transition->getId();
+        CLOG(INFO, LOG_BUILDER) <<"[" <<i <<"] initialize transition \"" <<transition->getId() <<"\"";
         if (!transition->initialize())
         {
-            qWarning() <<"initialization failed: couldn't initialize all transitions";
+            CLOG(WARNING, LOG_BUILDER) <<"initialization failed: couldn't initialize all transitions";
 
             return NULL;
         }
     }
 
-    qDebug() <<"created state machine successfully";
+    CLOG(INFO, LOG_BUILDER) <<"created state machine successfully";
 
     return stateMachine;
 }

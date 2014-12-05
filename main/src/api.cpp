@@ -16,9 +16,10 @@
  */
 
 #include <api.h>
+#include <logger.h>
 #include <application.h>
 
-#include <QDebug>
+#include <easylogging++.h>
 
 #include <cppcms/http_response.h>
 #include <cppcms/http_request.h>
@@ -26,7 +27,34 @@
 #include <cppcms/url_dispatcher.h>
 #include <cppcms/url_mapper.h>
 
+#include <QtConcurrentRun>
+
 using namespace hfsmexec;
+
+static cppcms::service* serviceHandle = NULL;
+
+static void worker()
+{
+    CLOG(INFO, LOG_API) <<"start http server";
+
+    try
+    {
+        cppcms::json::value config;
+        config["service"]["api"] = "http";
+        config["service"]["port"] = 8080;
+        config["service"]["disable_global_exit_handling"] = true;
+
+        serviceHandle = new cppcms::service(config);
+        serviceHandle->applications_pool().mount(cppcms::applications_factory<Api>());
+        serviceHandle->run();
+    }
+    catch(std::exception const& e)
+    {
+        CLOG(FATAL, LOG_API) <<e.what();
+    }
+
+    CLOG(INFO, LOG_API) <<"stopped http server";
+}
 
 /*
  * Api
@@ -81,6 +109,13 @@ void Api::handlerEvent()
     }
 }
 
+void Api::main(std::string url)
+{
+    CLOG(INFO, LOG_API) <<"request: " <<url;
+
+    cppcms::application::main(url);
+}
+
 std::string Api::content()
 {
     std::pair<void*, size_t> body = request().raw_post_data();
@@ -88,33 +123,15 @@ std::string Api::content()
     return std::string((const char *)body.first, body.second);
 }
 
-/*
- * ApiExecutor
- */
-ApiExecutor::ApiExecutor()
+void Api::exec()
 {
-
+    QtConcurrent::run(worker);
 }
 
-ApiExecutor::~ApiExecutor()
+void Api::quit()
 {
-
-}
-
-void ApiExecutor::run()
-{
-    try
+    if (serviceHandle != NULL)
     {
-        cppcms::json::value config;
-        config["service"]["api"] = "http";
-        config["service"]["port"] = 8080;
-
-        cppcms::service service(config);
-        service.applications_pool().mount(cppcms::applications_factory<Api>());
-        service.run();
-    }
-    catch(std::exception const& e)
-    {
-        qCritical() <<e.what();
+        serviceHandle->shutdown();
     }
 }

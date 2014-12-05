@@ -18,7 +18,7 @@
 #ifndef API_H
 #define API_H
 
-#include <QThread>
+#include <QFuture>
 
 #include <cppcms/application.h>
 #include <cppcms/service.h>
@@ -26,28 +26,20 @@
 
 namespace hfsmexec
 {
-    class Application;
-
     class Api : public cppcms::application
     {
         public:
+            static void exec();
+            static void quit();
+
             Api(cppcms::service &srv);
             virtual ~Api();
 
             void handlerEvent();
+            void main(std::string url);
 
         private:
             std::string content();
-    };
-
-    class ApiExecutor : public QThread
-    {
-        public:
-            ApiExecutor();
-            virtual ~ApiExecutor();
-
-        protected:
-            void run();
     };
 }
 

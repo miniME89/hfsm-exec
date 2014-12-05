@@ -3,12 +3,15 @@ QT -= gui
 
 TARGET = hfsm-exec
 
+QMAKE_CXXFLAGS += -std=c++11
+
 CONFIG += console
 CONFIG -= app_bundle
 
 TEMPLATE = app
 
 SOURCES += src/main.cpp \
+           src/logger.cpp \
            src/application.cpp \
            src/api.cpp \
            src/statemachine.cpp \
@@ -18,7 +21,8 @@ SOURCES += src/main.cpp \
            src/value_container.cpp \
            src/plugins.cpp
 
-HEADERS += inc/application.h \
+HEADERS += inc/logger.h \
+           inc/application.h \
            inc/api.h \
            inc/statemachine.h \
            inc/statemachine_impl.h \
@@ -30,7 +34,7 @@ HEADERS += inc/application.h \
 INCLUDEPATH += inc
 
 #external applications
-INCLUDEPATH += ../ext/pugixml/inc/ ../ext/jsoncpp/inc/ ../ext/yaml-cpp/inc/
+INCLUDEPATH += ../ext/pugixml/inc/ ../ext/jsoncpp/inc/ ../ext/yaml-cpp/inc/ ../ext/easylogging++/inc/
 LIBS += -L../build/lib/ -lpugixml -ljsoncpp -lyaml-cpp
 
 #cppcms

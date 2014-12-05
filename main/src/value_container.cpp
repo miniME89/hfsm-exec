@@ -1,6 +1,10 @@
 #include <value_container.h>
+#include <logger.h>
+
+#include <easylogging++.h>
+
+#include <QTextStream>
 #include <QStringList>
-#include <QDebug>
 
 #include <pugixml.hpp>
 #include <jsoncpp.h>
@@ -502,7 +506,7 @@ bool ValueContainer::toXml(QString& xml) const
     pugi::xml_node root = doc.append_child("value");
     if (!buildToXml(this, &root))
     {
-        qWarning() <<"couldn't build xml from value container";
+        CLOG(WARNING, LOG_VALUE) <<"couldn't build xml from value container";
 
         return false;
     }
@@ -521,7 +525,7 @@ bool ValueContainer::toJson(QString& json) const
     Json::Value root;
     if (!buildToJson(this, &root))
     {
-        qWarning() <<"couldn't build json from value container";
+        CLOG(WARNING, LOG_VALUE) <<"couldn't build json from value container";
 
         return false;
     }
@@ -537,7 +541,7 @@ bool ValueContainer::toYaml(QString& yaml) const
     YAML::Node root;
     if (!buildToYaml(this, &root))
     {
-        qWarning() <<"couldn't build yaml from value container";
+        CLOG(WARNING, LOG_VALUE) <<"couldn't build yaml from value container";
 
         return false;
     }
@@ -555,7 +559,7 @@ bool ValueContainer::fromXml(const QString& xml)
     pugi::xml_parse_result result = doc.load_buffer(xml.toStdString().c_str(), xml.size());
     if (result.status != pugi::status_ok)
     {
-        qWarning() <<"couldn't set value container from xml";
+        CLOG(WARNING, LOG_VALUE) <<"couldn't set value container from xml";
 
         return false;
     }
@@ -563,7 +567,7 @@ bool ValueContainer::fromXml(const QString& xml)
     pugi::xml_node root = doc.root();
     if (!buildFromXml(this, &root))
     {
-        qWarning() <<"couldn't set value container from xml";
+        CLOG(WARNING, LOG_VALUE) <<"couldn't set value container from xml";
 
         return false;
     }
@@ -577,14 +581,14 @@ bool ValueContainer::fromJson(const QString& json)
     Json::Reader reader;
     if (!reader.parse(json.toStdString(), root))
     {
-        qWarning() <<"couldn't set value container from json:" <<reader.getFormatedErrorMessages().c_str();
+        CLOG(WARNING, LOG_VALUE) <<"couldn't set value container from json: " <<reader.getFormatedErrorMessages().c_str();
 
         return false;
     }
 
     if (!buildFromJson(this, &root))
     {
-        qWarning() <<"couldn't set value container from json";
+        CLOG(WARNING, LOG_VALUE) <<"couldn't set value container from json";
 
         return false;
     }
@@ -600,7 +604,7 @@ bool ValueContainer::fromYaml(const QString& yaml)
 
         if (!buildFromYaml(this, &root))
         {
-            qWarning() <<"couldn't set value container from yaml";
+            CLOG(WARNING, LOG_VALUE) <<"couldn't set value container from yaml";
 
             return false;
         }
@@ -609,7 +613,7 @@ bool ValueContainer::fromYaml(const QString& yaml)
     }
     catch (YAML::Exception e)
     {
-        qWarning() <<"couldn't set value container from yaml:" <<e.msg.c_str();
+        CLOG(WARNING, LOG_VALUE) <<"couldn't set value container from yaml: " <<e.msg.c_str();
     }
 
     return false;
@@ -1149,7 +1153,7 @@ ValueContainerTest::ValueContainerTest()
 
     ValueContainer c;
 
-    qDebug() <<"===================================";
+    CLOG(INFO, LOG_VALUE) <<"===================================";
     c.fromJson("{ \"some\" : { \"test\" : { \"x\" : 5 } }, \"test\" : 1234 }");
     c["/other/test/x"].set(-55);
     c["/array_test[5]/obj[2]"].set("foo");
@@ -1158,28 +1162,28 @@ ValueContainerTest::ValueContainerTest()
 
     out = "";
     c.toXml(out);
-    qDebug() <<out;
+    CLOG(INFO, LOG_VALUE) <<out;
     c.toJson(out);
-    qDebug() <<out;
+    CLOG(INFO, LOG_VALUE) <<out;
     c.toYaml(out);
-    qDebug() <<out;
+    CLOG(INFO, LOG_VALUE) <<out;
 
-    qDebug() <<"===================================";
+    CLOG(INFO, LOG_VALUE) <<"===================================";
     c.fromXml("<test><from_xml><x>1</x><y>2</y><z>3</z></from_xml><arr><item>5</item><item>6</item><item>7</item></arr></test>");
 
     out = "";
     c.toXml(out);
-    qDebug() <<out;
+    CLOG(INFO, LOG_VALUE) <<out;
     c.toJson(out);
-    qDebug() <<out;
+    CLOG(INFO, LOG_VALUE) <<out;
     c.toYaml(out);
-    qDebug() <<out;
+    CLOG(INFO, LOG_VALUE) <<out;
 
-    qDebug() <<"===================================";
+    CLOG(INFO, LOG_VALUE) <<"===================================";
     QFile file("/home/marcel/Programming/hfsm-exec/test.yaml");
     if (!file.open(QFile::ReadOnly | QFile::Text))
     {
-        qWarning() <<"couldn't open file";
+        CLOG(INFO, LOG_VALUE) <<"couldn't open file";
 
         return;
     }
@@ -1190,9 +1194,9 @@ ValueContainerTest::ValueContainerTest()
 
     out = "";
     c.toXml(out);
-    qDebug() <<out;
+    CLOG(INFO, LOG_VALUE) <<out;
     c.toJson(out);
-    qDebug() <<out;
+    CLOG(INFO, LOG_VALUE) <<out;
     c.toYaml(out);
-    qDebug() <<out;
+    CLOG(INFO, LOG_VALUE) <<out;
 }

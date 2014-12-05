@@ -16,6 +16,7 @@
  */
 
 #include <decoder.h>
+#include <logger.h>
 
 using namespace hfsmexec;
 

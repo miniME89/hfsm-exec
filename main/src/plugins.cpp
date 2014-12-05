@@ -16,9 +16,11 @@
  */
 
 #include <plugins.h>
+#include <logger.h>
 #include <application.h>
 
-#include <QDebug>
+#include <easylogging++.h>
+
 #include <QDir>
 #include <QPluginLoader>
 
@@ -62,12 +64,12 @@ bool CommunicationPluginLoader::load(const QString &path)
 
     if (!pluginsDir.exists())
     {
-        qWarning() <<"couldn't load communication plugins in directory: directory doesn't exist";
+        CLOG(WARNING, LOG_PLUGIN) <<"couldn't load communication plugins in directory: directory doesn't exist";
 
         return false;
     }
 
-    qDebug() <<"loading all communication plugins in directory" <<pluginsDir.absolutePath();
+    CLOG(INFO, LOG_PLUGIN) <<"loading all communication plugins in directory " <<pluginsDir.absolutePath();
 
     foreach (QString fileName, pluginsDir.entryList(QDir::Files))
     {
@@ -78,7 +80,7 @@ bool CommunicationPluginLoader::load(const QString &path)
         QObject* plugin = pluginLoader.instance();
         if (!plugin)
         {
-            qWarning() <<"invalid communication plugin:" <<pluginLoader.errorString();
+            CLOG(WARNING, LOG_PLUGIN) <<"invalid communication plugin: " <<pluginLoader.errorString();
 
             continue;
         }
@@ -87,7 +89,7 @@ bool CommunicationPluginLoader::load(const QString &path)
         CommunicationPlugin* instance = qobject_cast<CommunicationPlugin*>(plugin);
         if (!instance)
         {
-            qWarning() <<"invalid communication plugin: plugin is not of type" <<QString("CommunicationPlugin");
+            CLOG(WARNING, LOG_PLUGIN) <<"invalid communication plugin: plugin is not of type \"CommunicationPlugin\"";
 
             continue;
         }
@@ -97,7 +99,7 @@ bool CommunicationPluginLoader::load(const QString &path)
         //validate plugin id
         if (pluginId.isEmpty())
         {
-            qWarning() <<"invalid communication plugin id: empty communication plugin id";
+            CLOG(WARNING, LOG_PLUGIN) <<"invalid communication plugin id: empty communication plugin id";
 
             continue;
         }
@@ -105,14 +107,14 @@ bool CommunicationPluginLoader::load(const QString &path)
         //verify unique plugin id
         for (int i = 0; plugins.size(); i++)
         {
-            qWarning() <<"invalid communication plugin id: communication plugin with plugin id" <<pluginId <<"already loaded";
+            CLOG(WARNING, LOG_PLUGIN) <<"invalid communication plugin id: communication plugin with plugin id \"" <<pluginId <<"\" already loaded";
 
             continue;
         }
 
         plugins.append(instance);
 
-        qDebug() <<"loaded communication plugin with pluginId " <<pluginId;
+        CLOG(INFO, LOG_PLUGIN) <<"loaded communication plugin with pluginId " <<pluginId;
     }
 
     return true;

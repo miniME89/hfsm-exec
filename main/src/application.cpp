@@ -16,11 +16,14 @@
  */
 
 #include <application.h>
+#include <logger.h>
 #include <value_container.h>
 
-using namespace hfsmexec;
+#include <easylogging++.h>
 
-ValueContainer parameterServer; //TODO remove
+_INITIALIZE_EASYLOGGINGPP
+
+using namespace hfsmexec;
 
 /*
  * Application
@@ -32,22 +35,64 @@ Application* Application::instance()
     return application;
 }
 
+void Application::signalHandler(int signal)
+{
+    CLOG(INFO, LOG_APPLICATION) <<"received signal";
+
+    application->quit();
+}
+
+int Application::exec(int argc, char** argv)
+{
+    application = new Application(argc, argv);
+
+    return application->exec();
+}
+
 Application::Application(int argc, char** argv) :
+    logger(new Logger(argc, argv)),
     qtApplication(new QCoreApplication(argc, argv)),
-    apiExecutor(new ApiExecutor()),
     decoderProvider(new DecoderProvider()),
     communicationPluginLoader(new CommunicationPluginLoader())
 {
-    application = this;
-    communicationPluginLoader->load("plugins");
+
 }
 
 Application::~Application()
 {
     delete qtApplication;
-    delete apiExecutor;
     delete decoderProvider;
     delete communicationPluginLoader;
+}
+
+int Application::exec()
+{
+    CLOG(INFO, LOG_APPLICATION) <<"start application";
+
+    //signal handler
+    signal(SIGINT, Application::signalHandler);
+
+    communicationPluginLoader->load("plugins");
+
+    //test
+    StateMachineTest stateMachineTest;
+    //ValueContainerTest valueContainerTest;
+    //DecoderTest decoderTest;
+    //CommunicationPluginLoaderTest pluginTest;
+
+    Api::exec();
+
+    return qtApplication->exec();
+}
+
+int Application::quit()
+{
+    CLOG(INFO, LOG_APPLICATION) <<"stop application";
+
+    Api::quit();
+    Application::instance()->getQtApplication()->quit();
+
+    return 0;
 }
 
 QCoreApplication* Application::getQtApplication()
@@ -55,35 +100,14 @@ QCoreApplication* Application::getQtApplication()
     return qtApplication;
 }
 
-ApiExecutor* Application::getApiExecutor()
-{
-    return apiExecutor;
-}
-
 DecoderProvider* Application::getDecoderProvider()
 {
     return decoderProvider;
 }
 
-CommunicationPluginLoader *Application::getCommunicationPluginLoader()
+CommunicationPluginLoader* Application::getCommunicationPluginLoader()
 {
     return communicationPluginLoader;
-}
-
-void Application::start()
-{
-    StateMachineTest stateMachineTest;
-    //ValueContainerTest valueContainerTest;
-    //DecoderTest decoderTest;
-    //CommunicationPluginLoaderTest pluginTest;
-
-    apiExecutor->start();
-    qtApplication->exec();
-}
-
-void Application::stop()
-{
-    //TODO
 }
 
 bool Application::postEvent(AbstractEvent* event)

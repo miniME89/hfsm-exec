@@ -19,6 +19,7 @@
 #define PLUGINS_H
 
 #include <statemachine.h>
+
 #include <QList>
 
 namespace hfsmexec
@@ -48,7 +49,7 @@ namespace hfsmexec
 
             bool load(const QString& path);
 
-        protected:
+        private:
             QList<CommunicationPlugin*> plugins;
     };
 

@@ -18,9 +18,10 @@
 #ifndef DECODER_H
 #define DECODER_H
 
-#include <QString>
 #include <statemachine.h>
 #include <statemachine_impl.h>
+
+#include <QString>
 
 namespace hfsmexec
 {

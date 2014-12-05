@@ -16,7 +16,6 @@
  */
 
 #include "plugin_http.h"
-#include <QDebug>
 
 using namespace hfsmexec;
 
@@ -33,8 +32,6 @@ HTTPCommunicationPlugin::~HTTPCommunicationPlugin()
 
 bool HTTPCommunicationPlugin::invoke(ValueContainer& endpoint, ValueContainer& inputParameters, ValueContainer& outputParameters)
 {
-    qDebug() <<"invoke";
-
     outputParameters["/some/test/value"].set(5);
 
     return true;
@@ -42,8 +39,6 @@ bool HTTPCommunicationPlugin::invoke(ValueContainer& endpoint, ValueContainer& i
 
 bool HTTPCommunicationPlugin::cancel()
 {
-    qDebug() <<"cancel";
-
     return true;
 }
 
