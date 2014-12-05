@@ -61,6 +61,6 @@ namespace hfsmexec
     };
 }
 
-Q_DECLARE_INTERFACE(hfsmexec::CommunicationPlugin, "CommunicationPlugin")
+Q_DECLARE_INTERFACE(hfsmexec::CommunicationPlugin, "hfsmexec.Plugins.CommunicationPlugin")
 
 #endif

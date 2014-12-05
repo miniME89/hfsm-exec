@@ -41,5 +41,3 @@ bool HTTPCommunicationPlugin::cancel()
 {
     return true;
 }
-
-Q_EXPORT_PLUGIN2(plugin-http, HTTPCommunicationPlugin)

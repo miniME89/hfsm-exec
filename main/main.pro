@@ -1,4 +1,4 @@
-QT += core xml xmlpatterns
+QT += core
 QT -= gui
 
 TARGET = hfsm-exec

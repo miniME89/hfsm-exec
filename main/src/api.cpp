@@ -27,7 +27,7 @@
 #include <cppcms/url_dispatcher.h>
 #include <cppcms/url_mapper.h>
 
-#include <QtConcurrentRun>
+#include <QtConcurrent/QtConcurrentRun>
 
 using namespace hfsmexec;
 

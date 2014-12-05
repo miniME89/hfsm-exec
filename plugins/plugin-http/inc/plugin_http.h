@@ -28,6 +28,7 @@ namespace hfsmexec
     class HTTPCommunicationPlugin : public QObject, public CommunicationPlugin
     {
         Q_OBJECT
+        Q_PLUGIN_METADATA(IID "hfsmexec.Plugins.CommunicationPlugin")
         Q_INTERFACES(hfsmexec::CommunicationPlugin)
 
         public:
