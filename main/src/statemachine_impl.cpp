@@ -201,7 +201,7 @@ QString ParallelState::toString() const
 InvokeState::InvokeState(const QString &stateId, const QString& type, const QString &parentStateId) :
     AbstractComplexState(stateId, parentStateId),
     type(type),
-    communicationPlugin(Application::instance()->getCommunicationPluginLoader()->getPlugin(type))
+    communicationPlugin(Application::getInstance()->getCommunicationPluginLoader()->getPlugin(type))
 {
 
 }
@@ -371,39 +371,14 @@ QString StateMachine::toString() const
     return "[StateMachine: " + stateId + "]";
 }
 
-void StateMachine::eventEntered()
-{
-    AbstractComplexState::eventEntered();
-
-    StateMachinePool::getInstance()->registerStateMachine(this);
-}
-
-void StateMachine::eventExited()
-{
-    AbstractComplexState::eventExited();
-
-    StateMachinePool::getInstance()->deregisterStateMachine(this);
-}
-
-void StateMachine::eventFinished()
-{
-    AbstractComplexState::eventFinished();
-
-    StateMachinePool::getInstance()->deregisterStateMachine(this);
-}
-
 void StateMachine::eventStarted()
 {
     CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> started state machine";
-
-    StateMachinePool::getInstance()->registerStateMachine(this);
 }
 
 void StateMachine::eventStopped()
 {
     CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> stopped state machine";
-
-    StateMachinePool::getInstance()->deregisterStateMachine(this);
 }
 
 /*
@@ -418,25 +393,23 @@ StateMachineTest::StateMachineTest()
 
     builder <<new ParallelState("p1");
     builder <<new FinalState("f1");
-
-    builder <<new InvokeState("invoke1", "HTTP", "p1");
-
-    builder <<new CompositeState("s1", "s1_1", "p1");
-    builder <<new CompositeState("s1_1", "", "s1");
-    builder <<new FinalState("f1_1", "s1");
-
-    builder <<new CompositeState("s2", "s2_1", "p1");
-    builder <<new CompositeState("s2_1", "", "s2");
-    builder <<new FinalState("f2_1", "s2");
-
     builder <<new NamedTransition("t1", "p1", "f1", "f");
-    builder <<new NamedTransition("t2", "s1_1", "f1_1", "f1");
-    builder <<new NamedTransition("t3", "s2_1", "f2_1", "f2");
+
+    builder <<new CompositeState("c1", "i1_1", "p1");
+    builder <<new InvokeState("i1_1", "HTTP", "c1");
+    builder <<new FinalState("f1_1", "c1");
+    builder <<new NamedTransition("t2", "i1_1", "f1_1", "f1");
+
+    builder <<new CompositeState("c2", "i2_1", "p1");
+    builder <<new InvokeState("i2_1", "HTTP", "c2");
+    builder <<new FinalState("f2_1", "c2");
+    builder <<new NamedTransition("t3", "i2_1", "f2_1", "f2");
 
     sm = builder.build();
     if (sm != NULL)
     {
-        sm->start();
+        Application::getInstance()->loadStateMachine(sm);
+        Application::getInstance()->startStateMachine();
         QTimer::singleShot(100, this, SLOT(triggerEvents()));
     }
 }
@@ -446,60 +419,4 @@ void StateMachineTest::triggerEvents()
     sm->postDelayedEvent(new NamedEvent("f1"), 2000);
     sm->postDelayedEvent(new NamedEvent("f2"), 4000);
     sm->postDelayedEvent(new NamedEvent("f"), 4500);
-}
-
-/*
- * StateMachinePool
- */
-StateMachinePool* StateMachinePool::instance = NULL;
-
-StateMachinePool* StateMachinePool::getInstance()
-{
-    if (instance == NULL)
-    {
-        instance = new StateMachinePool();
-    }
-
-    return instance;
-}
-
-StateMachinePool::StateMachinePool()
-{
-
-}
-
-StateMachinePool::~StateMachinePool()
-{
-
-}
-
-QList<StateMachine*> StateMachinePool::getPool() const
-{
-    return pool;
-}
-
-void StateMachinePool::registerStateMachine(StateMachine* stateMachine)
-{
-    mutexList.lock();
-    if (!pool.contains(stateMachine))
-    {
-        pool.append(stateMachine);
-    }
-    mutexList.unlock();
-}
-
-void StateMachinePool::deregisterStateMachine(StateMachine* stateMachine)
-{
-    mutexList.lock();
-    pool.removeOne(stateMachine);
-    mutexList.unlock();
-}
-
-bool StateMachinePool::isRegistered(StateMachine* stateMachine)
-{
-    mutexList.lock();
-    bool contains = pool.contains(stateMachine);
-    mutexList.unlock();
-
-    return contains;
 }

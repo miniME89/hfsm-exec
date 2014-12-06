@@ -258,24 +258,3 @@ StateMachine* YamlDecoder::decode(const QString &data)
 {
 
 }
-
-/*
- * DecoderTest
- */
-#include <QFile>
-DecoderTest::DecoderTest()
-{
-    QFile file("/home/marcel/Programming/hfsm-exec/state_machine.xml");
-    if (!file.open(QFile::ReadOnly | QFile::Text))
-    {
-        CLOG(WARNING, LOG_DECODER) <<"couldn't open file";
-
-        return;
-    }
-
-    QTextStream stream(&file);
-    QString data = stream.readAll();
-
-    XmlDecoder f;
-    f.decode(data);
-}

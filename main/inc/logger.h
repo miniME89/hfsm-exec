@@ -26,7 +26,7 @@
 #define LOG_BUILDER "builder"
 #define LOG_VALUE "value"
 
-#include <string>
+#include <QString>
 
 namespace hfsmexec
 {
@@ -45,16 +45,16 @@ namespace hfsmexec
     class Logger
     {
         public:
-            Logger(int argc, char** argv);
+            Logger();
             ~Logger();
 
             void setLoggerEnabled(bool enabled);
             void setLoggerEnabled(Level level, bool enabled);
-            void setLoggerEnabled(std::string loggerId, bool enabled);
-            void setLoggerEnabled(std::string loggerId, Level level, bool enabled);
+            void setLoggerEnabled(const QString& loggerId, bool enabled);
+            void setLoggerEnabled(const QString& loggerId, Level level, bool enabled);
 
             void setFileOut(bool enabled);
-            void setFilename(std::string filename);
+            void setFilename(const QString& filename);
 
             void setConsoleOut(bool enabled);
     };

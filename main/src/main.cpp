@@ -21,5 +21,7 @@ using namespace hfsmexec;
 
 int main(int argc, char** argv)
 {
-    return Application::exec(argc, argv);
+    Application* application = new Application(argc, argv);
+
+    return application->exec();
 }

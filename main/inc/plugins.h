@@ -53,12 +53,6 @@ namespace hfsmexec
         private:
             QList<CommunicationPlugin*> plugins;
     };
-
-    class CommunicationPluginLoaderTest
-    {
-        public:
-            CommunicationPluginLoaderTest();
-    };
 }
 
 Q_DECLARE_INTERFACE(hfsmexec::CommunicationPlugin, "hfsmexec.Plugins.CommunicationPlugin")

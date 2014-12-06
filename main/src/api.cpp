@@ -101,7 +101,7 @@ void Api::handlerEvent()
         }
 
         NamedEvent* namedEvent = new NamedEvent(event["name"].str().c_str());
-        Application::instance()->postEvent(namedEvent);
+        Application::getInstance()->postEvent(namedEvent);
     }
     else
     {

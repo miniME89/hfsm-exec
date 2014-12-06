@@ -16,15 +16,14 @@
  */
 
 #include <logger.h>
+#include <application.h>
 
 #include <easylogging++.h>
 
 using namespace hfsmexec;
 
-Logger::Logger(int argc, char** argv)
+Logger::Logger()
 {
-    _START_EASYLOGGINGPP(argc, argv);
-
     el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
 
     el::Loggers::getLogger(LOG_API);
@@ -34,8 +33,6 @@ Logger::Logger(int argc, char** argv)
     el::Loggers::getLogger(LOG_STATEMACHINE);
     el::Loggers::getLogger(LOG_BUILDER);
     el::Loggers::getLogger(LOG_VALUE);
-
-    setFilename("hfsm-exec.log");
 }
 
 Logger::~Logger()
@@ -55,35 +52,35 @@ void Logger::setLoggerEnabled(Level level, bool enabled)
     el::Loggers::reconfigureAllLoggers(config);
 }
 
-void Logger::setLoggerEnabled(std::string loggerId, bool enabled)
+void Logger::setLoggerEnabled(const QString& loggerId, bool enabled)
 {
     setLoggerEnabled(loggerId, Global, enabled);
 }
 
-void Logger::setLoggerEnabled(std::string loggerId, Level level, bool enabled)
+void Logger::setLoggerEnabled(const QString& loggerId, Level level, bool enabled)
 {
     el::Configurations config;
     config.set((el::Level)level, el::ConfigurationType::Enabled, (enabled) ? "true" : "false");
-    el::Loggers::reconfigureLogger(loggerId, config);
+    el::Loggers::reconfigureLogger(loggerId.toStdString(), config);
 }
 
 void Logger::setFileOut(bool enabled)
 {
     el::Configurations config;
-    config.set((el::Level)Global, el::ConfigurationType::ToStandardOutput, (enabled) ? "true" : "false");
+    config.set((el::Level)Global, el::ConfigurationType::ToFile, (enabled) ? "true" : "false");
     el::Loggers::reconfigureAllLoggers(config);
 }
 
-void Logger::setFilename(std::string filename)
+void Logger::setFilename(const QString& filename)
 {
     el::Configurations config;
-    config.set((el::Level)Global, el::ConfigurationType::Filename, filename);
+    config.set((el::Level)Global, el::ConfigurationType::Filename, filename.toStdString());
     el::Loggers::reconfigureAllLoggers(config);
 }
 
 void Logger::setConsoleOut(bool enabled)
 {
     el::Configurations config;
-    config.set((el::Level)Global, el::ConfigurationType::ToFile, (enabled) ? "true" : "false");
+    config.set((el::Level)Global, el::ConfigurationType::ToStandardOutput, (enabled) ? "true" : "false");
     el::Loggers::reconfigureAllLoggers(config);
 }

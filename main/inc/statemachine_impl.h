@@ -170,9 +170,6 @@ namespace hfsmexec
             virtual QString toString() const;
 
         protected slots:
-            virtual void eventEntered();
-            virtual void eventExited();
-            virtual void eventFinished();
             virtual void eventStarted();
             virtual void eventStopped();
 
@@ -181,27 +178,6 @@ namespace hfsmexec
 
         private:
             QString initialId;
-    };
-
-    class StateMachinePool
-    {
-        public:
-            static StateMachinePool* getInstance();
-
-            ~StateMachinePool();
-
-            QList<StateMachine*> getPool() const;
-
-            void registerStateMachine(StateMachine* stateMachine);
-            void deregisterStateMachine(StateMachine* stateMachine);
-            bool isRegistered(StateMachine* stateMachine);
-
-        private:
-            static StateMachinePool* instance;
-            QList<StateMachine*> pool;
-            QMutex mutexList;
-
-            StateMachinePool();
     };
 
     class StateMachineTest : public QObject

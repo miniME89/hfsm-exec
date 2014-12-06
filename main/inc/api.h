@@ -31,7 +31,7 @@ namespace hfsmexec
             static void quit();
 
             Api(cppcms::service &srv);
-            virtual ~Api();
+            ~Api();
 
             void handlerEvent();
             void main(std::string url);

@@ -18,6 +18,10 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
+#define APPLICATION_NAME "hfsm-exec"
+#define APPLICATION_VERSION "0.5"
+#define APPLICATION_DESCRIPTION "some description"
+
 #include <api.h>
 #include <logger.h>
 #include <decoder_impl.h>
@@ -25,18 +29,23 @@
 #include <plugins.h>
 
 #include <QCoreApplication>
+#include <QCommandLineParser>
+#include <QUrl>
 
 namespace hfsmexec
 {
     class Application
     {
         public:
-            static Application* instance();
-            static void signalHandler(int signal);
-            static int exec(int argc, char** argv);
+            static Application* getInstance();
 
+            Application(int argc, char** argv);
             ~Application();
 
+            int exec();
+            void quit();
+
+            Logger* getLogger();
             QCoreApplication* getQtApplication();
             DecoderProvider* getDecoderProvider();
             CommunicationPluginLoader* getCommunicationPluginLoader();
@@ -44,23 +53,32 @@ namespace hfsmexec
             bool postEvent(AbstractEvent* event);
 
             bool loadStateMachine(StateMachine* stateMachine);
+            bool loadStateMachine(const QString& data);
+            bool loadStateMachine(const QUrl& url);
             bool unloadStateMachine();
 
-            bool stateMachineStart();
-            bool stateMachineStop();
+            bool startStateMachine();
+            bool stopStateMachine();
+
+            bool getCommandLineOption(const QString& optionName, QStringList* values = NULL);
 
         private:
-            static Application* application;
+            static Application* instance;
+
+            QCommandLineParser commandLineParser;
+            QMap<QString, QCommandLineOption*> commandLineOptions;
 
             Logger* logger;
             QCoreApplication* qtApplication;
             DecoderProvider* decoderProvider;
             CommunicationPluginLoader* communicationPluginLoader;
 
-            Application(int argc, char** argv);
+            StateMachine* stateMachine;
 
-            int exec();
-            int quit();
+            static void signalHandler(int signal);
+
+            void createCommandLineOptions();
+            void processCommandLineOptions();
     };
 }
 

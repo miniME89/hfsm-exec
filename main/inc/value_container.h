@@ -192,12 +192,6 @@ namespace hfsmexec
             bool buildFromJson(ValueContainer* value, void* data);
             bool buildFromYaml(ValueContainer* value, void* data);
     };
-
-    class ValueContainerTest
-    {
-        public:
-            ValueContainerTest();
-    };
 }
 
 #endif

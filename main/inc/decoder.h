@@ -44,6 +44,8 @@ namespace hfsmexec
             DecoderProvider();
             ~DecoderProvider();
 
+            StateMachine* decode(const QString& encoding, const QString& data);
+
             AbstractDecoder* getDecoder(const QString& encoding);
             void addDecoder(AbstractDecoder* decoder);
             void removeDecoder(AbstractDecoder* decoder);

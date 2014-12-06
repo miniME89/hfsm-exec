@@ -64,7 +64,7 @@ bool CommunicationPluginLoader::load(const QString &path)
 
     if (!pluginsDir.exists())
     {
-        CLOG(WARNING, LOG_PLUGIN) <<"couldn't load communication plugins in directory: directory doesn't exist";
+        CLOG(WARNING, LOG_PLUGIN) <<"couldn't load communication plugins in directory \"" <<path <<"\": directory doesn't exist";
 
         return false;
     }
@@ -118,15 +118,4 @@ bool CommunicationPluginLoader::load(const QString &path)
     }
 
     return true;
-}
-
-/*
- * CommunicationPluginLoaderTest
- */
-CommunicationPluginLoaderTest::CommunicationPluginLoaderTest()
-{
-    CommunicationPluginLoader loader;
-    QList<CommunicationPlugin*> plugins;
-    loader.load("plugins");
-    plugins = loader.getPlugins();
 }

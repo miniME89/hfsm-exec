@@ -62,12 +62,6 @@ namespace hfsmexec
         private:
 
     };
-
-    class DecoderTest
-    {
-        public:
-            DecoderTest();
-    };
 }
 
 #endif
