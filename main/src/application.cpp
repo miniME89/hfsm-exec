@@ -17,7 +17,6 @@
 
 #include <application.h>
 #include <logger.h>
-#include <value_container.h>
 
 #include <easylogging++.h>
 
@@ -80,8 +79,6 @@ int Application::exec()
         Api::exec();
     }
 
-    StateMachineTest s;
-
     return qtApplication->exec();
 }
 
@@ -113,6 +110,26 @@ DecoderProvider* Application::getDecoderProvider()
 CommunicationPluginLoader* Application::getCommunicationPluginLoader()
 {
     return communicationPluginLoader;
+}
+
+bool Application::getCommandLineOption(const QString& optionName, QStringList* values)
+{
+    if (!commandLineOptions.contains(optionName))
+    {
+        return false;
+    }
+
+    if (!commandLineParser.isSet(optionName))
+    {
+        return false;
+    }
+
+    if (values != NULL)
+    {
+        *values = commandLineParser.values(*commandLineOptions[optionName]);
+    }
+
+    return true;
 }
 
 bool Application::postEvent(AbstractEvent* event)
@@ -169,14 +186,15 @@ bool Application::loadStateMachine(const QUrl& url)
     QNetworkAccessManager manager;
     QNetworkReply* reply = manager.get(QNetworkRequest(url));
 
-    QEventLoop eventLoop;
-    QObject::connect(reply, SIGNAL(finished()), &eventLoop, SLOT(quit()));
-    eventLoop.exec();
+    while (!reply->isFinished())
+    {
+        qtApplication->processEvents();
+    }
 
     QString stateMachine(reply->readAll());
     CLOG(INFO, LOG_APPLICATION) <<stateMachine;
 
-    return loadStateMachine(stateMachine);;
+    return loadStateMachine(stateMachine);
 }
 
 bool Application::unloadStateMachine()
@@ -227,26 +245,6 @@ bool Application::stopStateMachine()
     }
 
     stateMachine->stop();
-
-    return true;
-}
-
-bool Application::getCommandLineOption(const QString& optionName, QStringList* values)
-{
-    if (!commandLineOptions.contains(optionName))
-    {
-        return false;
-    }
-
-    if (!commandLineParser.isSet(optionName))
-    {
-        return false;
-    }
-
-    if (values != NULL)
-    {
-        *values = commandLineParser.values(*commandLineOptions[optionName]);
-    }
 
     return true;
 }
@@ -326,7 +324,6 @@ void Application::processCommandLineOptions()
         if (smfileValues.size() > 0)
         {
             QUrl url;
-
             QString path = smfileValues.first();
             //remote file
             if (path.contains("://"))

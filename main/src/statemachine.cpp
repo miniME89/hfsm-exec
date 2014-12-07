@@ -108,7 +108,7 @@ bool AbstractTransition::initialize()
 
 void AbstractTransition::onTransition(QEvent* e)
 {
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" triggered transition \"" <<transitionId <<"\"";
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" triggered transition";
 }
 
 /*
@@ -236,6 +236,9 @@ void AbstractComplexState::eventExited()
 void AbstractComplexState::eventFinished()
 {
     CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> finished";
+
+    NamedEvent* event = new NamedEvent("done." + stateId);
+    stateMachine->postEvent(event);
 }
 
 /*

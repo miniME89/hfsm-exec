@@ -112,9 +112,13 @@ bool XmlDecoder::decodeTransitions(pugi::xml_node& node, StateMachineBuilder& bu
 
     for (pugi::xml_node transitionElement = node.child("transition"); transitionElement; transitionElement = transitionElement.next_sibling())
     {
+        QString id = transitionElement.attribute("id").value();
         QString target = transitionElement.attribute("target").value();
+        QString event = transitionElement.attribute("event").value();
 
-        NamedTransition* transition = new NamedTransition("TODO", sourceState->getId(), target, "TODO");
+        CLOG(INFO, LOG_DECODER) <<"create NamedTransition: id=" <<id <<", source=" <<sourceState->getId() <<", target=" <<target <<", event=" <<event;
+
+        NamedTransition* transition = new NamedTransition(id, sourceState->getId(), target, event);
         builder <<transition;
     }
 
@@ -201,6 +205,7 @@ bool XmlDecoder::decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder
     QString id = node.attribute("id").value();
     QString type = node.attribute("type").value();
     pugi::xml_node endpoint = node.child("endpoint");
+    pugi::xml_node transitions = node.child("transitions");
 
     std::ostringstream stream;
     endpoint.print(stream);
@@ -213,6 +218,11 @@ bool XmlDecoder::decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder
 
     InvokeState* invoke = new InvokeState(id, type, parentState->getId());
     builder <<invoke;
+
+    if (!decodeTransitions(transitions, builder, invoke))
+    {
+        return false;
+    }
 
     return true;
 }

@@ -33,11 +33,11 @@ namespace hfsmexec
         public:
             static const QEvent::Type type;
 
-            NamedEvent(const QString& name);
+            NamedEvent(const QString& eventName);
             ~NamedEvent();
 
-            const QString& getName() const;
-            void setName(const QString& name);
+            const QString& getEventName() const;
+            void setEventName(const QString& eventName);
 
             const QString& getOrigin() const;
             void setOrigin(const QString& origin);
@@ -48,7 +48,7 @@ namespace hfsmexec
             virtual QString toString() const;
 
         private:
-            QString name;
+            QString eventName;
             QString origin;
             QString message;
     };
@@ -56,12 +56,38 @@ namespace hfsmexec
     class NamedTransition : public AbstractTransition
     {
         public:
-            NamedTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId, const QString &eventName);
+            NamedTransition(const QString& transitionId, const QString& sourceStateId, const QString& targetStateId, const QString& eventName);
 
             virtual QString toString() const;
 
         protected:
             virtual bool eventTest(QEvent* e);
+
+        private:
+            QString eventName;
+    };
+
+    class InternalEvent : public QEvent
+    {
+        public:
+            static const QEvent::Type type;
+
+            InternalEvent(const QString& eventName);
+
+            const QString& getEventName() const;
+
+        private:
+            QString eventName;
+    };
+
+    class InternalTransition : public QAbstractTransition
+    {
+        public:
+            InternalTransition(const QString& eventName);
+
+        protected:
+            virtual bool eventTest(QEvent* e);
+            virtual void onTransition(QEvent* e);
 
         private:
             QString eventName;
@@ -131,10 +157,12 @@ namespace hfsmexec
             CommunicationPlugin* getCommunicationPlugin() const;
             void setCommunicationPlugin(CommunicationPlugin* value);
 
+            void done();
+
             virtual bool initialize();
             virtual QString toString() const;
 
-    protected slots:
+        protected slots:
             virtual void eventEntered();
             virtual void eventExited();
             virtual void eventFinished();
@@ -178,20 +206,6 @@ namespace hfsmexec
 
         private:
             QString initialId;
-    };
-
-    class StateMachineTest : public QObject
-    {
-        Q_OBJECT
-
-        private:
-            StateMachine* sm;
-
-        public:
-            StateMachineTest();
-
-        private slots:
-            void triggerEvents();
     };
 }
 

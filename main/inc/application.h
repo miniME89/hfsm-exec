@@ -50,6 +50,8 @@ namespace hfsmexec
             DecoderProvider* getDecoderProvider();
             CommunicationPluginLoader* getCommunicationPluginLoader();
 
+            bool getCommandLineOption(const QString& optionName, QStringList* values = NULL);
+
             bool postEvent(AbstractEvent* event);
 
             bool loadStateMachine(StateMachine* stateMachine);
@@ -59,8 +61,6 @@ namespace hfsmexec
 
             bool startStateMachine();
             bool stopStateMachine();
-
-            bool getCommandLineOption(const QString& optionName, QStringList* values = NULL);
 
         private:
             static Application* instance;

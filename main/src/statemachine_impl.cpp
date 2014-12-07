@@ -30,7 +30,7 @@ const QEvent::Type NamedEvent::type = QEvent::Type(QEvent::User + 1);
 
 NamedEvent::NamedEvent(const QString &name) :
     AbstractEvent(type),
-    name(name)
+    eventName(name)
 {
 
 }
@@ -40,14 +40,14 @@ NamedEvent::~NamedEvent()
 
 }
 
-const QString& NamedEvent::getName() const
+const QString& NamedEvent::getEventName() const
 {
-    return name;
+    return eventName;
 }
 
-void NamedEvent::setName(const QString& name)
+void NamedEvent::setEventName(const QString& name)
 {
-    this->name = name;
+    this->eventName = name;
 }
 const QString& NamedEvent::getOrigin() const
 {
@@ -70,13 +70,13 @@ void NamedEvent::setMessage(const QString& message)
 
 QString NamedEvent::toString() const
 {
-    return "[StringEvent: " + name + "]";
+    return "[StringEvent: " + eventName + "]";
 }
 
 /*
  * NamedTransition
  */
-NamedTransition::NamedTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId, const QString& eventName) :
+NamedTransition::NamedTransition(const QString& transitionId, const QString& sourceStateId, const QString& targetStateId, const QString& eventName) :
     AbstractTransition(transitionId, sourceStateId, targetStateId)
 {
     this->eventName = eventName;
@@ -96,7 +96,50 @@ bool NamedTransition::eventTest(QEvent* e)
 
     NamedEvent* namedEvent = static_cast<NamedEvent*>(e);
 
-    return namedEvent->getName() == eventName;
+    return namedEvent->getEventName() == eventName;
+}
+
+/*
+ * InternalEvent
+ */
+const QEvent::Type InternalEvent::type = QEvent::Type(QEvent::User + 2);
+
+InternalEvent::InternalEvent(const QString& eventName) :
+    QEvent(type),
+    eventName(eventName)
+{
+
+}
+
+const QString& InternalEvent::getEventName() const
+{
+    return eventName;
+}
+
+/*
+ * InternalTransition
+ */
+InternalTransition::InternalTransition(const QString& eventName) :
+    eventName(eventName)
+{
+
+}
+
+bool InternalTransition::eventTest(QEvent* e)
+{
+    if (e->type() != InternalEvent::type)
+    {
+        return false;
+    }
+
+    InternalEvent* iternalEvent = static_cast<InternalEvent*>(e);
+
+    return iternalEvent->getEventName() == eventName;
+}
+
+void InternalTransition::onTransition(QEvent* e)
+{
+
 }
 
 /*
@@ -198,12 +241,18 @@ QString ParallelState::toString() const
 /*
  * InvokeState
  */
-InvokeState::InvokeState(const QString &stateId, const QString& type, const QString &parentStateId) :
+InvokeState::InvokeState(const QString& stateId, const QString& type, const QString& parentStateId) :
     AbstractComplexState(stateId, parentStateId),
     type(type),
     communicationPlugin(Application::getInstance()->getCommunicationPluginLoader()->getPlugin(type))
 {
+    QState* stateInvoke = new QState(delegate);
+    QFinalState* stateFinal = new QFinalState(delegate);
+    InternalTransition* transitionFinal = new InternalTransition("done." + stateId);
+    transitionFinal->setTargetState(stateFinal);
+    stateInvoke->addTransition(transitionFinal);
 
+    delegate->setInitialState(stateInvoke);
 }
 
 InvokeState::~InvokeState()
@@ -251,6 +300,12 @@ void InvokeState::setCommunicationPlugin(CommunicationPlugin* value)
     communicationPlugin = value;
 }
 
+void InvokeState::done()
+{
+    InternalEvent* event = new InternalEvent("done." + stateId);
+    stateMachine->postEvent(event);
+}
+
 bool InvokeState::initialize()
 {
     CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
@@ -278,6 +333,8 @@ void InvokeState::eventEntered()
     QString json2;
     outputParameters.toJson(json2);
     CLOG(INFO, LOG_STATEMACHINE) <<json2;
+
+    done(); //TODO temporary
 }
 
 void InvokeState::eventExited()
@@ -320,21 +377,57 @@ StateMachine::~StateMachine()
 
 void StateMachine::start() const
 {
+    if (delegate->isRunning())
+    {
+        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" can't start state machine: state machine is already running";
+
+        return;
+    }
+
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" start state machine";
+
     delegate->start();
 }
 
 void StateMachine::stop() const
 {
+    if (!delegate->isRunning())
+    {
+        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" can't stop state machine: state machine is not running";
+
+        return;
+    }
+
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" stop state machine";
+
     delegate->stop();
 }
 
 int StateMachine::postDelayedEvent(QEvent* event, int delay)
 {
+    if (!delegate->isRunning())
+    {
+        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" can't post delayed event to state machine: state machine is not running";
+
+        return -1;
+    }
+
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" post delayed event";
+
     return delegate->postDelayedEvent(event, delay);
 }
 
 void StateMachine::postEvent(QEvent* event, QStateMachine::EventPriority priority)
 {
+    if (!delegate->isRunning())
+    {
+        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" can't post event to state machine: state machine is not running";
+
+        return;
+    }
+
+    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" post event";
+
     delegate->postEvent(event, priority);
 }
 
@@ -379,44 +472,4 @@ void StateMachine::eventStarted()
 void StateMachine::eventStopped()
 {
     CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> stopped state machine";
-}
-
-/*
- * StateMachineTest
- */
-#include <QTimer>
-StateMachineTest::StateMachineTest()
-{
-    StateMachineBuilder builder;
-
-    builder <<new StateMachine("p1");
-
-    builder <<new ParallelState("p1");
-    builder <<new FinalState("f1");
-    builder <<new NamedTransition("t1", "p1", "f1", "f");
-
-    builder <<new CompositeState("c1", "i1_1", "p1");
-    builder <<new InvokeState("i1_1", "HTTP", "c1");
-    builder <<new FinalState("f1_1", "c1");
-    builder <<new NamedTransition("t2", "i1_1", "f1_1", "f1");
-
-    builder <<new CompositeState("c2", "i2_1", "p1");
-    builder <<new InvokeState("i2_1", "HTTP", "c2");
-    builder <<new FinalState("f2_1", "c2");
-    builder <<new NamedTransition("t3", "i2_1", "f2_1", "f2");
-
-    sm = builder.build();
-    if (sm != NULL)
-    {
-        Application::getInstance()->loadStateMachine(sm);
-        Application::getInstance()->startStateMachine();
-        QTimer::singleShot(100, this, SLOT(triggerEvents()));
-    }
-}
-
-void StateMachineTest::triggerEvents()
-{
-    sm->postDelayedEvent(new NamedEvent("f1"), 2000);
-    sm->postDelayedEvent(new NamedEvent("f2"), 4000);
-    sm->postDelayedEvent(new NamedEvent("f"), 4500);
 }
