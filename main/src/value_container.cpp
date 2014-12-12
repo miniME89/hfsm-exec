@@ -7,8 +7,8 @@
 #include <QStringList>
 
 #include <pugixml.hpp>
-#include <jsoncpp.h>
-#include <yaml.h>
+#include <jsoncpp/json/json.h>
+#include <yaml-cpp/yaml.h>
 
 using namespace hfsmexec;
 
