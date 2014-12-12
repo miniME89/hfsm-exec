@@ -33,13 +33,8 @@ HEADERS += inc/logger.h \
 
 INCLUDEPATH += inc
 
-#external applications
-INCLUDEPATH += ../ext/pugixml/inc/ ../ext/jsoncpp/inc/ ../ext/yaml-cpp/inc/ ../ext/easylogging++/inc/
-LIBS += -L../build/lib/ -lpugixml -ljsoncpp -lyaml-cpp
-
-#cppcms
-INCLUDEPATH += /usr/local/include/
-LIBS += -L/usr/local/lib/ -lbooster -lcppcms
+INCLUDEPATH += ../ext/easylogging++/inc/
+LIBS += -lpugixml -ljsoncpp -lyaml-cpp
 
 #linker flags
 QMAKE_LFLAGS += -export-dynamic
