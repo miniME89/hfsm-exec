@@ -50,7 +50,8 @@ Application::Application(int argc, char** argv) :
     logger(new Logger()),
     qtApplication(new QCoreApplication(argc, argv)),
     decoderProvider(new DecoderProvider()),
-    communicationPluginLoader(new CommunicationPluginLoader())
+    communicationPluginLoader(new CommunicationPluginLoader()),
+    apiWorker(new ApiWorker())
 {
     instance = this;
 
@@ -76,7 +77,7 @@ int Application::exec()
 
     if (!getCommandLineOption("api"))
     {
-        Api::exec();
+        apiWorker->exec();
     }
 
     return qtApplication->exec();
@@ -88,7 +89,7 @@ void Application::quit()
 
     unloadStateMachine();
 
-    Api::quit();
+    apiWorker->quit();
     Application::getInstance()->getQtApplication()->quit();
 }
 
@@ -110,6 +111,11 @@ DecoderProvider* Application::getDecoderProvider()
 CommunicationPluginLoader* Application::getCommunicationPluginLoader()
 {
     return communicationPluginLoader;
+}
+
+ApiWorker* Application::getApiWorker()
+{
+    return apiWorker;
 }
 
 bool Application::getCommandLineOption(const QString& optionName, QStringList* values)

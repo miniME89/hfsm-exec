@@ -22,8 +22,8 @@
 #define APPLICATION_VERSION "0.5"
 #define APPLICATION_DESCRIPTION "some description"
 
-#include <api.h>
 #include <logger.h>
+#include <api_impl.h>
 #include <decoder_impl.h>
 #include <statemachine_impl.h>
 #include <plugins.h>
@@ -49,6 +49,7 @@ namespace hfsmexec
             QCoreApplication* getQtApplication();
             DecoderProvider* getDecoderProvider();
             CommunicationPluginLoader* getCommunicationPluginLoader();
+            ApiWorker* getApiWorker();
 
             bool getCommandLineOption(const QString& optionName, QStringList* values = NULL);
 
@@ -72,6 +73,7 @@ namespace hfsmexec
             QCoreApplication* qtApplication;
             DecoderProvider* decoderProvider;
             CommunicationPluginLoader* communicationPluginLoader;
+            ApiWorker* apiWorker;
 
             StateMachine* stateMachine;
 

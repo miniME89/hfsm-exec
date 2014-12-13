@@ -13,7 +13,7 @@ TEMPLATE = app
 SOURCES += src/main.cpp \
            src/logger.cpp \
            src/application.cpp \
-           src/api.cpp \
+           src/api_impl.cpp \
            src/statemachine.cpp \
            src/statemachine_impl.cpp \
            src/decoder.cpp \
@@ -23,6 +23,7 @@ SOURCES += src/main.cpp \
 
 HEADERS += inc/logger.h \
            inc/application.h \
+           inc/api_impl.h \
            inc/api.h \
            inc/statemachine.h \
            inc/statemachine_impl.h \
@@ -35,6 +36,7 @@ INCLUDEPATH += inc
 
 INCLUDEPATH += ../ext/easylogging++/inc/
 LIBS += -lpugixml -ljsoncpp -lyaml-cpp
+LIBS += -lmicrohttpd -ljsonrpccpp-common -ljsonrpccpp-server
 
 #linker flags
 QMAKE_LFLAGS += -export-dynamic

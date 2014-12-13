@@ -1,0 +1,36 @@
+[
+    {
+        "name": "loadStateMachine",
+        "params": {
+            "stateMachine": ""
+        },
+        "returns" : false
+    },
+    {
+        "name": "UnloadStateMachine",
+        "params": {
+        },
+        "returns" : false
+    },
+    {
+        "name": "StartStateMachine",
+        "params": {
+        },
+        "returns" : false
+    },
+    {
+        "name": "StopStateMachine",
+        "params": {
+        },
+        "returns" : false
+    },
+    {
+        "name": "postEvent",
+        "params": {
+            "event": "",
+            "origin": "",
+            "message": ""
+        },
+        "returns" : false
+    }
+]
