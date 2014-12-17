@@ -260,32 +260,32 @@ InvokeState::~InvokeState()
 
 }
 
-const ValueContainer& InvokeState::getEndpoint() const
+const Value& InvokeState::getEndpoint() const
 {
     return endpoint;
 }
 
-void InvokeState::setEndpoint(const ValueContainer& value)
+void InvokeState::setEndpoint(const Value& value)
 {
     endpoint = value;
 }
 
-const ValueContainer& InvokeState::getInputParameters() const
+const Value& InvokeState::getInputParameters() const
 {
     return inputParameters;
 }
 
-void InvokeState::setInputParameters(const ValueContainer& value)
+void InvokeState::setInputParameters(const Value& value)
 {
     inputParameters = value;
 }
 
-const ValueContainer& InvokeState::getOutputParameters() const
+const Value& InvokeState::getOutputParameters() const
 {
     return outputParameters;
 }
 
-void InvokeState::setOutputParameters(const ValueContainer& value)
+void InvokeState::setOutputParameters(const Value& value)
 {
     outputParameters = value;
 }

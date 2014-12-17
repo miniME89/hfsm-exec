@@ -18,7 +18,7 @@
 #ifndef PLUGINS_H
 #define PLUGINS_H
 
-#include <value_container.h>
+#include <value.h>
 
 #include <QList>
 #include <QtPlugin>
@@ -30,7 +30,7 @@ namespace hfsmexec
         public:
             CommunicationPlugin(const QString& pluginId) : pluginId(pluginId) {}
             virtual ~CommunicationPlugin() {}
-            virtual bool invoke(ValueContainer& endpoint, ValueContainer& inputParameters, ValueContainer& outputParameters) = 0;
+            virtual bool invoke(Value& endpoint, Value& inputParameters, Value& outputParameters) = 0;
             virtual bool cancel() = 0;
 
             QString getPluginId() const { return pluginId; }

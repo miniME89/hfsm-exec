@@ -26,7 +26,7 @@
 
 namespace hfsmexec
 {
-    class ValueContainer;
+    class Value;
 
     typedef enum
     {
@@ -46,8 +46,8 @@ namespace hfsmexec
     typedef int Integer;
     typedef double Float;
     typedef QString String;
-    typedef QList<ValueContainer> Array;
-    typedef QMap<String, ValueContainer> Object;
+    typedef QList<Value> Array;
+    typedef QMap<String, Value> Object;
 
     class ArbitraryValueException : public std::exception
     {
@@ -109,7 +109,7 @@ namespace hfsmexec
             void destroy();
     };
 
-    class ValueContainer
+    class Value
     {
         public:
             enum XmlFormat
@@ -118,11 +118,11 @@ namespace hfsmexec
                 PARAMETER_TAG
             };
 
-            ValueContainer();
-            ValueContainer(const ValueContainer& value);
+            Value();
+            Value(const Value& value);
             template<typename T>
-            ValueContainer(const T& value);
-            ~ValueContainer();
+            Value(const T& value);
+            ~Value();
 
             bool isUndefined() const;
             bool isNull() const;
@@ -168,12 +168,12 @@ namespace hfsmexec
             bool fromJson(const QString& json);
             bool fromYaml(const QString& yaml);
 
-            const ValueContainer& operator=(const ValueContainer& other);
-            bool operator==(const ValueContainer& other) const;
-            ValueContainer& operator[](const QString& path);
-            const ValueContainer& operator[](const QString& path) const;
-            ValueContainer& operator[](int i);
-            const ValueContainer& operator[](int i) const;
+            const Value& operator=(const Value& other);
+            bool operator==(const Value& other) const;
+            Value& operator[](const QString& path);
+            const Value& operator[](const QString& path) const;
+            Value& operator[](int i);
+            const Value& operator[](int i) const;
 
         private:
             ArbitraryValue value;
@@ -184,13 +184,13 @@ namespace hfsmexec
             template <typename T>
             void setValue(const T& value);
 
-            bool buildToXml(const ValueContainer* value, void* data) const;
-            bool buildToJson(const ValueContainer* value, void* data) const;
-            bool buildToYaml(const ValueContainer* value, void* data) const;
+            bool buildToXml(const Value* value, void* data) const;
+            bool buildToJson(const Value* value, void* data) const;
+            bool buildToYaml(const Value* value, void* data) const;
 
-            bool buildFromXml(ValueContainer* value, void* data);
-            bool buildFromJson(ValueContainer* value, void* data);
-            bool buildFromYaml(ValueContainer* value, void* data);
+            bool buildFromXml(Value* value, void* data);
+            bool buildFromJson(Value* value, void* data);
+            bool buildFromYaml(Value* value, void* data);
     };
 }
 

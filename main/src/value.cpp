@@ -1,4 +1,21 @@
-#include <value_container.h>
+/*
+ *  Copyright (C) 2014 Marcel Lehwald
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <value.h>
 #include <logger.h>
 
 #include <easylogging++.h>
@@ -308,71 +325,71 @@ void ArbitraryValue::destroy()
 }
 
 /*
- * ValueContainer
+ * Value
  */
-ValueContainer::ValueContainer()
+Value::Value()
 {
     null();
 }
 
-ValueContainer::ValueContainer(const ValueContainer& value) :
+Value::Value(const Value& value) :
     value(value.value)
 {
 
 }
 
 template<typename T>
-ValueContainer::ValueContainer(const T& value)
+Value::Value(const T& value)
 {
     setValue<T>(value);
 }
 
-ValueContainer::~ValueContainer()
+Value::~Value()
 {
 
 }
 
-bool ValueContainer::isUndefined() const
+bool Value::isUndefined() const
 {
     return getType() == TYPE_UNDEFINED;
 }
 
-bool ValueContainer::isNull() const
+bool Value::isNull() const
 {
     return getType() == TYPE_NULL;
 }
 
-bool ValueContainer::isBoolean() const
+bool Value::isBoolean() const
 {
     return getType() == TYPE_BOOLEAN;
 }
 
-bool ValueContainer::isInteger() const
+bool Value::isInteger() const
 {
     return getType() == TYPE_INTEGER;
 }
 
-bool ValueContainer::isFloat() const
+bool Value::isFloat() const
 {
     return getType() == TYPE_FLOAT;
 }
 
-bool ValueContainer::isString() const
+bool Value::isString() const
 {
     return getType() == TYPE_STRING;
 }
 
-bool ValueContainer::isArray() const
+bool Value::isArray() const
 {
     return getType() == TYPE_ARRAY;
 }
 
-bool ValueContainer::isObject() const
+bool Value::isObject() const
 {
     return getType() == TYPE_OBJECT;
 }
 
-Boolean ValueContainer::getBoolean(Boolean defaultValue) const
+Boolean Value::getBoolean(Boolean defaultValue) const
 {
     Boolean value;
     get(value, defaultValue);
@@ -380,7 +397,7 @@ Boolean ValueContainer::getBoolean(Boolean defaultValue) const
     return value;
 }
 
-Integer ValueContainer::getInteger(Integer defaultValue) const
+Integer Value::getInteger(Integer defaultValue) const
 {
     Integer value;
     get(value, defaultValue);
@@ -388,7 +405,7 @@ Integer ValueContainer::getInteger(Integer defaultValue) const
     return value;
 }
 
-Float ValueContainer::getFloat(Float defaultValue) const
+Float Value::getFloat(Float defaultValue) const
 {
     Float value;
     get(value, defaultValue);
@@ -396,7 +413,7 @@ Float ValueContainer::getFloat(Float defaultValue) const
     return value;
 }
 
-String ValueContainer::getString(String defaultValue) const
+String Value::getString(String defaultValue) const
 {
     String value;
     get(value, defaultValue);
@@ -404,7 +421,7 @@ String ValueContainer::getString(String defaultValue) const
     return value;
 }
 
-Array ValueContainer::getArray(Array defaultValue) const
+Array Value::getArray(Array defaultValue) const
 {
     Array value;
     get(value, defaultValue);
@@ -412,7 +429,7 @@ Array ValueContainer::getArray(Array defaultValue) const
     return value;
 }
 
-Object ValueContainer::getObject(Object defaultValue) const
+Object Value::getObject(Object defaultValue) const
 {
     Object value;
     get(value, defaultValue);
@@ -420,87 +437,87 @@ Object ValueContainer::getObject(Object defaultValue) const
     return value;
 }
 
-bool ValueContainer::get(Boolean& value, Boolean defaultValue) const
+bool Value::get(Boolean& value, Boolean defaultValue) const
 {
     return getValue<Boolean>(value, defaultValue);
 }
 
-bool ValueContainer::get(Integer& value, Integer defaultValue) const
+bool Value::get(Integer& value, Integer defaultValue) const
 {
     return getValue<Integer>(value, defaultValue);
 }
 
-bool ValueContainer::get(Float& value, Float defaultValue) const
+bool Value::get(Float& value, Float defaultValue) const
 {
     return getValue<Float>(value, defaultValue);
 }
 
-bool ValueContainer::get(String& value, String defaultValue) const
+bool Value::get(String& value, String defaultValue) const
 {
     return getValue<String>(value, defaultValue);
 }
 
-bool ValueContainer::get(Array& value, Array defaultValue) const
+bool Value::get(Array& value, Array defaultValue) const
 {
     return getValue<Array>(value, defaultValue);
 }
 
-bool ValueContainer::get(Object& value, Object defaultValue) const
+bool Value::get(Object& value, Object defaultValue) const
 {
     return getValue<Object>(value, defaultValue);
 }
 
-void ValueContainer::set(const Boolean& value)
+void Value::set(const Boolean& value)
 {
     setValue<Boolean>(value);
 }
 
-void ValueContainer::set(const Integer& value)
+void Value::set(const Integer& value)
 {
     setValue<Integer>(value);
 }
 
-void ValueContainer::set(const Float& value)
+void Value::set(const Float& value)
 {
     setValue<Float>(value);
 }
 
-void ValueContainer::set(const char* value)
+void Value::set(const char* value)
 {
     set(String(value));
 }
 
-void ValueContainer::set(const String& value)
+void Value::set(const String& value)
 {
     setValue<String>(value);
 }
 
-void ValueContainer::set(const Array& value)
+void Value::set(const Array& value)
 {
     setValue<Array>(value);
 }
 
-void ValueContainer::set(const Object& value)
+void Value::set(const Object& value)
 {
     setValue<Object>(value);
 }
 
-void ValueContainer::undefined()
+void Value::undefined()
 {
     value.set<Undefined>(Undefined());
 }
 
-void ValueContainer::null()
+void Value::null()
 {
     value.set<Null>(Null());
 }
 
-const ArbitraryValueType& ValueContainer::getType() const
+const ArbitraryValueType& Value::getType() const
 {
     return value.getType();
 }
 
-bool ValueContainer::toXml(QString& xml) const
+bool Value::toXml(QString& xml) const
 {
     pugi::xml_document doc;
     pugi::xml_node root = doc.append_child("value");
@@ -520,7 +537,7 @@ bool ValueContainer::toXml(QString& xml) const
     return true;
 }
 
-bool ValueContainer::toJson(QString& json) const
+bool Value::toJson(QString& json) const
 {
     Json::Value root;
     if (!buildToJson(this, &root))
@@ -536,7 +553,7 @@ bool ValueContainer::toJson(QString& json) const
     return true;
 }
 
-bool ValueContainer::toYaml(QString& yaml) const
+bool Value::toYaml(QString& yaml) const
 {
     YAML::Node root;
     if (!buildToYaml(this, &root))
@@ -553,7 +570,7 @@ bool ValueContainer::toYaml(QString& yaml) const
     return true;
 }
 
-bool ValueContainer::fromXml(const QString& xml)
+bool Value::fromXml(const QString& xml)
 {
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_buffer(xml.toStdString().c_str(), xml.size());
@@ -575,7 +592,7 @@ bool ValueContainer::fromXml(const QString& xml)
     return true;
 }
 
-bool ValueContainer::fromJson(const QString& json)
+bool Value::fromJson(const QString& json)
 {
     Json::Value root;
     Json::Reader reader;
@@ -596,7 +613,7 @@ bool ValueContainer::fromJson(const QString& json)
     return true;
 }
 
-bool ValueContainer::fromYaml(const QString& yaml)
+bool Value::fromYaml(const QString& yaml)
 {
     try
     {
@@ -619,23 +636,23 @@ bool ValueContainer::fromYaml(const QString& yaml)
     return false;
 }
 
-const ValueContainer& ValueContainer::operator=(const ValueContainer& other)
+const Value& Value::operator=(const Value& other)
 {
     this->value.set(other.value);
 
     return *this;
 }
 
-bool ValueContainer::operator==(const ValueContainer& other) const
+bool Value::operator==(const Value& other) const
 {
     return value == other.value;
 }
 
-ValueContainer& ValueContainer::operator[](const QString& path)
+Value& Value::operator[](const QString& path)
 {
     QStringList splitPath = path.trimmed().split("/", QString::SkipEmptyParts);
 
-    ValueContainer* value = this;
+    Value* value = this;
     for (int i = 0; i < splitPath.size(); i++)
     {
         QString name = splitPath[i];
@@ -650,7 +667,7 @@ ValueContainer& ValueContainer::operator[](const QString& path)
         //value does not exist
         if (it == object.end())
         {
-            value = &object.insert(name.toStdString().c_str(), ValueContainer()).value();
+            value = &object.insert(name.toStdString().c_str(), Value()).value();
             value->null();
         }
         //value already exist
@@ -663,11 +680,11 @@ ValueContainer& ValueContainer::operator[](const QString& path)
     return *value;
 }
 
-const ValueContainer& ValueContainer::operator[](const QString& path) const
+const Value& Value::operator[](const QString& path) const
 {
     QStringList splitPath = path.trimmed().split("/", QString::SkipEmptyParts);
 
-    const ValueContainer* value = this;
+    const Value* value = this;
     for (int i = 0; i < splitPath.size(); i++)
     {
         QString name = splitPath[i];
@@ -695,7 +712,7 @@ const ValueContainer& ValueContainer::operator[](const QString& path) const
 }
 
 
-ValueContainer& ValueContainer::operator[](int i)
+Value& Value::operator[](int i)
 {
     if (getType() != TYPE_ARRAY)
     {
@@ -711,7 +728,7 @@ ValueContainer& ValueContainer::operator[](int i)
     return array[i];
 }
 
-const ValueContainer& ValueContainer::operator[](int i) const
+const Value& Value::operator[](int i) const
 {
     if (getType() != TYPE_ARRAY)
     {
@@ -728,7 +745,7 @@ const ValueContainer& ValueContainer::operator[](int i) const
 }
 
 template<typename T>
-bool ValueContainer::getValue(T& value, T defaultValue) const
+bool Value::getValue(T& value, T defaultValue) const
 {
     try
     {
@@ -746,12 +763,12 @@ bool ValueContainer::getValue(T& value, T defaultValue) const
 }
 
 template<typename T>
-void ValueContainer::setValue(const T& value)
+void Value::setValue(const T& value)
 {
     this->value.set<T>(value);
 }
 
-bool ValueContainer::buildToXml(const ValueContainer* value, void* data) const
+bool Value::buildToXml(const Value* value, void* data) const
 {
     pugi::xml_node* xmlValue = static_cast<pugi::xml_node*>(data);
 
@@ -817,7 +834,7 @@ bool ValueContainer::buildToXml(const ValueContainer* value, void* data) const
     return true;
 }
 
-bool ValueContainer::buildToJson(const ValueContainer* value, void* data) const
+bool Value::buildToJson(const Value* value, void* data) const
 {
     Json::Value* jsonValue = static_cast<Json::Value*>(data);
 
@@ -887,7 +904,7 @@ bool ValueContainer::buildToJson(const ValueContainer* value, void* data) const
     return true;
 }
 
-bool ValueContainer::buildToYaml(const ValueContainer* value, void* data) const
+bool Value::buildToYaml(const Value* value, void* data) const
 {
     YAML::Node* yamlValue = static_cast<YAML::Node*>(data);
 
@@ -955,7 +972,7 @@ bool ValueContainer::buildToYaml(const ValueContainer* value, void* data) const
     return true;
 }
 
-bool ValueContainer::buildFromXml(ValueContainer* value, void* data)
+bool Value::buildFromXml(Value* value, void* data)
 {
     pugi::xml_node* xmlValue = static_cast<pugi::xml_node*>(data);
     pugi::xml_text textContent = xmlValue->text();
@@ -992,7 +1009,7 @@ bool ValueContainer::buildFromXml(ValueContainer* value, void* data)
         Array array;
         for (pugi::xml_node_iterator i = xmlValue->begin(); i != xmlValue->end(); i++)
         {
-            ValueContainer v;
+            Value v;
             if (!buildFromXml(&v, &i))
             {
                 return false;
@@ -1006,7 +1023,7 @@ bool ValueContainer::buildFromXml(ValueContainer* value, void* data)
         Object object;
         for (pugi::xml_node_iterator i = xmlValue->begin(); i != xmlValue->end(); i++)
         {
-            ValueContainer v;
+            Value v;
             if (!buildFromXml(&v, &i))
             {
                 return false;
@@ -1020,7 +1037,7 @@ bool ValueContainer::buildFromXml(ValueContainer* value, void* data)
     return true;
 }
 
-bool ValueContainer::buildFromJson(ValueContainer* value, void* data)
+bool Value::buildFromJson(Value* value, void* data)
 {
     Json::Value* jsonValue = static_cast<Json::Value*>(data);
 
@@ -1049,7 +1066,7 @@ bool ValueContainer::buildFromJson(ValueContainer* value, void* data)
         Array array;
         for (unsigned int i = 0; i < jsonValue->size(); i++)
         {
-            ValueContainer v;
+            Value v;
             if (!buildFromJson(&v, &jsonValue[i]))
             {
                 return false;
@@ -1063,7 +1080,7 @@ bool ValueContainer::buildFromJson(ValueContainer* value, void* data)
         Object object;
         for (Json::ValueIterator i = jsonValue->begin(); i != jsonValue->end(); i++)
         {
-            ValueContainer v;
+            Value v;
             if (!buildFromJson(&v, &*i))
             {
                 return false;
@@ -1076,7 +1093,7 @@ bool ValueContainer::buildFromJson(ValueContainer* value, void* data)
     return true;
 }
 
-bool ValueContainer::buildFromYaml(ValueContainer* value, void* data)
+bool Value::buildFromYaml(Value* value, void* data)
 {
     YAML::Node* yamlValue = static_cast<YAML::Node*>(data);
 
@@ -1115,7 +1132,7 @@ bool ValueContainer::buildFromYaml(ValueContainer* value, void* data)
         Array array;
         for (unsigned int i = 0; i < yamlValue->size(); i++)
         {
-            ValueContainer v;
+            Value v;
             YAML::Node n = (*yamlValue)[i];
             if (!buildFromYaml(&v, &n))
             {
@@ -1130,7 +1147,7 @@ bool ValueContainer::buildFromYaml(ValueContainer* value, void* data)
         Object object;
         for (YAML::iterator i = yamlValue->begin(); i != yamlValue->end(); i++)
         {
-            ValueContainer v;
+            Value v;
             if (!buildFromYaml(&v, &i->second))
             {
                 return false;

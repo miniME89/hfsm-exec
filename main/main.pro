@@ -18,7 +18,7 @@ SOURCES += src/main.cpp \
            src/statemachine_impl.cpp \
            src/decoder.cpp \
            src/decoder_impl.cpp \
-           src/value_container.cpp \
+           src/value.cpp \
            src/plugins.cpp
 
 HEADERS += inc/logger.h \
@@ -28,7 +28,7 @@ HEADERS += inc/logger.h \
            inc/statemachine_impl.h \
            inc/decoder.h \
            inc/decoder_impl.h \
-           inc/value_container.h \
+           inc/value.h \
            inc/plugins.h
 
 INCLUDEPATH += inc

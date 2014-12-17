@@ -30,7 +30,7 @@ HTTPCommunicationPlugin::~HTTPCommunicationPlugin()
 
 }
 
-bool HTTPCommunicationPlugin::invoke(ValueContainer& endpoint, ValueContainer& inputParameters, ValueContainer& outputParameters)
+bool HTTPCommunicationPlugin::invoke(Value& endpoint, Value& inputParameters, Value& outputParameters)
 {
     outputParameters["/some/test/value"].set(5);
 

@@ -145,14 +145,14 @@ namespace hfsmexec
             InvokeState(const QString& stateId, const QString& type, const QString& parentStateId = "");
             virtual ~InvokeState();
 
-            const ValueContainer& getEndpoint() const;
-            void setEndpoint(const ValueContainer& value);
+            const Value& getEndpoint() const;
+            void setEndpoint(const Value& value);
 
-            const ValueContainer& getInputParameters() const;
-            void setInputParameters(const ValueContainer& value);
+            const Value& getInputParameters() const;
+            void setInputParameters(const Value& value);
 
-            const ValueContainer& getOutputParameters() const;
-            void setOutputParameters(const ValueContainer& value);
+            const Value& getOutputParameters() const;
+            void setOutputParameters(const Value& value);
 
             CommunicationPlugin* getCommunicationPlugin() const;
             void setCommunicationPlugin(CommunicationPlugin* value);
@@ -169,9 +169,9 @@ namespace hfsmexec
 
         private:
             QString type;
-            ValueContainer endpoint;
-            ValueContainer inputParameters;
-            ValueContainer outputParameters;
+            Value endpoint;
+            Value inputParameters;
+            Value outputParameters;
             CommunicationPlugin* communicationPlugin;
     };
 

@@ -18,7 +18,7 @@
 #include <decoder_impl.h>
 #include <logger.h>
 #include <statemachine_impl.h>
-#include <value_container.h>
+#include <value.h>
 
 #include <easylogging++.h>
 
@@ -211,7 +211,7 @@ bool XmlDecoder::decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder
     endpoint.print(stream);
     QString endPointStr = stream.str().c_str();
 
-    ValueContainer endpointParameter;
+    Value endpointParameter;
     endpointParameter.fromXml(endPointStr);
 
     CLOG(INFO, LOG_DECODER) <<"create InvokeState: id=" <<id <<", type=" <<type <<", parent=" <<parentState->getId();
