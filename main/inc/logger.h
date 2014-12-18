@@ -25,6 +25,7 @@
 #define LOG_STATEMACHINE "statemachine"
 #define LOG_BUILDER "builder"
 #define LOG_VALUE "value"
+#define LOG_UTILS "utils"
 
 #include <QString>
 

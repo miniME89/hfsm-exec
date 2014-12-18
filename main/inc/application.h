@@ -56,7 +56,6 @@ namespace hfsmexec
 
             bool loadStateMachine(StateMachine* stateMachine);
             bool loadStateMachine(const QString& data);
-            bool loadStateMachine(const QUrl& url);
             bool unloadStateMachine();
 
             bool startStateMachine();

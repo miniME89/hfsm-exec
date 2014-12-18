@@ -33,6 +33,7 @@ Logger::Logger()
     el::Loggers::getLogger(LOG_STATEMACHINE);
     el::Loggers::getLogger(LOG_BUILDER);
     el::Loggers::getLogger(LOG_VALUE);
+    el::Loggers::getLogger(LOG_UTILS);
 }
 
 Logger::~Logger()

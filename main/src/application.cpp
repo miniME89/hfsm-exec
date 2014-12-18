@@ -17,13 +17,9 @@
 
 #include <application.h>
 #include <logger.h>
+#include <utils.h>
 
 #include <easylogging++.h>
-
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
-#include <QFile>
 
 _INITIALIZE_EASYLOGGINGPP
 
@@ -179,24 +175,6 @@ bool Application::loadStateMachine(const QString& data)
     return true;
 }
 
-bool Application::loadStateMachine(const QUrl& url)
-{
-    CLOG(INFO, LOG_APPLICATION) <<"load state machine from " <<url.toString();
-
-    QNetworkAccessManager manager;
-    QNetworkReply* reply = manager.get(QNetworkRequest(url));
-
-    while (!reply->isFinished())
-    {
-        qtApplication->processEvents();
-    }
-
-    QString stateMachine(reply->readAll());
-    CLOG(INFO, LOG_APPLICATION) <<stateMachine;
-
-    return loadStateMachine(stateMachine);
-}
-
 bool Application::unloadStateMachine()
 {
     CLOG(INFO, LOG_APPLICATION) <<"unload the currently loaded state machine";
@@ -323,22 +301,17 @@ void Application::processCommandLineOptions()
     {
         if (smfileValues.size() > 0)
         {
-            QUrl url;
             QString path = smfileValues.first();
-            //remote file
-            if (path.contains("://"))
-            {
-                url = QUrl::fromUserInput(path);
-            }
-            //local file
-            else
-            {
-                url = QUrl::fromLocalFile(path);
-            }
+            Downloader downloader;
 
-            if (loadStateMachine(url))
+            downloader.download(path, true);
+            if (!downloader.getError())
             {
-                startStateMachine();
+                QString stateMachine = downloader.getData();
+                if (loadStateMachine(stateMachine))
+                {
+                    startStateMachine();
+                }
             }
         }
     }

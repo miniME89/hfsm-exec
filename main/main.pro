@@ -19,7 +19,8 @@ SOURCES += src/main.cpp \
            src/decoder.cpp \
            src/decoder_impl.cpp \
            src/value.cpp \
-           src/plugins.cpp
+           src/plugins.cpp \
+           src/utils.cpp
 
 HEADERS += inc/logger.h \
            inc/application.h \
@@ -29,7 +30,8 @@ HEADERS += inc/logger.h \
            inc/decoder.h \
            inc/decoder_impl.h \
            inc/value.h \
-           inc/plugins.h
+           inc/plugins.h \
+           inc/utils.h
 
 INCLUDEPATH += inc
 
