@@ -18,6 +18,9 @@
 #ifndef DECODER_H
 #define DECODER_H
 
+#define LOGGER_DECODER "decoder"
+
+#include <logger.h>
 #include <statemachine.h>
 
 #include <QString>
@@ -34,8 +37,9 @@ namespace hfsmexec
 
             virtual StateMachine* decode(const QString& data) = 0;
 
-        private:
-            QString encoding;
+        protected:
+            static const Logger* logger;
+            const QString encoding;
     };
 
     class DecoderProvider
@@ -51,6 +55,7 @@ namespace hfsmexec
             void removeDecoder(AbstractDecoder* decoder);
 
         private:
+            static const Logger* logger;
             QMap<QString, AbstractDecoder*> decoders;
     };
 }

@@ -19,8 +19,6 @@
 #include <logger.h>
 #include <application.h>
 
-#include <easylogging++.h>
-
 using namespace hfsmexec;
 
 /*
@@ -70,7 +68,7 @@ void NamedEvent::setMessage(const QString& message)
 
 QString NamedEvent::toString() const
 {
-    return "[StringEvent: " + eventName + "]";
+    return "[NamedEvent: " + eventName + "]";
 }
 
 /*
@@ -97,6 +95,18 @@ bool NamedTransition::eventTest(QEvent* e)
     NamedEvent* namedEvent = static_cast<NamedEvent*>(e);
 
     return namedEvent->getEventName() == eventName;
+}
+
+void NamedTransition::onTransition(QEvent* e)
+{
+    if (e->type() != NamedEvent::type)
+    {
+        return;
+    }
+
+    NamedEvent* namedEvent = static_cast<NamedEvent*>(e);
+
+    logger->info(QString("%1 triggered transition on event %2").arg(toString()).arg(namedEvent->toString()));
 }
 
 /*
@@ -163,7 +173,7 @@ QFinalState* FinalState::getDelegate() const
 
 bool FinalState::initialize()
 {
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
+    logger->info(QString("%1 initialize").arg(toString()));
 
     return true;
 }
@@ -189,7 +199,7 @@ CompositeState::~CompositeState()
 
 bool CompositeState::initialize()
 {
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
+    logger->info(QString("%1 initialize").arg(toString()));
 
     if (!initialStateId.isEmpty()) //TODO remove
     {
@@ -197,7 +207,7 @@ bool CompositeState::initialize()
         const AbstractState* initialState = getState(initialStateId);
         if (initialState == NULL)
         {
-            CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" initialization failed: couldn't find initial state \"" <<initialStateId <<"\"";
+            logger->warning(QString("%1 initialization failed: couldn't find initial state \"%2\"").arg(toString()).arg(initialStateId));
 
             return false;
         }
@@ -228,7 +238,7 @@ ParallelState::~ParallelState()
 
 bool ParallelState::initialize()
 {
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
+    logger->info(QString("%1 initialize").arg(toString()));
 
     return true;
 }
@@ -308,7 +318,7 @@ void InvokeState::done()
 
 bool InvokeState::initialize()
 {
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
+    logger->info(QString("%1 initialize").arg(toString()));
 
     return true;
 }
@@ -319,20 +329,20 @@ void InvokeState::eventEntered()
 
     if (communicationPlugin == NULL)
     {
-        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" invalid communication plugin. Skip invocation.";
+        logger->warning(QString("%1 invalid communication plugin. Skip invocation.").arg(toString()));
 
         return;
     }
 
     QString json;
     inputParameters.toJson(json);
-    CLOG(INFO, LOG_STATEMACHINE) <<json;
+    logger->info(json);
 
     communicationPlugin->invoke(endpoint, inputParameters, outputParameters);
 
     QString json2;
     outputParameters.toJson(json2);
-    CLOG(INFO, LOG_STATEMACHINE) <<json2;
+    logger->info(json2);
 
     done(); //TODO temporary
 }
@@ -379,12 +389,12 @@ void StateMachine::start() const
 {
     if (delegate->isRunning())
     {
-        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" can't start state machine: state machine is already running";
+        logger->warning(QString("%1 can't start state machine: state machine is already running").arg(toString()));
 
         return;
     }
 
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" start state machine";
+    logger->info(QString("%1 start state machine").arg(toString()));
 
     delegate->start();
 }
@@ -393,12 +403,12 @@ void StateMachine::stop() const
 {
     if (!delegate->isRunning())
     {
-        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" can't stop state machine: state machine is not running";
+        logger->warning(QString("%1 can't stop state machine: state machine is not running").arg(toString()));
 
         return;
     }
 
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" stop state machine";
+    logger->info(QString("%1 stop state machine").arg(toString()));
 
     delegate->stop();
 }
@@ -407,12 +417,12 @@ int StateMachine::postDelayedEvent(QEvent* event, int delay)
 {
     if (!delegate->isRunning())
     {
-        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" can't post delayed event to state machine: state machine is not running";
+        logger->warning(QString("%1 can't post delayed event to state machine: state machine is not running").arg(toString()));
 
         return -1;
     }
 
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" post delayed event";
+    logger->info(QString("%1 post delayed event").arg(toString()));
 
     return delegate->postDelayedEvent(event, delay);
 }
@@ -421,12 +431,12 @@ void StateMachine::postEvent(QEvent* event, QStateMachine::EventPriority priorit
 {
     if (!delegate->isRunning())
     {
-        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" can't post event to state machine: state machine is not running";
+        logger->warning(QString("%1 can't post event to state machine: state machine is not running").arg(toString()));
 
         return;
     }
 
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" post event";
+    logger->info(QString("%1 post event").arg(toString()));
 
     delegate->postEvent(event, priority);
 }
@@ -443,13 +453,13 @@ QStateMachine* StateMachine::getDelegate() const
 
 bool StateMachine::initialize()
 {
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
+    logger->info(QString("%1 initialize").arg(toString()));
 
     //set initial state
     const AbstractState* initialState = getState(initialId);
     if (initialState == NULL)
     {
-        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" initialization failed: couldn't find initial state \"" <<initialId <<"\"";
+        logger->warning(QString("%1 initialization failed: couldn't find initial state \"%2\"").arg(toString()).arg(initialId));
 
         return false;
     }
@@ -466,10 +476,10 @@ QString StateMachine::toString() const
 
 void StateMachine::eventStarted()
 {
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> started state machine";
+    logger->info(QString("%1 --> started state machine").arg(toString()));
 }
 
 void StateMachine::eventStopped()
 {
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> stopped state machine";
+    logger->info(QString("%1 --> stopped state machine").arg(toString()));
 }

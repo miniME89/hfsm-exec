@@ -18,12 +18,14 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
+#define LOGGER_APPLICATION "application"
+
 #define APPLICATION_NAME "hfsm-exec"
 #define APPLICATION_VERSION "0.5"
 #define APPLICATION_DESCRIPTION "some description"
 
-#include <api.h>
 #include <logger.h>
+#include <api.h>
 #include <decoder_impl.h>
 #include <statemachine_impl.h>
 #include <plugins.h>
@@ -45,7 +47,6 @@ namespace hfsmexec
             int exec();
             void quit();
 
-            Logger* getLogger();
             QCoreApplication* getQtApplication();
             DecoderProvider* getDecoderProvider();
             CommunicationPluginLoader* getCommunicationPluginLoader();
@@ -63,14 +64,15 @@ namespace hfsmexec
 
         private:
             static Application* instance;
+            static const Logger* logger;
 
             QCommandLineParser commandLineParser;
             QMap<QString, QCommandLineOption*> commandLineOptions;
 
-            Logger* logger;
-            QCoreApplication* qtApplication;
-            DecoderProvider* decoderProvider;
-            CommunicationPluginLoader* communicationPluginLoader;
+            QCoreApplication qtApplication;
+            DecoderProvider decoderProvider;
+            CommunicationPluginLoader communicationPluginLoader;
+            LoggerController loggerController;
 
             StateMachine* stateMachine;
 

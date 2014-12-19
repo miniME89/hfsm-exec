@@ -18,6 +18,10 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#define LOGGER_UTILS "utils"
+
+#include <logger.h>
+
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 
@@ -45,11 +49,13 @@ namespace hfsmexec
             void downloadFinished(QNetworkReply* reply);
 
         private:
-           QNetworkAccessManager manager;
-           QNetworkReply* reply;
-           QNetworkReply::NetworkError error;
-           QString errorMessage;
-           QByteArray data;
+            static const Logger* logger;
+
+            QNetworkAccessManager manager;
+            QNetworkReply* reply;
+            QNetworkReply::NetworkError error;
+            QString errorMessage;
+            QByteArray data;
     };
 }
 

@@ -17,15 +17,14 @@
 
 #include <statemachine.h>
 #include <statemachine_impl.h>
-#include <logger.h>
-
-#include <easylogging++.h>
 
 using namespace hfsmexec;
 
 /*
  * AbstractEvent
  */
+Logger* AbstractEvent::logger = Logger::getLogger(LOGGER_STATEMACHINE);
+
 AbstractEvent::AbstractEvent(Type type) :
     QEvent(type)
 {
@@ -35,6 +34,8 @@ AbstractEvent::AbstractEvent(Type type) :
 /*
  * AbstractTransition
  */
+Logger* AbstractTransition::logger = Logger::getLogger(LOGGER_STATEMACHINE);
+
 AbstractTransition::AbstractTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId) :
     transitionId(transitionId),
     sourceStateId(sourceStateId),
@@ -73,18 +74,18 @@ StateMachine* AbstractTransition::getStateMachine()
 
 bool AbstractTransition::initialize()
 {
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" initialize";
+    logger->info(QString("%1 initialize").arg(toString()));
 
     if (sourceState == NULL)
     {
-        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" transition initialization failed: couldn't find source state \"" <<sourceStateId <<"\"";
+        logger->warning(QString("%1 transition initialization failed: couldn't find source state \"%2\"").arg(toString()).arg(sourceStateId));
 
         return false;
     }
 
     if (targetState == NULL)
     {
-        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" transition initialization failed: couldn't find target state \"" <<targetStateId <<"\"";
+        logger->warning(QString("%1 transition initialization failed: couldn't find target state \"%2\"").arg(toString()).arg(targetStateId));
 
         return false;
     }
@@ -93,12 +94,12 @@ bool AbstractTransition::initialize()
     QState* state = dynamic_cast<QState*>(sourceState->getDelegate());
     if (state == NULL)
     {
-        CLOG(WARNING, LOG_STATEMACHINE) <<toString() <<" transition initialization failed: source delegate is not of type QState";
+        logger->warning(QString("%1 transition initialization failed: source delegate is not of type QState").arg(toString()));
 
         return false;
     }
 
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" add transition from \"" <<sourceState->getId() <<"\" to \"" <<targetState->getId() + "\"";
+    logger->info(QString("%1 add transition from \"%2\" to \"%3\"").arg(toString()).arg(sourceState->getId()).arg(targetState->getId()));
 
     setTargetState(targetState->getDelegate());
     state->addTransition(this);
@@ -106,18 +107,15 @@ bool AbstractTransition::initialize()
     return true;
 }
 
-void AbstractTransition::onTransition(QEvent* e)
-{
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" triggered transition";
-}
-
 /*
  * AbstractState
  */
+Logger* AbstractState::logger = Logger::getLogger(LOGGER_STATEMACHINE);
+
 AbstractState::AbstractState(const QString& stateId, const QString& parentStateId) :
-        stateId(stateId),
-        parentStateId(parentStateId),
-        stateMachine(NULL)
+    stateId(stateId),
+    parentStateId(parentStateId),
+    stateMachine(NULL)
 {
     setObjectName("AbstractState");
 }
@@ -225,17 +223,17 @@ QState* AbstractComplexState::getDelegate() const
 
 void AbstractComplexState::eventEntered()
 {
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> entered";
+    logger->info(QString("%1 --> entered").arg(toString()));
 }
 
 void AbstractComplexState::eventExited()
 {
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> exited";
+    logger->info(QString("%1 --> exited").arg(toString()));
 }
 
 void AbstractComplexState::eventFinished()
 {
-    CLOG(INFO, LOG_STATEMACHINE) <<toString() <<" --> finished";
+    logger->info(QString("%1 --> finished").arg(toString()));
 
     NamedEvent* event = new NamedEvent("done." + stateId);
     stateMachine->postEvent(event);
@@ -244,6 +242,8 @@ void AbstractComplexState::eventFinished()
 /*
  * StateMachineBuilder
  */
+Logger* StateMachineBuilder::logger = Logger::getLogger(LOGGER_BUILDER);
+
 StateMachineBuilder::StateMachineBuilder() :
     stateMachine(NULL)
 {
@@ -259,14 +259,14 @@ void StateMachineBuilder::addState(StateMachine* stateMachine)
 {
     if (this->stateMachine != NULL)
     {
-        CLOG(WARNING, LOG_BUILDER) <<"can't add state machine: another state machine was already provided";
+        logger->warning("can't add state machine: another state machine was already provided");
 
         return;
     }
 
     if (stateMachine->stateMachine != NULL)
     {
-        CLOG(WARNING, LOG_BUILDER) <<"can't add state machine: state machine is already part of another state machine";
+        logger->warning("can't add state machine: state machine is already part of another state machine");
 
         return;
     }
@@ -278,7 +278,7 @@ void StateMachineBuilder::addState(AbstractState* state)
 {
     if (state->stateMachine != NULL)
     {
-        CLOG(WARNING, LOG_BUILDER) <<"can't add state: state is already part of another state machine";
+        logger->warning("can't add state: state is already part of another state machine");
 
         return;
     }
@@ -290,7 +290,7 @@ void StateMachineBuilder::addTransition(AbstractTransition* transition)
 {
     if (transition->stateMachine != NULL)
     {
-        CLOG(WARNING, LOG_BUILDER) <<"can't add transition: transition is already part of another state machine";
+        logger->warning("can't add transition: transition is already part of another state machine");
 
         return;
     }
@@ -302,15 +302,15 @@ StateMachine* StateMachineBuilder::build()
 {
     if (stateMachine == NULL)
     {
-        CLOG(WARNING, LOG_BUILDER) <<"can't build state machine: no instance of StateMachine was provided";
+        logger->warning("can't build state machine: no instance of StateMachine was provided");
 
         return NULL;
     }
 
-    CLOG(INFO, LOG_BUILDER) <<"create state machine";
+    logger->info("create state machine");
 
     //link states
-    CLOG(INFO, LOG_BUILDER) <<"link states";
+    logger->info("link states");
     for (int i = 0; i < states.size(); i++)
     {
         AbstractState* state = states[i];
@@ -319,46 +319,46 @@ StateMachine* StateMachineBuilder::build()
         AbstractState* parentState = getState(state->parentStateId);
         if (parentState == NULL)
         {
-            CLOG(WARNING, LOG_BUILDER) <<"initialization failed: couldn't find parent state \"" <<state->parentStateId <<"\"";
+            logger->warning(QString("initialization failed: couldn't find parent state \"%1\"").arg(state->parentStateId));
 
             return NULL;
         }
 
         //link state
-        CLOG(INFO, LOG_BUILDER) <<"link child state \"" <<state->getId() <<"\" with parent state \"" <<parentState->getId() <<"\"";
+        logger->info(QString("link child state \"%1\" with parent state \"%2\"").arg(state->getId()).arg(parentState->getId()));
         state->stateMachine = stateMachine;
         state->setParent(parentState);
         state->getDelegate()->setParent(parentState->getDelegate());
     }
 
     //initialize state machine
-    CLOG(INFO, LOG_BUILDER) <<"initialize state machine";
+    logger->info("initialize state machine");
     stateMachine->stateMachine = stateMachine;
     if (!stateMachine->initialize())
     {
-        CLOG(WARNING, LOG_BUILDER) <<"initialization failed: initialization of state machine failed";
+        logger->warning("initialization failed: initialization of state machine failed");
 
         return NULL;
     }
 
     //initialize states
-    CLOG(INFO, LOG_BUILDER) <<"initialize " <<states.size() <<" states";
+    logger->info(QString("initialize %1 states").arg(states.size()));
     for (int i = 0; i < states.size(); i++)
     {
         AbstractState* state = states[i];
 
         //initialize state
-        CLOG(INFO, LOG_BUILDER) <<"[" <<i <<"] initialize state \"" <<state->getId() <<"\"";
+        logger->info(QString("[%1] initialize state \"%2\"").arg(i).arg(state->getId()));
         if (!state->initialize())
         {
-            CLOG(WARNING, LOG_BUILDER) <<"initialization failed: initialization of states failed";
+            logger->warning("initialization failed: initialization of states failed");
 
             return NULL;
         }
     }
 
     //initialize transitions
-    CLOG(INFO, LOG_BUILDER) <<"initialize " <<transitions.size() <<" transitions";
+    logger->info(QString("initialize %1 transitions").arg(transitions.size()));
     for (int i = 0; i < transitions.size(); i++)
     {
         AbstractTransition* transition = transitions[i];
@@ -367,7 +367,7 @@ StateMachine* StateMachineBuilder::build()
         AbstractState* sourceState = getState(transition->sourceStateId);
         if (sourceState == NULL)
         {
-            CLOG(WARNING, LOG_BUILDER) <<"initialization failed: couldn't find transition source state \"" <<transition->sourceStateId <<"\"";
+            logger->warning(QString("initialization failed: couldn't find transition source state \"%1\"").arg(transition->sourceStateId));
 
             return NULL;
         }
@@ -376,7 +376,7 @@ StateMachine* StateMachineBuilder::build()
         AbstractState* targetState = getState(transition->targetStateId);
         if (targetState == NULL)
         {
-            CLOG(WARNING, LOG_BUILDER) <<"initialization failed: couldn't find transition source state \"" <<transition->targetStateId <<"\"";
+            logger->warning(QString("initialization failed: couldn't find transition target state \"%1\"").arg(transition->targetStateId));
 
             return NULL;
         }
@@ -386,16 +386,16 @@ StateMachine* StateMachineBuilder::build()
         transition->sourceState = sourceState;
         transition->targetState = targetState;
 
-        CLOG(INFO, LOG_BUILDER) <<"[" <<i <<"] initialize transition \"" <<transition->getId() <<"\"";
+        logger->info(QString("[%1] initialize transition \"%2\"").arg(i).arg(transition->getId()));
         if (!transition->initialize())
         {
-            CLOG(WARNING, LOG_BUILDER) <<"initialization failed: couldn't initialize all transitions";
+            logger->warning("initialization failed: couldn't initialize all transitions");
 
             return NULL;
         }
     }
 
-    CLOG(INFO, LOG_BUILDER) <<"created state machine successfully";
+    logger->info("created state machine successfully");
 
     return stateMachine;
 }

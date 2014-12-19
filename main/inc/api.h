@@ -18,6 +18,10 @@
 #ifndef API_H
 #define API_H
 
+#define LOGGER_API "api"
+
+#include <logger.h>
+
 #include <cppcms/application.h>
 #include <cppcms/service.h>
 #include <cppcms/applications_pool.h>
@@ -37,6 +41,10 @@ namespace hfsmexec
             void main(std::string url);
 
         private:
+            static const Logger* logger;
+
+            static void worker();
+
             std::string content();
     };
 }

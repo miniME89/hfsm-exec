@@ -22,18 +22,20 @@
 
 using namespace hfsmexec;
 
-Logger::Logger()
-{
-    el::Loggers::addFlag(el::LoggingFlag::ColoredTerminalOutput);
+_INITIALIZE_EASYLOGGINGPP
 
-    el::Loggers::getLogger(LOG_API);
-    el::Loggers::getLogger(LOG_APPLICATION);
-    el::Loggers::getLogger(LOG_DECODER);
-    el::Loggers::getLogger(LOG_PLUGIN);
-    el::Loggers::getLogger(LOG_STATEMACHINE);
-    el::Loggers::getLogger(LOG_BUILDER);
-    el::Loggers::getLogger(LOG_VALUE);
-    el::Loggers::getLogger(LOG_UTILS);
+/*
+ * Logger
+ */
+Logger::Logger(const QString& name) :
+    name(name)
+{
+    el::Loggers::getLogger(name.toStdString());
+}
+
+Logger* Logger::getLogger(const QString& name)
+{
+    return new Logger(name);
 }
 
 Logger::~Logger()
@@ -41,47 +43,75 @@ Logger::~Logger()
 
 }
 
-void Logger::setLoggerEnabled(bool enabled)
+void Logger::info(const QString& message) const
 {
-    setLoggerEnabled(Global, enabled);
+    CLOG(INFO, name.toStdString().c_str()) <<message;
 }
 
-void Logger::setLoggerEnabled(Level level, bool enabled)
+void Logger::warning(const QString& message) const
+{
+    CLOG(WARNING, name.toStdString().c_str()) <<message;
+}
+
+void Logger::error(const QString& message) const
+{
+    CLOG(ERROR, name.toStdString().c_str()) <<message;
+}
+
+void Logger::fatal(const QString& message) const
+{
+    CLOG(FATAL, name.toStdString().c_str()) <<message;
+}
+
+void Logger::debug(const QString& message) const
+{
+    CLOG(DEBUG, name.toStdString().c_str()) <<message;
+}
+
+/*
+ * LoggerController
+ */
+LoggerController::LoggerController()
+{
+
+}
+
+LoggerController::~LoggerController()
+{
+
+}
+
+void LoggerController::setLoggerEnabled(bool enabled)
 {
     el::Configurations config;
-    config.set((el::Level)level, el::ConfigurationType::Enabled, (enabled) ? "true" : "false");
+    config.set(el::Level::Global, el::ConfigurationType::Enabled, (enabled) ? "true" : "false");
     el::Loggers::reconfigureAllLoggers(config);
 }
 
-void Logger::setLoggerEnabled(const QString& loggerId, bool enabled)
-{
-    setLoggerEnabled(loggerId, Global, enabled);
-}
-
-void Logger::setLoggerEnabled(const QString& loggerId, Level level, bool enabled)
+void LoggerController::setLoggerEnabled(const QString& name, bool enabled)
 {
     el::Configurations config;
-    config.set((el::Level)level, el::ConfigurationType::Enabled, (enabled) ? "true" : "false");
-    el::Loggers::reconfigureLogger(loggerId.toStdString(), config);
+    config.set(el::Level::Global, el::ConfigurationType::Enabled, (enabled) ? "true" : "false");
+    el::Loggers::reconfigureLogger(name.toStdString(), config);
 }
 
-void Logger::setFileOut(bool enabled)
+void LoggerController::setFileOut(bool enabled)
 {
     el::Configurations config;
-    config.set((el::Level)Global, el::ConfigurationType::ToFile, (enabled) ? "true" : "false");
+    config.set(el::Level::Global, el::ConfigurationType::ToFile, (enabled) ? "true" : "false");
     el::Loggers::reconfigureAllLoggers(config);
 }
 
-void Logger::setFilename(const QString& filename)
+void LoggerController::setFilename(const QString& filename)
 {
     el::Configurations config;
-    config.set((el::Level)Global, el::ConfigurationType::Filename, filename.toStdString());
+    config.set(el::Level::Global, el::ConfigurationType::Filename, filename.toStdString());
     el::Loggers::reconfigureAllLoggers(config);
 }
 
-void Logger::setConsoleOut(bool enabled)
+void LoggerController::setConsoleOut(bool enabled)
 {
     el::Configurations config;
-    config.set((el::Level)Global, el::ConfigurationType::ToStandardOutput, (enabled) ? "true" : "false");
+    config.set(el::Level::Global, el::ConfigurationType::ToStandardOutput, (enabled) ? "true" : "false");
     el::Loggers::reconfigureAllLoggers(config);
 }

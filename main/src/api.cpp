@@ -16,10 +16,7 @@
  */
 
 #include <api.h>
-#include <logger.h>
 #include <application.h>
-
-#include <easylogging++.h>
 
 #include <cppcms/http_response.h>
 #include <cppcms/http_request.h>
@@ -33,32 +30,11 @@ using namespace hfsmexec;
 
 static cppcms::service* serviceHandle = NULL;
 
-static void worker()
-{
-    CLOG(INFO, LOG_API) <<"start http server";
-
-    try
-    {
-        cppcms::json::value config;
-        config["service"]["api"] = "http";
-        config["service"]["port"] = 8080;
-        config["service"]["disable_global_exit_handling"] = true;
-
-        serviceHandle = new cppcms::service(config);
-        serviceHandle->applications_pool().mount(cppcms::applications_factory<Api>());
-        serviceHandle->run();
-    }
-    catch(std::exception const& e)
-    {
-        CLOG(FATAL, LOG_API) <<e.what();
-    }
-
-    CLOG(INFO, LOG_API) <<"stopped http server";
-}
-
 /*
  * Api
  */
+const Logger* Api::logger = Logger::getLogger(LOGGER_API);
+
 Api::Api(cppcms::service &srv) :
     cppcms::application(srv)
 {
@@ -111,9 +87,32 @@ void Api::handlerEvent()
 
 void Api::main(std::string url)
 {
-    CLOG(INFO, LOG_API) <<"request: " <<url;
+    logger->info(QString("request: %1").arg(url.c_str()));
 
     cppcms::application::main(url);
+}
+
+void Api::worker()
+{
+    logger->info("start http server");
+
+    try
+    {
+        cppcms::json::value config;
+        config["service"]["api"] = "http";
+        config["service"]["port"] = 8080;
+        config["service"]["disable_global_exit_handling"] = true;
+
+        serviceHandle = new cppcms::service(config);
+        serviceHandle->applications_pool().mount(cppcms::applications_factory<Api>());
+        serviceHandle->run();
+    }
+    catch(std::exception const& e)
+    {
+        logger->fatal(e.what());
+    }
+
+    logger->info("stopped http server");
 }
 
 std::string Api::content()
@@ -125,7 +124,7 @@ std::string Api::content()
 
 void Api::exec()
 {
-    QtConcurrent::run(worker);
+    QtConcurrent::run(Api::worker);
 }
 
 void Api::quit()

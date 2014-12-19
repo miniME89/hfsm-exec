@@ -16,12 +16,9 @@
  */
 
 #include <application.h>
-#include <logger.h>
 #include <utils.h>
 
-#include <easylogging++.h>
-
-_INITIALIZE_EASYLOGGINGPP
+#include <signal.h>
 
 using namespace hfsmexec;
 
@@ -30,6 +27,8 @@ using namespace hfsmexec;
  */
 Application* Application::instance = NULL;
 
+const Logger* Application::logger = Logger::getLogger(LOGGER_APPLICATION);
+
 Application* Application::getInstance()
 {
     return instance;
@@ -37,50 +36,46 @@ Application* Application::getInstance()
 
 void Application::signalHandler(int signal)
 {
-    CLOG(INFO, LOG_APPLICATION) <<"received signal";
+    logger->info(QString("received signal (%1)").arg(signal));
 
     instance->quit();
 }
 
 Application::Application(int argc, char** argv) :
-    logger(new Logger()),
-    qtApplication(new QCoreApplication(argc, argv)),
-    decoderProvider(new DecoderProvider()),
-    communicationPluginLoader(new CommunicationPluginLoader())
+    qtApplication(argc, argv),
+    stateMachine(NULL)
 {
     instance = this;
 
-    signal(SIGINT, Application::signalHandler);
-
-    decoderProvider->addDecoder(new XmlDecoder());
-
     createCommandLineOptions();
-    processCommandLineOptions();
+
+    signal(SIGINT, Application::signalHandler);
 }
 
 Application::~Application()
 {
-    delete logger;
-    delete qtApplication;
-    delete decoderProvider;
-    delete communicationPluginLoader;
+
 }
 
 int Application::exec()
 {
-    CLOG(INFO, LOG_APPLICATION) <<"start application";
+    logger->info("start application");
+
+    decoderProvider.addDecoder(new XmlDecoder());
+
+    processCommandLineOptions();
 
     if (!getCommandLineOption("api"))
     {
         Api::exec();
     }
 
-    return qtApplication->exec();
+    return qtApplication.exec();
 }
 
 void Application::quit()
 {
-    CLOG(INFO, LOG_APPLICATION) <<"stop application";
+    logger->info("stop application");
 
     unloadStateMachine();
 
@@ -88,24 +83,19 @@ void Application::quit()
     Application::getInstance()->getQtApplication()->quit();
 }
 
-Logger* Application::getLogger()
-{
-    return logger;
-}
-
 QCoreApplication* Application::getQtApplication()
 {
-    return qtApplication;
+    return &qtApplication;
 }
 
 DecoderProvider* Application::getDecoderProvider()
 {
-    return decoderProvider;
+    return &decoderProvider;
 }
 
 CommunicationPluginLoader* Application::getCommunicationPluginLoader()
 {
-    return communicationPluginLoader;
+    return &communicationPluginLoader;
 }
 
 bool Application::getCommandLineOption(const QString& optionName, QStringList* values)
@@ -130,7 +120,7 @@ bool Application::getCommandLineOption(const QString& optionName, QStringList* v
 
 bool Application::postEvent(AbstractEvent* event)
 {
-    CLOG(INFO, LOG_APPLICATION) <<"post event to the executing state machine";
+    logger->info("post event to the executing state machine");
 
     if (stateMachine != NULL)
     {
@@ -144,11 +134,11 @@ bool Application::postEvent(AbstractEvent* event)
 
 bool Application::loadStateMachine(StateMachine* stateMachine)
 {
-    CLOG(INFO, LOG_APPLICATION) <<"load state machine";
+    logger->info("load state machine");
 
     if (!unloadStateMachine())
     {
-        CLOG(WARNING, LOG_APPLICATION) <<"couldn't load state machine: unloading of existing state machine failed";
+        logger->warning("couldn't load state machine: unloading of existing state machine failed");
 
         return false;
     }
@@ -160,12 +150,12 @@ bool Application::loadStateMachine(StateMachine* stateMachine)
 
 bool Application::loadStateMachine(const QString& data)
 {
-    CLOG(INFO, LOG_APPLICATION) <<"load state machine from encoded data";
+    logger->info("load state machine from encoded data");
 
-    StateMachine* stateMachine = decoderProvider->decode("XML", data);
+    StateMachine* stateMachine = decoderProvider.decode("XML", data);
     if (stateMachine == NULL)
     {
-        CLOG(WARNING, LOG_APPLICATION) <<"couldn't load state machine: decoding of encoded state machine failed";
+        logger->warning("couldn't load state machine: decoding of encoded state machine failed");
 
         return false;
     }
@@ -177,7 +167,7 @@ bool Application::loadStateMachine(const QString& data)
 
 bool Application::unloadStateMachine()
 {
-    CLOG(INFO, LOG_APPLICATION) <<"unload the currently loaded state machine";
+    logger->info("unload the currently loaded state machine");
 
     if (stateMachine == NULL)
     {
@@ -197,11 +187,11 @@ bool Application::unloadStateMachine()
 
 bool Application::startStateMachine()
 {
-    CLOG(INFO, LOG_APPLICATION) <<"start the loaded state machine";
+    logger->info("start the loaded state machine");
 
     if (stateMachine == NULL)
     {
-        CLOG(WARNING, LOG_APPLICATION) <<"couldn't start the loaded state machine: no state machine was loaded";
+        logger->warning("couldn't start the loaded state machine: no state machine was loaded");
 
         return false;
     }
@@ -213,11 +203,11 @@ bool Application::startStateMachine()
 
 bool Application::stopStateMachine()
 {
-    CLOG(INFO, LOG_APPLICATION) <<"stop the executing state machine";
+    logger->info("stop the executing state machine");
 
     if (stateMachine == NULL)
     {
-        CLOG(WARNING, LOG_APPLICATION) <<"couldn't stop the loaded state machine: no state machine was loaded";
+        logger->warning("couldn't stop the loaded state machine: no state machine was loaded");
 
         return false;
     }
@@ -247,12 +237,12 @@ void Application::createCommandLineOptions()
     {
         commandLineParser.addOption(*i.value());
     }
+
+    commandLineParser.process(qtApplication);
 }
 
 void Application::processCommandLineOptions()
 {
-    commandLineParser.process(*qtApplication);
-
     //logfile
     QString logFile = "hfsm-exec.log";
     QStringList logFileValues;
@@ -264,22 +254,7 @@ void Application::processCommandLineOptions()
         }
     }
 
-    logger->setFilename(logFile);
-
-    //logger
-    QStringList loggersValues;
-    if (getCommandLineOption("logger", &loggersValues))
-    {
-        if (loggersValues.size() > 0)
-        {
-            logger->setLoggerEnabled(false);
-
-            for (int i = 0; i < loggersValues.size(); i++)
-            {
-                logger->setLoggerEnabled(loggersValues[i], true);
-            }
-        }
-    }
+    loggerController.setFilename(logFile);
 
     //plugindir
     QStringList pluginDirValues;
@@ -287,12 +262,12 @@ void Application::processCommandLineOptions()
     {
         for (int i = 0; i < pluginDirValues.size(); i++)
         {
-            communicationPluginLoader->load(pluginDirValues[i]);
+            communicationPluginLoader.load(pluginDirValues[i]);
         }
     }
     else
     {
-        communicationPluginLoader->load("plugins");
+        communicationPluginLoader.load("plugins");
     }
 
     //smfile

@@ -16,9 +16,6 @@
  */
 
 #include <value.h>
-#include <logger.h>
-
-#include <easylogging++.h>
 
 #include <QTextStream>
 #include <QStringList>
@@ -327,6 +324,8 @@ void ArbitraryValue::destroy()
 /*
  * Value
  */
+const Logger* Value::logger = Logger::getLogger(LOGGER_VALUE);
+
 Value::Value()
 {
     null();
@@ -523,7 +522,7 @@ bool Value::toXml(QString& xml) const
     pugi::xml_node root = doc.append_child("value");
     if (!buildToXml(this, &root))
     {
-        CLOG(WARNING, LOG_VALUE) <<"couldn't build xml from value container";
+        logger->warning("couldn't build xml from value container");
 
         return false;
     }
@@ -542,7 +541,7 @@ bool Value::toJson(QString& json) const
     Json::Value root;
     if (!buildToJson(this, &root))
     {
-        CLOG(WARNING, LOG_VALUE) <<"couldn't build json from value container";
+        logger->warning("couldn't build json from value container");
 
         return false;
     }
@@ -558,7 +557,7 @@ bool Value::toYaml(QString& yaml) const
     YAML::Node root;
     if (!buildToYaml(this, &root))
     {
-        CLOG(WARNING, LOG_VALUE) <<"couldn't build yaml from value container";
+        logger->warning("couldn't build yaml from value container");
 
         return false;
     }
@@ -576,7 +575,7 @@ bool Value::fromXml(const QString& xml)
     pugi::xml_parse_result result = doc.load_buffer(xml.toStdString().c_str(), xml.size());
     if (result.status != pugi::status_ok)
     {
-        CLOG(WARNING, LOG_VALUE) <<"couldn't set value container from xml";
+        logger->warning("couldn't set value container from xml");
 
         return false;
     }
@@ -584,7 +583,7 @@ bool Value::fromXml(const QString& xml)
     pugi::xml_node root = doc.root();
     if (!buildFromXml(this, &root))
     {
-        CLOG(WARNING, LOG_VALUE) <<"couldn't set value container from xml";
+        logger->warning("couldn't set value container from xml");
 
         return false;
     }
@@ -598,14 +597,14 @@ bool Value::fromJson(const QString& json)
     Json::Reader reader;
     if (!reader.parse(json.toStdString(), root))
     {
-        CLOG(WARNING, LOG_VALUE) <<"couldn't set value container from json: " <<reader.getFormatedErrorMessages().c_str();
+        logger->warning(QString("couldn't set value container from json: %1").arg(reader.getFormatedErrorMessages().c_str()));
 
         return false;
     }
 
     if (!buildFromJson(this, &root))
     {
-        CLOG(WARNING, LOG_VALUE) <<"couldn't set value container from json";
+        logger->warning("couldn't set value container from json");
 
         return false;
     }
@@ -621,7 +620,7 @@ bool Value::fromYaml(const QString& yaml)
 
         if (!buildFromYaml(this, &root))
         {
-            CLOG(WARNING, LOG_VALUE) <<"couldn't set value container from yaml";
+            logger->warning("couldn't set value container from yaml");
 
             return false;
         }
@@ -630,7 +629,7 @@ bool Value::fromYaml(const QString& yaml)
     }
     catch (YAML::Exception e)
     {
-        CLOG(WARNING, LOG_VALUE) <<"couldn't set value container from yaml: " <<e.msg.c_str();
+        logger->warning( QString("couldn't set value container from yaml: %1").arg(e.msg.c_str()));
     }
 
     return false;

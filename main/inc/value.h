@@ -18,6 +18,10 @@
 #ifndef VALUECONTAINER_H
 #define VALUECONTAINER_H
 
+#define LOGGER_VALUE "value"
+
+#include <logger.h>
+
 #include <QString>
 #include <QList>
 #include <QMap>
@@ -176,6 +180,7 @@ namespace hfsmexec
             const Value& operator[](int i) const;
 
         private:
+            static const Logger* logger;
             ArbitraryValue value;
 
             template <typename T>

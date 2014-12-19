@@ -18,6 +18,9 @@
 #ifndef PLUGINS_H
 #define PLUGINS_H
 
+#define LOGGER_PLUGIN "plugins"
+
+#include <logger.h>
 #include <value.h>
 
 #include <QList>
@@ -28,14 +31,15 @@ namespace hfsmexec
     class CommunicationPlugin
     {
         public:
-            CommunicationPlugin(const QString& pluginId) : pluginId(pluginId) {}
-            virtual ~CommunicationPlugin() {}
+            CommunicationPlugin(const QString& pluginId);
+            virtual ~CommunicationPlugin();
             virtual bool invoke(Value& endpoint, Value& inputParameters, Value& outputParameters) = 0;
             virtual bool cancel() = 0;
 
-            QString getPluginId() const { return pluginId; }
+            QString getPluginId() const;
 
         protected:
+            static Logger* logger;
             const QString pluginId;
     };
 
@@ -51,6 +55,7 @@ namespace hfsmexec
             bool load(const QString& path);
 
         private:
+            static const Logger* logger;
             QList<CommunicationPlugin*> plugins;
     };
 }

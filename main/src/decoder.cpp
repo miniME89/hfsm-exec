@@ -16,15 +16,14 @@
  */
 
 #include <decoder.h>
-#include <logger.h>
-
-#include <easylogging++.h>
 
 using namespace hfsmexec;
 
 /*
  * AbstractDecoder
  */
+const Logger* AbstractDecoder::logger = Logger::getLogger(LOGGER_DECODER);
+
 AbstractDecoder::AbstractDecoder(const QString &encoding) :
     encoding(encoding)
 {
@@ -44,6 +43,8 @@ const QString& AbstractDecoder::getEncoding() const
 /*
  * DecoderProvider
  */
+const Logger* DecoderProvider::logger = Logger::getLogger(LOGGER_DECODER);
+
 DecoderProvider::DecoderProvider()
 {
 
@@ -59,7 +60,7 @@ StateMachine* DecoderProvider::decode(const QString& encoding, const QString& da
     AbstractDecoder* decoder = getDecoder(encoding);
     if (decoder == NULL)
     {
-        CLOG(WARNING, LOG_DECODER) <<"couldn't decode data: no decoder for data encoding " <<encoding <<" is available";
+        logger->warning(QString("couldn't decode data: no decoder for data encoding \"%1\" is available").arg(encoding));
 
         return NULL;
     }
@@ -67,7 +68,7 @@ StateMachine* DecoderProvider::decode(const QString& encoding, const QString& da
     StateMachine* stateMachine = decoder->decode(data);
     if (stateMachine == NULL)
     {
-        CLOG(WARNING, LOG_DECODER) <<"couldn't decode data: decoding failed";
+        logger->warning("couldn't decode data: decoding failed");
 
         return NULL;
     }
@@ -87,14 +88,14 @@ AbstractDecoder* DecoderProvider::getDecoder(const QString& encoding)
 
 void DecoderProvider::addDecoder(AbstractDecoder* decoder)
 {
-    CLOG(INFO, LOG_DECODER) <<"add decoder for " <<decoder->getEncoding() <<" encoding";
+    logger->info(QString("add decoder for \"%1\" encoding").arg(decoder->getEncoding()));
 
     decoders[decoder->getEncoding()] = decoder;
 }
 
 void DecoderProvider::removeDecoder(AbstractDecoder* decoder)
 {
-    CLOG(INFO, LOG_DECODER) <<"remove decoder for " <<decoder->getEncoding() <<" encoding";
+    logger->info(QString("remove decoder for \"%1\" encoding").arg(decoder->getEncoding()));
 
     //TODO
 }

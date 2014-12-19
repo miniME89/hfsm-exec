@@ -18,41 +18,37 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#define LOG_API "api"
-#define LOG_APPLICATION "application"
-#define LOG_DECODER "decoder"
-#define LOG_PLUGIN "plugin"
-#define LOG_STATEMACHINE "statemachine"
-#define LOG_BUILDER "builder"
-#define LOG_VALUE "value"
-#define LOG_UTILS "utils"
-
 #include <QString>
 
 namespace hfsmexec
 {
-    enum Level {
-        Global = 1,
-        Trace = 2,
-        Debug = 4,
-        Fatal = 8,
-        Error = 16,
-        Warning = 32,
-        Verbose = 64,
-        Info = 128,
-        Unknown = 1010
-    };
-
     class Logger
     {
         public:
-            Logger();
+            static Logger* getLogger(const QString& name);
+
             ~Logger();
 
+            void info(const QString& message) const;
+            void warning(const QString& message) const;
+            void error(const QString& message) const;
+            void fatal(const QString& message) const;
+            void debug(const QString& message) const;
+
+        private:
+            const QString name;
+
+            Logger(const QString& name);
+    };
+
+    class LoggerController
+    {
+        public:
+            LoggerController();
+            ~LoggerController();
+
             void setLoggerEnabled(bool enabled);
-            void setLoggerEnabled(Level level, bool enabled);
-            void setLoggerEnabled(const QString& loggerId, bool enabled);
-            void setLoggerEnabled(const QString& loggerId, Level level, bool enabled);
+            void setLoggerEnabled(const QString& name, bool enabled);
 
             void setFileOut(bool enabled);
             void setFilename(const QString& filename);

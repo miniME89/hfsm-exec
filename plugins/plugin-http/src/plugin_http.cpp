@@ -33,6 +33,7 @@ HTTPCommunicationPlugin::~HTTPCommunicationPlugin()
 bool HTTPCommunicationPlugin::invoke(Value& endpoint, Value& inputParameters, Value& outputParameters)
 {
     outputParameters["/some/test/value"].set(5);
+    logger->info("test");
 
     return true;
 }

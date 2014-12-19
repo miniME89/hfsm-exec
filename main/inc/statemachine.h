@@ -18,6 +18,10 @@
 #ifndef STATEMACHINE_H
 #define STATEMACHINE_H
 
+#define LOGGER_STATEMACHINE "statemachine"
+#define LOGGER_BUILDER "builder"
+
+#include <logger.h>
 #include <value.h>
 
 #include <QEvent>
@@ -36,6 +40,9 @@ namespace hfsmexec
             AbstractEvent(Type type);
 
             virtual QString toString() const = 0;
+
+        protected:
+            static Logger* logger;
     };
 
     class AbstractTransition : public QAbstractTransition
@@ -56,6 +63,7 @@ namespace hfsmexec
             virtual QString toString() const = 0;
 
         protected:
+            static Logger* logger;
             QString transitionId;
             QString sourceStateId;
             QString targetStateId;
@@ -64,7 +72,7 @@ namespace hfsmexec
             StateMachine* stateMachine;
 
             virtual bool eventTest(QEvent* e) = 0;
-            void onTransition(QEvent* e);
+            virtual void onTransition(QEvent* e) = 0;
     };
 
     class AbstractState : public QObject
@@ -92,6 +100,7 @@ namespace hfsmexec
             Value& getOutputParameters();
 
         protected:
+            static Logger* logger;
             QString stateId;
             QString parentStateId;
             StateMachine* stateMachine;
@@ -141,6 +150,7 @@ namespace hfsmexec
             StateMachineBuilder& operator<<(AbstractTransition* transition);
 
         private:
+            static Logger* logger;
             StateMachine* stateMachine;
             QList<AbstractState*> states;
             QList<AbstractTransition*> transitions;

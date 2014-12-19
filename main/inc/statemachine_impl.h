@@ -62,6 +62,7 @@ namespace hfsmexec
 
         protected:
             virtual bool eventTest(QEvent* e);
+            virtual void onTransition(QEvent* e);
 
         private:
             QString eventName;

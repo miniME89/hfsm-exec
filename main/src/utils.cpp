@@ -16,16 +16,15 @@
  */
 
 #include <utils.h>
-#include <logger.h>
 #include <application.h>
-
-#include <easylogging++.h>
 
 using namespace hfsmexec;
 
 /*
  * Downloader
  */
+const Logger* Downloader::logger = Logger::getLogger(LOGGER_UTILS);
+
 Downloader::Downloader() :
     reply(NULL)
 {
@@ -39,7 +38,7 @@ Downloader::~Downloader()
 
 void Downloader::download(const QString& url, bool block)
 {
-    CLOG(INFO, LOG_UTILS) <<"load file " <<url;
+    logger->info(QString("load file %1").arg(url));
 
     QUrl u;
     //remote file
@@ -90,11 +89,11 @@ void Downloader::downloadFinished(QNetworkReply* reply)
 
     if (error != QNetworkReply::NoError)
     {
-        CLOG(WARNING, LOG_UTILS) <<"couldn't load file: " <<reply->errorString();
+        logger->warning(QString("couldn't load file: %1").arg(reply->errorString()));
     }
     else
     {
-        CLOG(INFO, LOG_UTILS) <<"load file finished";
+        logger->info("load file finished");
     }
 
     emit finished(error, errorMessage, data);
