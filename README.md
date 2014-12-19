@@ -52,15 +52,17 @@ A RESTful API using HTTP provides an interface for interacting with the executor
 | DONE    | PUT    | /statemachine/event   | Post an event to the running state machine  |
 | ...     |        |                       |                                             |
 
-### Build
-Execute the following command in the root directory:
-<pre>
-qmake && make
-</pre>
-
 ### Dependencies
 - Qt5
 - CppCMS
+- pugixml
+- jsoncpp
+- yaml-cpp
+
+### Build
+Install the required dependencies on your system and execute the following command in the root directory:
+
+    qmake && make
 
 ### License
 GNU General Public License
