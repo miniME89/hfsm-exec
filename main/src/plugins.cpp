@@ -25,7 +25,7 @@ using namespace hfsmexec;
 /*
  * CommunicationPlugin
  */
-Logger* CommunicationPlugin::logger = Logger::getLogger(LOGGER_PLUGIN);
+const Logger* CommunicationPlugin::logger = Logger::getLogger(LOGGER_PLUGIN);
 
 CommunicationPlugin::CommunicationPlugin(const QString &pluginId) :
     pluginId(pluginId)

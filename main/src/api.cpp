@@ -17,6 +17,7 @@
 
 #include <api.h>
 #include <application.h>
+#include <statemachine_impl.h>
 
 #include <cppcms/http_response.h>
 #include <cppcms/http_request.h>

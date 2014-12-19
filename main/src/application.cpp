@@ -16,6 +16,8 @@
  */
 
 #include <application.h>
+#include <decoder_impl.h>
+#include <statemachine_impl.h>
 #include <utils.h>
 
 #include <signal.h>

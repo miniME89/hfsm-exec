@@ -39,7 +39,7 @@ namespace hfsmexec
             QString getPluginId() const;
 
         protected:
-            static Logger* logger;
+            static const Logger* logger;
             const QString pluginId;
     };
 

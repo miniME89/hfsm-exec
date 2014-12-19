@@ -19,7 +19,6 @@
 #define STATEMACHINE_H
 
 #define LOGGER_STATEMACHINE "statemachine"
-#define LOGGER_BUILDER "builder"
 
 #include <logger.h>
 #include <value.h>
@@ -42,7 +41,7 @@ namespace hfsmexec
             virtual QString toString() const = 0;
 
         protected:
-            static Logger* logger;
+            static const Logger* logger;
     };
 
     class AbstractTransition : public QAbstractTransition
@@ -63,7 +62,7 @@ namespace hfsmexec
             virtual QString toString() const = 0;
 
         protected:
-            static Logger* logger;
+            static const Logger* logger;
             QString transitionId;
             QString sourceStateId;
             QString targetStateId;
@@ -100,7 +99,7 @@ namespace hfsmexec
             Value& getOutputParameters();
 
         protected:
-            static Logger* logger;
+            static const Logger* logger;
             QString stateId;
             QString parentStateId;
             StateMachine* stateMachine;
@@ -131,31 +130,6 @@ namespace hfsmexec
 
         protected:
             QState* delegate;
-    };
-
-    class StateMachineBuilder
-    {
-        public:
-            StateMachineBuilder();
-            ~StateMachineBuilder();
-
-            void addState(StateMachine* stateMachine);
-            void addState(AbstractState* state);
-            void addTransition(AbstractTransition* transition);
-
-            StateMachine* build();
-
-            StateMachineBuilder& operator<<(StateMachine* stateMachine);
-            StateMachineBuilder& operator<<(AbstractState* state);
-            StateMachineBuilder& operator<<(AbstractTransition* transition);
-
-        private:
-            static Logger* logger;
-            StateMachine* stateMachine;
-            QList<AbstractState*> states;
-            QList<AbstractTransition*> transitions;
-
-            AbstractState* getState(const QString& stateId);
     };
 }
 

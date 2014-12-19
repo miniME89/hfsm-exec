@@ -16,6 +16,7 @@ SOURCES += src/main.cpp \
            src/api.cpp \
            src/statemachine.cpp \
            src/statemachine_impl.cpp \
+           src/builder.cpp \
            src/decoder.cpp \
            src/decoder_impl.cpp \
            src/value.cpp \
@@ -27,6 +28,7 @@ HEADERS += inc/logger.h \
            inc/api.h \
            inc/statemachine.h \
            inc/statemachine_impl.h \
+           inc/builder.h \
            inc/decoder.h \
            inc/decoder_impl.h \
            inc/value.h \

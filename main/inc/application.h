@@ -26,13 +26,12 @@
 
 #include <logger.h>
 #include <api.h>
-#include <decoder_impl.h>
-#include <statemachine_impl.h>
+#include <decoder.h>
+#include <statemachine.h>
 #include <plugins.h>
 
 #include <QCoreApplication>
 #include <QCommandLineParser>
-#include <QUrl>
 
 namespace hfsmexec
 {
