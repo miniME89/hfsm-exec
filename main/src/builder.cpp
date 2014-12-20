@@ -187,7 +187,7 @@ StateMachineBuilder& StateMachineBuilder::operator<<(AbstractTransition* transit
 
 AbstractState* StateMachineBuilder::getState(const QString& stateId)
 {
-    if (stateId.isEmpty())
+    if (stateMachine->getId() == stateId)
     {
         return stateMachine;
     }

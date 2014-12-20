@@ -88,8 +88,8 @@ namespace hfsmexec
 
             AbstractState* getParentState() const;
             QList<AbstractTransition*> getTransitions() const;
+            StateMachine* getStateMachine();
             virtual AbstractState* getState(const QString& stateId);
-            virtual StateMachine* getStateMachine();
 
             virtual QAbstractState* getDelegate() const = 0;
             virtual bool initialize() = 0;

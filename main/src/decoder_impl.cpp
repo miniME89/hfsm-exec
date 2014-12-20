@@ -50,14 +50,14 @@ StateMachine* XmlDecoder::decode(const QString& data)
     pugi::xml_node root = doc.first_child();
     if (std::string(root.name()) != "stateMachine")
     {
-        logger->warning(QString("invalid XML encoding: root element needs to be a \"stateMachine\" element"));
+        logger->warning("invalid XML encoding: root element needs to be a \"stateMachine\" element");
 
         return NULL;
     }
 
     //decode state machine recursively
     StateMachineBuilder builder;
-    decodeStateMachine(root, builder);
+    decodeStateMachine(root, builder, NULL);
 
     return builder.build();
 }
@@ -112,7 +112,7 @@ bool XmlDecoder::decodeTransitions(pugi::xml_node& node, StateMachineBuilder& bu
         QString target = transitionElement.attribute("target").value();
         QString event = transitionElement.attribute("event").value();
 
-        logger->info(QString("create NamedTransition: id=%1, source=%2, target=%3, event=%4").arg(id).arg(sourceState->getId()).arg(target).arg(event));
+        logger->info(QString("decode NamedTransition: id=%1, source=%2, target=%3, event=%4").arg(id).arg(sourceState->getId()).arg(target).arg(event));
 
         NamedTransition* transition = new NamedTransition(id, sourceState->getId(), target, event);
         builder <<transition;
@@ -121,16 +121,21 @@ bool XmlDecoder::decodeTransitions(pugi::xml_node& node, StateMachineBuilder& bu
     return true;
 }
 
-bool XmlDecoder::decodeStateMachine(pugi::xml_node& node, StateMachineBuilder& builder)
+bool XmlDecoder::decodeStateMachine(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
-    logger->info("decode stateMachine");
-
+    QString id = node.attribute("id").value();
     QString initial = node.attribute("initial").value();
     pugi::xml_node childs = node.child("childs");
 
-    logger->info(QString("create StateMachine: initial=%1").arg(initial));
+    QString parentStateId = "";
+    if (parentState != NULL)
+    {
+        parentStateId = parentState->getId();
+    }
 
-    StateMachine* stateMachine = new StateMachine(initial);
+    logger->info(QString("decode StateMachine: id=%1, initial=%2, parent=%3").arg(id).arg(initial).arg(parentStateId));
+
+    StateMachine* stateMachine = new StateMachine(id, initial, parentStateId);
     builder <<stateMachine;
 
     if (!decodeChilds(childs, builder, stateMachine))
@@ -143,14 +148,12 @@ bool XmlDecoder::decodeStateMachine(pugi::xml_node& node, StateMachineBuilder& b
 
 bool XmlDecoder::decodeComposite(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
-    logger->info("decode composite");
-
     QString id = node.attribute("id").value();
     QString initial = node.attribute("initial").value();
     pugi::xml_node transitions = node.child("transitions");
     pugi::xml_node childs = node.child("childs");
 
-    logger->info(QString("create CompositeState: id=%1, initial=%2, parent=%3").arg(id).arg(initial).arg(parentState->getId()));
+    logger->info(QString("decode CompositeState: id=%1, initial=%2, parent=%3").arg(id).arg(initial).arg(parentState->getId()));
 
     CompositeState* composite = new CompositeState(id, initial, parentState->getId());
     builder <<composite;
@@ -170,13 +173,11 @@ bool XmlDecoder::decodeComposite(pugi::xml_node& node, StateMachineBuilder& buil
 
 bool XmlDecoder::decodeParallel(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
-    logger->info("decode parallel");
-
     QString id = node.attribute("id").value();
     pugi::xml_node transitions = node.child("transitions");
     pugi::xml_node childs = node.child("childs");
 
-    logger->info(QString("create ParallelState: id=%1, parent=%2").arg(id).arg(parentState->getId()));
+    logger->info(QString("decode ParallelState: id=%1, parent=%2").arg(id).arg(parentState->getId()));
 
     ParallelState* parallel = new ParallelState(id, parentState->getId());
     builder <<parallel;
@@ -196,8 +197,6 @@ bool XmlDecoder::decodeParallel(pugi::xml_node& node, StateMachineBuilder& build
 
 bool XmlDecoder::decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
-    logger->info("decode invoke");
-
     QString id = node.attribute("id").value();
     QString type = node.attribute("type").value();
     pugi::xml_node endpoint = node.child("endpoint");
@@ -210,7 +209,7 @@ bool XmlDecoder::decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder
     Value endpointParameter;
     endpointParameter.fromXml(endPointStr);
 
-    logger->info(QString("create InvokeState: id=%1, type=%2, parent=%3").arg(id).arg(type).arg(parentState->getId()));
+    logger->info(QString("decode InvokeState: id=%1, type=%2, parent=%3").arg(id).arg(type).arg(parentState->getId()));
 
     InvokeState* invoke = new InvokeState(id, type, parentState->getId());
     builder <<invoke;
@@ -225,11 +224,9 @@ bool XmlDecoder::decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder
 
 bool XmlDecoder::decodeFinal(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
-    logger->info("decode final");
-
     QString id = node.attribute("id").value();
 
-    logger->info(QString("create FinalState: id=%1, parent=%2").arg(id).arg(parentState->getId()));
+    logger->info(QString("decode FinalState: id=%1, parent=%2").arg(id).arg(parentState->getId()));
 
     FinalState* composite = new FinalState(id, parentState->getId());
     builder <<composite;

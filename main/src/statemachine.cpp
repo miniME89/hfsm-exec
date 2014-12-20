@@ -140,6 +140,11 @@ QList<AbstractTransition*> AbstractState::getTransitions() const
     return transitions;
 }
 
+StateMachine* AbstractState::getStateMachine()
+{
+    return stateMachine;
+}
+
 AbstractState* AbstractState::getState(const QString& stateId)
 {
     if (this->stateId == stateId)
@@ -148,11 +153,6 @@ AbstractState* AbstractState::getState(const QString& stateId)
     }
 
     return NULL;
-}
-
-StateMachine* AbstractState::getStateMachine()
-{
-    return stateMachine;
 }
 
 Value& AbstractState::getInputParameters()

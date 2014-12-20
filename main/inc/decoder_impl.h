@@ -35,7 +35,7 @@ namespace hfsmexec
         private:
             bool decodeChilds(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
             bool decodeTransitions(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* sourceState);
-            bool decodeStateMachine(pugi::xml_node& node, StateMachineBuilder& builder);
+            bool decodeStateMachine(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
             bool decodeComposite(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
             bool decodeParallel(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
             bool decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);

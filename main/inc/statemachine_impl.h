@@ -183,7 +183,7 @@ namespace hfsmexec
         friend class StateMachineBuilder;
 
         public:
-            StateMachine(const QString& initialId);
+            StateMachine(const QString& stateId, const QString& initialId, const QString& parentStateId = "");
             ~StateMachine();
 
             void start() const;
@@ -191,8 +191,6 @@ namespace hfsmexec
 
             int postDelayedEvent(QEvent* event, int delay);
             void postEvent(QEvent* event, QStateMachine::EventPriority priority = QStateMachine::NormalPriority);
-
-            StateMachine* getStateMachine();
 
             virtual QStateMachine* getDelegate() const;
             virtual bool initialize();

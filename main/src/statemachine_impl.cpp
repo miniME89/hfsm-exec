@@ -365,8 +365,8 @@ QString InvokeState::toString() const
 /*
  * StateMachine
  */
-StateMachine::StateMachine(const QString &initialId) :
-    AbstractComplexState(""),
+StateMachine::StateMachine(const QString& stateId, const QString &initialId, const QString& parentStateId) :
+    AbstractComplexState(stateId, parentStateId),
     delegate(new QStateMachine()),
     initialId(initialId)
 {
@@ -439,11 +439,6 @@ void StateMachine::postEvent(QEvent* event, QStateMachine::EventPriority priorit
     logger->info(QString("%1 post event").arg(toString()));
 
     delegate->postEvent(event, priority);
-}
-
-StateMachine* StateMachine::getStateMachine()
-{
-    return this;
 }
 
 QStateMachine* StateMachine::getDelegate() const
