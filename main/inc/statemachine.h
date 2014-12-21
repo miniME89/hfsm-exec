@@ -85,27 +85,35 @@ namespace hfsmexec
             virtual ~AbstractState();
 
             const QString& getId() const;
+            const QString& getParentStateId() const;
+            const StateMachine* getStateMachine() const;
+
+            Value& getParameters();
+            Value& getInputParameters();
+            Value& getOutputParameters();
 
             AbstractState* getParentState() const;
-            QList<AbstractTransition*> getTransitions() const;
-            StateMachine* getStateMachine();
-            virtual AbstractState* getState(const QString& stateId);
+
+            const QList<AbstractState*>& getChildStates() const;
+            AbstractState* getChildState(const QString& stateId);
+
+            const QList<AbstractTransition*>& getTransitions() const;
+            AbstractTransition* getTransition(const QString& transitionId);
+
+            AbstractState* findState(const QString& stateId);
 
             virtual QAbstractState* getDelegate() const = 0;
             virtual bool initialize() = 0;
             virtual QString toString() const = 0;
-
-            Value& getInputParameters();
-            Value& getOutputParameters();
 
         protected:
             static const Logger* logger;
             QString stateId;
             QString parentStateId;
             StateMachine* stateMachine;
+            Value parameters;
             QList<AbstractTransition*> transitions;
-            Value inputParameters;
-            Value outputParameters;
+            QList<AbstractState*> childStates;
     };
 
     class AbstractComplexState : public AbstractState
@@ -115,9 +123,6 @@ namespace hfsmexec
         public:
             AbstractComplexState(const QString& stateId, const QString& parentStateId = "");
             virtual ~AbstractComplexState();
-
-            const QList<AbstractState*> getChildStates() const;
-            virtual AbstractState* getState(const QString& stateId);
 
             virtual QState* getDelegate() const;
             virtual bool initialize() = 0;

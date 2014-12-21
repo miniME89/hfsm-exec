@@ -204,7 +204,7 @@ bool CompositeState::initialize()
     if (!initialStateId.isEmpty()) //TODO remove
     {
         //set initial state
-        const AbstractState* initialState = getState(initialStateId);
+        const AbstractState* initialState = findState(initialStateId);
         if (initialState == NULL)
         {
             logger->warning(QString("%1 initialization failed: couldn't find initial state \"%2\"").arg(toString()).arg(initialStateId));
@@ -263,6 +263,8 @@ InvokeState::InvokeState(const QString& stateId, const QString& type, const QStr
     stateInvoke->addTransition(transitionFinal);
 
     delegate->setInitialState(stateInvoke);
+
+    parameters["endpoint"] = Object();
 }
 
 InvokeState::~InvokeState()
@@ -270,37 +272,17 @@ InvokeState::~InvokeState()
 
 }
 
-const Value& InvokeState::getEndpoint() const
+Value& InvokeState::getEndpoint()
 {
-    return endpoint;
+    return parameters["endpoint"];
 }
 
-void InvokeState::setEndpoint(const Value& value)
+void InvokeState::setEndpoint(Value& value)
 {
-    endpoint = value;
+    parameters["endpoint"] = value;
 }
 
-const Value& InvokeState::getInputParameters() const
-{
-    return inputParameters;
-}
-
-void InvokeState::setInputParameters(const Value& value)
-{
-    inputParameters = value;
-}
-
-const Value& InvokeState::getOutputParameters() const
-{
-    return outputParameters;
-}
-
-void InvokeState::setOutputParameters(const Value& value)
-{
-    outputParameters = value;
-}
-
-CommunicationPlugin* InvokeState::getCommunicationPlugin() const
+CommunicationPlugin* InvokeState::getCommunicationPlugin()
 {
     return communicationPlugin;
 }
@@ -335,13 +317,13 @@ void InvokeState::eventEntered()
     }
 
     QString json;
-    inputParameters.toJson(json);
+    parameters["input"].toJson(json);
     logger->info(json);
 
-    communicationPlugin->invoke(endpoint, inputParameters, outputParameters);
+    communicationPlugin->invoke(parameters["endpoint"], parameters["input"], parameters["output"]);
 
     QString json2;
-    outputParameters.toJson(json2);
+    parameters["output"].toJson(json2);
     logger->info(json2);
 
     done(); //TODO temporary
@@ -451,7 +433,7 @@ bool StateMachine::initialize()
     logger->info(QString("%1 initialize").arg(toString()));
 
     //set initial state
-    const AbstractState* initialState = getState(initialId);
+    const AbstractState* initialState = findState(initialId);
     if (initialState == NULL)
     {
         logger->warning(QString("%1 initialization failed: couldn't find initial state \"%2\"").arg(toString()).arg(initialId));

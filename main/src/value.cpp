@@ -326,15 +326,64 @@ void ArbitraryValue::destroy()
  */
 const Logger* Value::logger = Logger::getLogger(LOGGER_VALUE);
 
-Value::Value()
+Value::Value() :
+    value(new ArbitraryValue())
 {
     null();
 }
 
-Value::Value(const Value& value) :
-    value(value.value)
+Value::Value(const Boolean& value) :
+    value(new ArbitraryValue())
 {
+    *this = value;
+}
 
+Value::Value(const Integer& value) :
+    value(new ArbitraryValue())
+{
+    *this = value;
+}
+
+Value::Value(const Float& value) :
+    value(new ArbitraryValue())
+{
+    *this = value;
+}
+
+Value::Value(const char* value) :
+    value(new ArbitraryValue())
+{
+    *this = value;
+}
+
+Value::Value(const String& value) :
+    value(new ArbitraryValue())
+{
+    *this = value;
+}
+
+Value::Value(const Array& value) :
+    value(new ArbitraryValue())
+{
+    *this = value;
+}
+
+Value::Value(const Object& value) :
+    value(new ArbitraryValue())
+{
+    *this = value;
+}
+
+Value::Value(const Value& value) :
+    value(new ArbitraryValue())
+{
+    *this = value;
+}
+
+Value::Value(const Value* value) :
+    value(new ArbitraryValue())
+{
+    *this = value;
 }
 
 template<typename T>
@@ -345,7 +394,7 @@ Value::Value(const T& value)
 
 Value::~Value()
 {
-
+    delete value;
 }
 
 bool Value::isUndefined() const
@@ -503,17 +552,17 @@ void Value::set(const Object& value)
 
 void Value::undefined()
 {
-    value.set<Undefined>(Undefined());
+    value->set<Undefined>(Undefined());
 }
 
 void Value::null()
 {
-    value.set<Null>(Null());
+    value->set<Null>(Null());
 }
 
 const ArbitraryValueType& Value::getType() const
 {
-    return value.getType();
+    return value->getType();
 }
 
 bool Value::toXml(QString& xml) const
@@ -629,15 +678,72 @@ bool Value::fromYaml(const QString& yaml)
     }
     catch (YAML::Exception e)
     {
-        logger->warning( QString("couldn't set value container from yaml: %1").arg(e.msg.c_str()));
+        logger->warning(QString("couldn't set value container from yaml: %1").arg(e.msg.c_str()));
     }
 
     return false;
 }
 
+const Value& Value::operator=(const Boolean& value)
+{
+    set(value);
+
+    return *this;
+}
+
+const Value& Value::operator=(const Integer& value)
+{
+    set(value);
+
+    return *this;
+}
+
+const Value& Value::operator=(const Float& value)
+{
+    set(value);
+
+    return *this;
+}
+
+const Value& Value::operator=(const char* value)
+{
+    set(value);
+
+    return *this;
+}
+
+const Value& Value::operator=(const String& value)
+{
+    set(value);
+
+    return *this;
+}
+
+const Value& Value::operator=(const Array& value)
+{
+    set(value);
+
+    return *this;
+}
+
+const Value& Value::operator=(const Object& value)
+{
+    set(value);
+
+    return *this;
+}
+
 const Value& Value::operator=(const Value& other)
 {
-    this->value.set(other.value);
+    this->value->set(*other.value);
+
+    return *this;
+}
+
+const Value &Value::operator=(const Value* other)
+{
+    delete this->value;
+    this->value = other->value;
 
     return *this;
 }
@@ -661,7 +767,7 @@ Value& Value::operator[](const QString& path)
             value->set(Object());
         }
 
-        Object& object = value->value.get<Object>();
+        Object& object = value->value->get<Object>();
         Object::iterator it = object.find(name.toStdString().c_str());
         //value does not exist
         if (it == object.end())
@@ -693,7 +799,7 @@ const Value& Value::operator[](const QString& path) const
             throw ArbitraryValueException("value ist not of type object");
         }
 
-        const Object& object = value->value.get<Object>();
+        const Object& object = value->value->get<Object>();
         Object::const_iterator it = object.find(name.toStdString().c_str());
         //value does not exist
         if (it == object.end())
@@ -718,7 +824,7 @@ Value& Value::operator[](int i)
         set(Array());
     }
 
-    Array& array = value.get<Array>();
+    Array& array = value->get<Array>();
     for (int j = array.size() - i - 1; j < 0; j++)
     {
         array.append(Null());
@@ -734,7 +840,7 @@ const Value& Value::operator[](int i) const
         throw ArbitraryValueException("value ist not of type array");
     }
 
-    const Array& array = value.get<Array>();
+    const Array& array = value->get<Array>();
     if (i >= array.size())
     {
         throw ArbitraryValueException("index out of bound");
@@ -748,7 +854,7 @@ bool Value::getValue(T& value, T defaultValue) const
 {
     try
     {
-        value = this->value.get<T>();
+        value = this->value->get<T>();
 
         return true;
     }
@@ -764,7 +870,7 @@ bool Value::getValue(T& value, T defaultValue) const
 template<typename T>
 void Value::setValue(const T& value)
 {
-    this->value.set<T>(value);
+    this->value->set<T>(value);
 }
 
 bool Value::buildToXml(const Value* value, void* data) const

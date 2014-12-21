@@ -118,6 +118,9 @@ AbstractState::AbstractState(const QString& stateId, const QString& parentStateI
     stateMachine(NULL)
 {
     setObjectName("AbstractState");
+
+    parameters["input"] = Object();
+    parameters["output"] = Object();
 }
 
 AbstractState::~AbstractState()
@@ -130,39 +133,90 @@ const QString& AbstractState::getId() const
     return stateId;
 }
 
+const QString& AbstractState::getParentStateId() const
+{
+    return parentStateId;
+}
+
+const StateMachine* AbstractState::getStateMachine() const
+{
+    return stateMachine;
+}
+
+Value& AbstractState::getParameters()
+{
+    return parameters;
+}
+
+Value& AbstractState::getInputParameters()
+{
+    return parameters["input"];
+}
+
+Value& AbstractState::getOutputParameters()
+{
+    return parameters["output"];
+}
+
 AbstractState* AbstractState::getParentState() const
 {
     return qobject_cast<AbstractState*>(parent());
 }
 
-QList<AbstractTransition*> AbstractState::getTransitions() const
+const QList<AbstractState*>& AbstractState::getChildStates() const
+{
+    return childStates;
+}
+
+AbstractState* AbstractState::getChildState(const QString& stateId)
+{
+    for (int i = 0; i < childStates.size(); i++)
+    {
+        if (childStates[i]->getId() == stateId)
+        {
+            return childStates[i];
+        }
+    }
+
+    return NULL;
+}
+
+const QList<AbstractTransition*>& AbstractState::getTransitions() const
 {
     return transitions;
 }
 
-StateMachine* AbstractState::getStateMachine()
+AbstractTransition* AbstractState::getTransition(const QString& transitionId)
 {
-    return stateMachine;
+    for (int i = 0; i < transitions.size(); i++)
+    {
+        if (transitions[i]->getId() == transitionId)
+        {
+            return transitions[i];
+        }
+    }
+
+    return NULL;
 }
 
-AbstractState* AbstractState::getState(const QString& stateId)
+AbstractState* AbstractState::findState(const QString& stateId)
 {
     if (this->stateId == stateId)
     {
         return this;
     }
 
+    //find state recursively
+    for (int i = 0; i < childStates.size(); i++)
+    {
+        AbstractState* state = childStates[i]->findState(stateId);
+        if (state != NULL)
+        {
+            return state;
+        }
+    }
+
     return NULL;
-}
-
-Value& AbstractState::getInputParameters()
-{
-    return inputParameters;
-}
-
-Value& AbstractState::getOutputParameters()
-{
-    return outputParameters;
 }
 
 /*
@@ -181,39 +235,6 @@ AbstractComplexState::AbstractComplexState(const QString &stateId, const QString
 AbstractComplexState::~AbstractComplexState()
 {
 
-}
-
-const QList<AbstractState*> AbstractComplexState::getChildStates() const
-{
-    QList<AbstractState*> childsCast;
-    QObjectList childs = children();
-    for (int i = 0; i < childs.size(); i++)
-    {
-        childsCast.append(qobject_cast<AbstractState*>(childs[i]));
-    }
-
-    return childsCast;
-}
-
-AbstractState* AbstractComplexState::getState(const QString& stateId)
-{
-    if (this->stateId == stateId)
-    {
-        return this;
-    }
-
-    //find state recursively
-    QList<AbstractState*> states = getChildStates();
-    for (int i = 0; i < states.size(); i++)
-    {
-        AbstractState* state = states[i]->getState(stateId);
-        if (state != NULL)
-        {
-            return state;
-        }
-    }
-
-    return NULL;
 }
 
 QState* AbstractComplexState::getDelegate() const

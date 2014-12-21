@@ -116,14 +116,16 @@ namespace hfsmexec
     class Value
     {
         public:
-            enum XmlFormat
-            {
-                NAME_TAG,
-                PARAMETER_TAG
-            };
-
             Value();
+            Value(const Boolean& value);
+            Value(const Integer& value);
+            Value(const Float& value);
+            Value(const char* value);
+            Value(const String& value);
+            Value(const Array& value);
+            Value(const Object& value);
             Value(const Value& value);
+            Value(const Value* value);
             template<typename T>
             Value(const T& value);
             ~Value();
@@ -172,8 +174,18 @@ namespace hfsmexec
             bool fromJson(const QString& json);
             bool fromYaml(const QString& yaml);
 
+            const Value& operator=(const Boolean& value);
+            const Value& operator=(const Integer& value);
+            const Value& operator=(const Float& value);
+            const Value& operator=(const char* value);
+            const Value& operator=(const String& value);
+            const Value& operator=(const Array& value);
+            const Value& operator=(const Object& value);
             const Value& operator=(const Value& other);
+            const Value& operator=(const Value* other);
+
             bool operator==(const Value& other) const;
+
             Value& operator[](const QString& path);
             const Value& operator[](const QString& path) const;
             Value& operator[](int i);
@@ -181,7 +193,7 @@ namespace hfsmexec
 
         private:
             static const Logger* logger;
-            ArbitraryValue value;
+            ArbitraryValue* value;
 
             template <typename T>
             bool getValue(T& value, T defaultValue) const;

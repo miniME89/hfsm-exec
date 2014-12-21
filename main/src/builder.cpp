@@ -90,6 +90,7 @@ StateMachine* StateMachineBuilder::build()
 
         //link state
         logger->info(QString("link child state \"%1\" with parent state \"%2\"").arg(state->getId()).arg(parentState->getId()));
+        parentState->childStates.append(state);
         state->stateMachine = stateMachine;
         state->setParent(parentState);
         state->getDelegate()->setParent(parentState->getDelegate());
