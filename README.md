@@ -35,7 +35,6 @@
 
 ### Project Structure
 - doc/ - Documentation
-- ext/ - External dependencies source code which will be build along with the main program
 - main/ - The source code of the main program
 - plugins/ - Implementations of communication plugins
 
@@ -60,9 +59,12 @@ A RESTful API using HTTP provides an interface for interacting with the executor
 - yaml-cpp
 
 ### Build
-Install the required dependencies on your system and execute the following command in the root directory:
+Install the required dependencies on your system and execute the following commands in the root directory:
 
-    qmake && make
+    mkdir build
+    cd build
+    cmake ..
+    make
 
 ### License
 GNU General Public License
