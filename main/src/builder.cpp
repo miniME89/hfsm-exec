@@ -62,6 +62,11 @@ void StateMachineBuilder::addTransition(AbstractTransition* transition)
     transitions.append(transition);
 }
 
+void StateMachineBuilder::addDataflow(Dataflow* dataflow)
+{
+    dataflows.append(dataflow);
+}
+
 StateMachine* StateMachineBuilder::build()
 {
     if (stateMachine == NULL)
@@ -94,6 +99,40 @@ StateMachine* StateMachineBuilder::build()
         state->stateMachine = stateMachine;
         state->setParent(parentState);
         state->getDelegate()->setParent(parentState->getDelegate());
+    }
+
+    //link dataflows
+    for (int i = 0; i < dataflows.size(); i++)
+    {
+        Dataflow* dataflow = dataflows[i];
+
+        //find source state
+        AbstractState* sourceState = getState(dataflow->getSourceStateId());
+        if (sourceState == NULL)
+        {
+            logger->warning(QString("initialization failed: couldn't find dataflow source state \"%1\"").arg(dataflow->getSourceStateId()));
+
+            return NULL;
+        }
+
+        //find target state
+        AbstractState* targetState = getState(dataflow->getTargetStateId());
+        if (targetState == NULL)
+        {
+            logger->warning(QString("initialization failed: couldn't find dataflow target state \"%1\"").arg(dataflow->getTargetStateId()));
+
+            return NULL;
+        }
+
+        Value sourceParameters;
+        sourceParameters["input"] = &sourceState->getInputParameters();
+        sourceParameters["output"] = &sourceState->getOutputParameters();
+
+        Value targetParameters;
+        targetParameters["input"] = &targetState->getInputParameters();
+        targetParameters["output"] = &targetState->getOutputParameters();
+
+        targetParameters[dataflow->getTo()] = &sourceParameters[dataflow->getFrom()];
     }
 
     //initialize state machine
@@ -182,6 +221,13 @@ StateMachineBuilder& StateMachineBuilder::operator<<(AbstractState* state)
 StateMachineBuilder& StateMachineBuilder::operator<<(AbstractTransition* transition)
 {
     addTransition(transition);
+
+    return *this;
+}
+
+StateMachineBuilder& StateMachineBuilder::operator<<(Dataflow* dataflow)
+{
+    addDataflow(dataflow);
 
     return *this;
 }

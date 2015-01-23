@@ -53,8 +53,8 @@ namespace hfsmexec
             virtual ~AbstractTransition();
 
             const QString& getId() const;
-            AbstractState* getSourceState() const;
-            AbstractState* getTargetState() const;
+            AbstractState* getSourceState();
+            AbstractState* getTargetState();
             StateMachine* getStateMachine();
 
             bool initialize();
@@ -74,6 +74,37 @@ namespace hfsmexec
             virtual void onTransition(QEvent* e) = 0;
     };
 
+    class Dataflow
+    {
+        friend class StateMachineBuilder;
+
+        public:
+            Dataflow(const QString& sourceStateId, const QString& targetStateId, const QString& from, const QString& to);
+            ~Dataflow();
+
+            const QString& getSourceStateId() const;
+            const QString& getTargetStateId() const;
+            const QString& getFrom() const;
+            const QString& getTo() const;
+
+            AbstractState* getSourceState();
+            AbstractState* getTargetState();
+            Value& getFromParameter();
+            Value& getToParameter();
+
+            QString toString() const;
+
+        private:
+            QString sourceStateId;
+            QString targetStateId;
+            QString from;
+            QString to;
+            AbstractState* sourceState;
+            AbstractState* targetState;
+            Value fromParameter;
+            Value toParameter;
+    };
+
     class AbstractState : public QObject
     {
         Q_OBJECT
@@ -88,11 +119,14 @@ namespace hfsmexec
             const QString& getParentStateId() const;
             const StateMachine* getStateMachine() const;
 
-            Value& getParameters();
             Value& getInputParameters();
+            void setInputParameters(const Value& value);
             Value& getOutputParameters();
+            void setOutputParameters(const Value& value);
 
-            AbstractState* getParentState() const;
+            const QList<Dataflow>& getDataflows() const;
+
+            AbstractState* getParentState();
 
             const QList<AbstractState*>& getChildStates() const;
             AbstractState* getChildState(const QString& stateId);
@@ -111,7 +145,9 @@ namespace hfsmexec
             QString stateId;
             QString parentStateId;
             StateMachine* stateMachine;
-            Value parameters;
+            Value inputParameters;
+            Value outputParameters;
+            QList<Dataflow> dataflows;
             QList<AbstractTransition*> transitions;
             QList<AbstractState*> childStates;
     };

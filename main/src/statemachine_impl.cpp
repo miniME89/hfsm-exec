@@ -264,7 +264,7 @@ InvokeState::InvokeState(const QString& stateId, const QString& type, const QStr
 
     delegate->setInitialState(stateInvoke);
 
-    parameters["endpoint"] = Object();
+    endpoint = Object();
 }
 
 InvokeState::~InvokeState()
@@ -274,12 +274,12 @@ InvokeState::~InvokeState()
 
 Value& InvokeState::getEndpoint()
 {
-    return parameters["endpoint"];
+    return endpoint;
 }
 
 void InvokeState::setEndpoint(Value& value)
 {
-    parameters["endpoint"] = value;
+    endpoint = value;
 }
 
 CommunicationPlugin* InvokeState::getCommunicationPlugin()
@@ -316,14 +316,19 @@ void InvokeState::eventEntered()
         return;
     }
 
+    Value all;
+    all["input"] = &inputParameters;
+    all["output"] = &outputParameters;
+    all["endpoint"] = &endpoint;
+
     QString json;
-    parameters["input"].toJson(json);
+    all.toJson(json);
     logger->info(json);
 
-    communicationPlugin->invoke(parameters["endpoint"], parameters["input"], parameters["output"]);
+    communicationPlugin->invoke(endpoint, inputParameters, outputParameters);
 
     QString json2;
-    parameters["output"].toJson(json2);
+    all.toJson(json2);
     logger->info(json2);
 
     done(); //TODO temporary

@@ -165,6 +165,7 @@ namespace hfsmexec
         private:
             QString type;
             CommunicationPlugin* communicationPlugin;
+            Value endpoint;
     };
 
     class StateMachine : public AbstractComplexState

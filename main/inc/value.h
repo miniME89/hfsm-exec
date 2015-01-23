@@ -28,6 +28,8 @@
 
 #include <exception>
 
+#include <QMutex>
+
 namespace hfsmexec
 {
     class Value;
@@ -91,7 +93,13 @@ namespace hfsmexec
 
             bool operator==(ArbitraryValue const& other) const;
 
+            void incReference();
+            void decReference();
+
         private:
+            int refCounter;
+            QMutex mutexRefCounter;
+
             ArbitraryValueType type;
 
             union DataUnion

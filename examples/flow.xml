@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<stateMachine id="stateMachine" initial="p1">
+    <input/>
+    <output/>
+    <transitions/>
+    <childs>
+        <parallel id="p1">
+            <transitions>
+                <transition event="done.p1" target="i3" />
+            </transitions>
+            <childs>
+                <invoke id="i1" type="HTTP">
+                    <endpoint>
+                        <parameter name="url" type="String"></parameter>
+                        <parameter name="port" type="Integer"></parameter>
+                        <parameter name="method" type="String"></parameter>
+                    </endpoint>
+                    <input/>
+                    <output>
+                        <parameter name="velocity" type="Float"></parameter>
+                        <parameter name="acceleration" type="Float">1234</parameter>
+                    </output>
+                    <transitions/>
+                    <childs/>
+                </invoke>
+                <invoke id="i2" type="HTTP">
+                    <endpoint>
+                        <parameter name="url" type="String"></parameter>
+                        <parameter name="port" type="Integer"></parameter>
+                        <parameter name="method" type="String"></parameter>
+                    </endpoint>
+                    <input/>
+                    <output>
+                        <parameter name="frame" type="String">testframe</parameter>
+                        <parameter name="pose" type="Array"></parameter>
+                    </output>
+                    <transitions/>
+                    <childs/>
+                </invoke>
+            </childs>
+        </parallel>
+        <invoke id="i3" type="HTTP">
+            <endpoint>
+                <parameter name="url" type="String"></parameter>
+                <parameter name="port" type="Integer"></parameter>
+                <parameter name="method" type="String"></parameter>
+            </endpoint>
+            <input>
+                <parameter name="frame" type="String"></parameter>
+                <parameter name="velocity" type="Float"></parameter>
+                <parameter name="acceleration" type="Float"></parameter>
+                <parameter name="pose" type="Array"></parameter>
+            </input>
+            <output/>
+            <dataflows>
+                <dataflow source="i1" from="output/velocity" to="input/velocity"/>
+                <dataflow source="i1" from="output/acceleration" to="input/acceleration"/>
+                <dataflow source="i2" from="output/frame" to="input/frame"/>
+                <dataflow source="i2" from="output/pose" to="input/pose"/>
+            </dataflows>
+            <transitions>
+                <transition event="done.i3" target="f1" />
+            </transitions>
+        </invoke>
+        <final id="f1" />
+    </childs>
+</stateMachine>

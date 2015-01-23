@@ -105,19 +105,22 @@ const char* ArbitraryValueException::what() const throw()
 /*
  * ArbitraryValue
  */
-ArbitraryValue::ArbitraryValue()
+ArbitraryValue::ArbitraryValue() :
+    refCounter(1)
 {
     create(TYPE_UNDEFINED);
 }
 
 
-ArbitraryValue::ArbitraryValue(ArbitraryValue const &other)
+ArbitraryValue::ArbitraryValue(ArbitraryValue const &other) :
+    refCounter(1)
 {
     create(other.type, other.data);
 }
 
 template<typename T>
-ArbitraryValue::ArbitraryValue(T const &v)
+ArbitraryValue::ArbitraryValue(T const &v) :
+    refCounter(1)
 {
     create<T>(v);
 }
@@ -219,6 +222,25 @@ bool ArbitraryValue::operator==(ArbitraryValue const& other) const
             return get<Array>() == other.get<Array>();
         default:
             return true;
+    }
+}
+
+void ArbitraryValue::incReference()
+{
+    mutexRefCounter.lock();
+    refCounter++;
+    mutexRefCounter.unlock();
+}
+
+void ArbitraryValue::decReference()
+{
+    mutexRefCounter.lock();
+    refCounter--;
+    mutexRefCounter.unlock();
+
+    if (refCounter <= 0)
+    {
+        delete this;
     }
 }
 
@@ -394,7 +416,7 @@ Value::Value(const T& value)
 
 Value::~Value()
 {
-    delete value;
+    value->decReference();
 }
 
 bool Value::isUndefined() const
@@ -568,8 +590,7 @@ const ArbitraryValueType& Value::getType() const
 bool Value::toXml(QString& xml) const
 {
     pugi::xml_document doc;
-    pugi::xml_node root = doc.append_child("value");
-    if (!buildToXml(this, &root))
+    if (!buildToXml(this, &doc))
     {
         logger->warning("couldn't build xml from value container");
 
@@ -740,10 +761,11 @@ const Value& Value::operator=(const Value& other)
     return *this;
 }
 
-const Value &Value::operator=(const Value* other)
+const Value& Value::operator=(const Value* other)
 {
-    delete this->value;
-    this->value = other->value;
+    value->decReference();
+    value = other->value;
+    value->incReference();
 
     return *this;
 }
@@ -1080,36 +1102,28 @@ bool Value::buildToYaml(const Value* value, void* data) const
 bool Value::buildFromXml(Value* value, void* data)
 {
     pugi::xml_node* xmlValue = static_cast<pugi::xml_node*>(data);
+    pugi::xml_attribute typeAttribute = xmlValue->attribute("type");
     pugi::xml_text textContent = xmlValue->text();
-    if (textContent)
-    {
-        std::string text = textContent.get();
 
-        if (text.empty())
-        {
-            value->null();
-        }
-        else if (text == "true" || text == "false")
-        {
-            value->set(textContent.as_bool());
-        }
-        else if (strtod(text.c_str(), NULL) != 0.0 || text == "0" || text == "0.0")
-        {
-            if (text.find_first_of(".") == std::string::npos)
-            {
-                value->set(textContent.as_int());
-            }
-            else
-            {
-                value->set(textContent.as_double());
-            }
-        }
-        else
-        {
-            value->set(text.c_str());
-        }
+    QString type = typeAttribute.value();
+
+    if (type == "Boolean")
+    {
+        value->set(textContent.as_bool());
     }
-    else if (xmlValue->child("item"))   //TODO object or array?
+    else if (type == "Integer")
+    {
+        value->set(textContent.as_int());
+    }
+    else if (type == "Float")
+    {
+        value->set(textContent.as_double());
+    }
+    else if (type == "String")
+    {
+        value->set(textContent.as_string());
+    }
+    else if (type == "Array")
     {
         Array array;
         for (pugi::xml_node_iterator i = xmlValue->begin(); i != xmlValue->end(); i++)
@@ -1134,7 +1148,15 @@ bool Value::buildFromXml(Value* value, void* data)
                 return false;
             }
 
-            object.insert(i->name(), v);
+            pugi::xml_attribute nameAttribute = i->attribute("name");
+            QString key = i->name();
+
+            if (!nameAttribute.empty())
+            {
+                key = nameAttribute.value();
+            }
+
+            object.insert(key, v);
         }
         value->set(object);
     }

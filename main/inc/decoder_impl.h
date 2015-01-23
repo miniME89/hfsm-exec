@@ -34,12 +34,15 @@ namespace hfsmexec
 
         private:
             bool decodeChilds(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
-            bool decodeTransitions(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* sourceState);
-            bool decodeStateMachine(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
-            bool decodeComposite(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
-            bool decodeParallel(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
-            bool decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
-            bool decodeFinal(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
+            bool decodeTransitions(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* state);
+            bool decodeInput(pugi::xml_node& node, AbstractState* state);
+            bool decodeOutput(pugi::xml_node& node, AbstractState* state);
+            bool decodeDataflows(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* state);
+            AbstractState* decodeStateMachine(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
+            AbstractState* decodeComposite(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
+            AbstractState* decodeParallel(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
+            AbstractState* decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
+            AbstractState* decodeFinal(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState);
     };
 
     class JsonDecoder : public AbstractDecoder

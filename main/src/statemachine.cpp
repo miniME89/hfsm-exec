@@ -57,12 +57,12 @@ const QString& AbstractTransition::getId() const
     return transitionId;
 }
 
-AbstractState* AbstractTransition::getSourceState() const
+AbstractState* AbstractTransition::getSourceState()
 {
     return sourceState;
 }
 
-AbstractState *AbstractTransition::getTargetState() const
+AbstractState *AbstractTransition::getTargetState()
 {
     return targetState;
 }
@@ -108,6 +108,67 @@ bool AbstractTransition::initialize()
 }
 
 /*
+ * Dataflow
+ */
+Dataflow::Dataflow(const QString& sourceStateId, const QString& targetStateId, const QString& from, const QString& to)
+{
+    this->sourceStateId = sourceStateId;
+    this->targetStateId = targetStateId;
+    this->from = from;
+    this->to = to;
+}
+
+Dataflow::~Dataflow()
+{
+
+}
+
+const QString& Dataflow::getSourceStateId() const
+{
+    return sourceStateId;
+}
+
+const QString& Dataflow::getTargetStateId() const
+{
+    return targetStateId;
+}
+
+const QString& Dataflow::getFrom() const
+{
+    return from;
+}
+
+const QString& Dataflow::getTo() const
+{
+    return to;
+}
+
+AbstractState* Dataflow::getSourceState()
+{
+    return sourceState;
+}
+
+AbstractState* Dataflow::getTargetState()
+{
+    return targetState;
+}
+
+Value& Dataflow::getFromParameter()
+{
+    return fromParameter;
+}
+
+Value& Dataflow::getToParameter()
+{
+    return toParameter;
+}
+
+QString Dataflow::toString() const
+{
+    return QString("[Dataflow: sourceStateId=%1, targetStateId=%1, from=%3, to%4]").arg(sourceStateId).arg(targetStateId).arg(from).arg(to);
+}
+
+/*
  * AbstractState
  */
 const Logger* AbstractState::logger = Logger::getLogger(LOGGER_STATEMACHINE);
@@ -119,8 +180,8 @@ AbstractState::AbstractState(const QString& stateId, const QString& parentStateI
 {
     setObjectName("AbstractState");
 
-    parameters["input"] = Object();
-    parameters["output"] = Object();
+    inputParameters = Object();
+    outputParameters = Object();
 }
 
 AbstractState::~AbstractState()
@@ -143,22 +204,32 @@ const StateMachine* AbstractState::getStateMachine() const
     return stateMachine;
 }
 
-Value& AbstractState::getParameters()
-{
-    return parameters;
-}
-
 Value& AbstractState::getInputParameters()
 {
-    return parameters["input"];
+    return inputParameters;
+}
+
+void AbstractState::setInputParameters(const Value& value)
+{
+    inputParameters = value;
 }
 
 Value& AbstractState::getOutputParameters()
 {
-    return parameters["output"];
+    return outputParameters;
 }
 
-AbstractState* AbstractState::getParentState() const
+void AbstractState::setOutputParameters(const Value& value)
+{
+    outputParameters = value;
+}
+
+const QList<Dataflow>& AbstractState::getDataflows() const
+{
+    return dataflows;
+}
+
+AbstractState* AbstractState::getParentState()
 {
     return qobject_cast<AbstractState*>(parent());
 }
