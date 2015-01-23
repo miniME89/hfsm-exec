@@ -153,12 +153,12 @@ AbstractState* Dataflow::getTargetState()
     return targetState;
 }
 
-Value& Dataflow::getFromParameter()
+Parameter& Dataflow::getFromParameter()
 {
     return fromParameter;
 }
 
-Value& Dataflow::getToParameter()
+Parameter& Dataflow::getToParameter()
 {
     return toParameter;
 }
@@ -204,27 +204,27 @@ const StateMachine* AbstractState::getStateMachine() const
     return stateMachine;
 }
 
-Value& AbstractState::getInputParameters()
+Parameter& AbstractState::getInputParameters()
 {
     return inputParameters;
 }
 
-void AbstractState::setInputParameters(const Value& value)
+void AbstractState::setInputParameters(const Parameter& value)
 {
     inputParameters = value;
 }
 
-Value& AbstractState::getOutputParameters()
+Parameter& AbstractState::getOutputParameters()
 {
     return outputParameters;
 }
 
-void AbstractState::setOutputParameters(const Value& value)
+void AbstractState::setOutputParameters(const Parameter& value)
 {
     outputParameters = value;
 }
 
-const QList<Dataflow>& AbstractState::getDataflows() const
+const QList<Dataflow*> &AbstractState::getDataflows() const
 {
     return dataflows;
 }

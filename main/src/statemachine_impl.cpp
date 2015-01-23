@@ -272,12 +272,12 @@ InvokeState::~InvokeState()
 
 }
 
-Value& InvokeState::getEndpoint()
+Parameter& InvokeState::getEndpoint()
 {
     return endpoint;
 }
 
-void InvokeState::setEndpoint(Value& value)
+void InvokeState::setEndpoint(Parameter& value)
 {
     endpoint = value;
 }
@@ -316,7 +316,7 @@ void InvokeState::eventEntered()
         return;
     }
 
-    Value all;
+    Parameter all;
     all["input"] = &inputParameters;
     all["output"] = &outputParameters;
     all["endpoint"] = &endpoint;

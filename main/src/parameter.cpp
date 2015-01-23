@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <value.h>
+#include <parameter.h>
 
 #include <QTextStream>
 #include <QStringList>
@@ -32,165 +32,165 @@ struct ArbitraryValueTypeContainer;
 template<>
 struct ArbitraryValueTypeContainer<Undefined>
 {
-    static const ArbitraryValueType type = TYPE_UNDEFINED;
+    static const ValueType type = TYPE_UNDEFINED;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Null>
 {
-    static const ArbitraryValueType type = TYPE_NULL;
+    static const ValueType type = TYPE_NULL;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Boolean>
 {
-    static const ArbitraryValueType type = TYPE_BOOLEAN;
+    static const ValueType type = TYPE_BOOLEAN;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Integer>
 {
-    static const ArbitraryValueType type = TYPE_INTEGER;
+    static const ValueType type = TYPE_INTEGER;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Float>
 {
-    static const ArbitraryValueType type = TYPE_FLOAT;
+    static const ValueType type = TYPE_FLOAT;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<String>
 {
-    static const ArbitraryValueType type = TYPE_STRING;
+    static const ValueType type = TYPE_STRING;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Array>
 {
-    static const ArbitraryValueType type = TYPE_ARRAY;
+    static const ValueType type = TYPE_ARRAY;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Object>
 {
-    static const ArbitraryValueType type = TYPE_OBJECT;
+    static const ValueType type = TYPE_OBJECT;
 };
 
 /*
- * ArbitraryValueException
+ * ValueException
  */
-ArbitraryValueException::ArbitraryValueException() :
-    message("ArbitraryValueException")
+ValueException::ValueException() :
+    message("ValueException")
 {
 
 }
 
-ArbitraryValueException::ArbitraryValueException(const QString& message):
+ValueException::ValueException(const QString& message):
     message(message)
 {
 
 }
 
-ArbitraryValueException::~ArbitraryValueException() throw()
+ValueException::~ValueException() throw()
 {
 
 }
 
-const char* ArbitraryValueException::what() const throw()
+const char* ValueException::what() const throw()
 {
     return message.toStdString().c_str();
 }
 
 /*
- * ArbitraryValue
+ * Value
  */
-ArbitraryValue::ArbitraryValue() :
+Value::Value() :
     refCounter(1)
 {
     create(TYPE_UNDEFINED);
 }
 
 
-ArbitraryValue::ArbitraryValue(ArbitraryValue const &other) :
+Value::Value(Value const &other) :
     refCounter(1)
 {
     create(other.type, other.data);
 }
 
 template<typename T>
-ArbitraryValue::ArbitraryValue(T const &v) :
+Value::Value(T const &v) :
     refCounter(1)
 {
     create<T>(v);
 }
 
-ArbitraryValue::~ArbitraryValue()
+Value::~Value()
 {
     destroy();
 }
 
-const ArbitraryValueType& ArbitraryValue::getType() const
+const ValueType& Value::getType() const
 {
     return type;
 }
 
-void* ArbitraryValue::ptr()
+void* Value::ptr()
 {
     return static_cast<void*>(&data);
 }
 
-void const* ArbitraryValue::ptr() const
+void const* Value::ptr() const
 {
     return static_cast<void const*>(&data);
 }
 
 template<typename T>
-T& ArbitraryValue::get()
+T& Value::get()
 {
-    ArbitraryValueType expected = ArbitraryValueTypeContainer<T>::type;
+    ValueType expected = ArbitraryValueTypeContainer<T>::type;
     if(expected != type)
     {
-        throw ArbitraryValueException("invalid type");
+        throw ValueException("invalid type");
     }
 
     switch(type)
     {
         case TYPE_UNDEFINED:
         case TYPE_NULL:
-            throw ArbitraryValueException("non-fetchable type");
+            throw ValueException("non-fetchable type");
         default:
             return *static_cast<T*>(ptr());
     }
 }
 
 template<typename T>
-T const& ArbitraryValue::get() const
+T const& Value::get() const
 {
-    ArbitraryValueType expected = ArbitraryValueTypeContainer<T>::type;
+    ValueType expected = ArbitraryValueTypeContainer<T>::type;
     if(expected != type)
     {
-        throw ArbitraryValueException("invalid type");
+        throw ValueException("invalid type");
     }
 
     switch(type)
     {
         case TYPE_UNDEFINED:
         case TYPE_NULL:
-            throw ArbitraryValueException("non-fetchable type");
+            throw ValueException("non-fetchable type");
         default:
             return *static_cast<T const*>(ptr());
     }
 }
 
 template<typename T>
-void ArbitraryValue::set(T const& other)
+void Value::set(T const& other)
 {
     destroy();
     create<T>(other);
 }
 
-void ArbitraryValue::set(ArbitraryValue const& other)
+void Value::set(Value const& other)
 {
     if(this != &other)
     {
@@ -199,7 +199,7 @@ void ArbitraryValue::set(ArbitraryValue const& other)
     }
 }
 
-bool ArbitraryValue::operator==(ArbitraryValue const& other) const
+bool Value::operator==(Value const& other) const
 {
     if(type != other.type)
     {
@@ -225,14 +225,14 @@ bool ArbitraryValue::operator==(ArbitraryValue const& other) const
     }
 }
 
-void ArbitraryValue::incReference()
+void Value::incReference()
 {
     mutexRefCounter.lock();
     refCounter++;
     mutexRefCounter.unlock();
 }
 
-void ArbitraryValue::decReference()
+void Value::decReference()
 {
     mutexRefCounter.lock();
     refCounter--;
@@ -245,7 +245,7 @@ void ArbitraryValue::decReference()
 }
 
 template<typename T>
-void ArbitraryValue::create(T const &v)
+void Value::create(T const &v)
 {
     void* p = ptr();
     type = ArbitraryValueTypeContainer<T>::type;
@@ -270,7 +270,7 @@ void ArbitraryValue::create(T const &v)
     }
 }
 
-void ArbitraryValue::create(ArbitraryValueType t)
+void Value::create(ValueType t)
 {
     type = t;
     memset(ptr(), 0, sizeof(data));
@@ -294,7 +294,7 @@ void ArbitraryValue::create(ArbitraryValueType t)
     }
 }
 
-void ArbitraryValue::create(ArbitraryValueType t, DataUnion const& other)
+void Value::create(ValueType t, DataUnion const& other)
 {
     void* p = &data;
     type = t;
@@ -319,7 +319,7 @@ void ArbitraryValue::create(ArbitraryValueType t, DataUnion const& other)
     }
 }
 
-void ArbitraryValue::destroy()
+void Value::destroy()
 {
     switch(type)
     {
@@ -344,122 +344,122 @@ void ArbitraryValue::destroy()
 }
 
 /*
- * Value
+ * Parameter
  */
-const Logger* Value::logger = Logger::getLogger(LOGGER_VALUE);
+const Logger* Parameter::logger = Logger::getLogger(LOGGER_VALUE);
 
-Value::Value() :
-    value(new ArbitraryValue())
+Parameter::Parameter() :
+    value(new Value())
 {
     null();
 }
 
-Value::Value(const Boolean& value) :
-    value(new ArbitraryValue())
+Parameter::Parameter(const Boolean& value) :
+    value(new Value())
 {
     *this = value;
 }
 
-Value::Value(const Integer& value) :
-    value(new ArbitraryValue())
+Parameter::Parameter(const Integer& value) :
+    value(new Value())
 {
     *this = value;
 }
 
-Value::Value(const Float& value) :
-    value(new ArbitraryValue())
+Parameter::Parameter(const Float& value) :
+    value(new Value())
 {
     *this = value;
 }
 
-Value::Value(const char* value) :
-    value(new ArbitraryValue())
+Parameter::Parameter(const char* value) :
+    value(new Value())
 {
     *this = value;
 }
 
-Value::Value(const String& value) :
-    value(new ArbitraryValue())
+Parameter::Parameter(const String& value) :
+    value(new Value())
 {
     *this = value;
 }
 
-Value::Value(const Array& value) :
-    value(new ArbitraryValue())
+Parameter::Parameter(const Array& value) :
+    value(new Value())
 {
     *this = value;
 }
 
-Value::Value(const Object& value) :
-    value(new ArbitraryValue())
+Parameter::Parameter(const Object& value) :
+    value(new Value())
 {
     *this = value;
 }
 
-Value::Value(const Value& value) :
-    value(new ArbitraryValue())
+Parameter::Parameter(const Parameter& value) :
+    value(new Value())
 {
     *this = value;
 }
 
-Value::Value(const Value* value) :
-    value(new ArbitraryValue())
+Parameter::Parameter(const Parameter* value) :
+    value(new Value())
 {
     *this = value;
 }
 
 template<typename T>
-Value::Value(const T& value)
+Parameter::Parameter(const T& value)
 {
     setValue<T>(value);
 }
 
-Value::~Value()
+Parameter::~Parameter()
 {
     value->decReference();
 }
 
-bool Value::isUndefined() const
+bool Parameter::isUndefined() const
 {
     return getType() == TYPE_UNDEFINED;
 }
 
-bool Value::isNull() const
+bool Parameter::isNull() const
 {
     return getType() == TYPE_NULL;
 }
 
-bool Value::isBoolean() const
+bool Parameter::isBoolean() const
 {
     return getType() == TYPE_BOOLEAN;
 }
 
-bool Value::isInteger() const
+bool Parameter::isInteger() const
 {
     return getType() == TYPE_INTEGER;
 }
 
-bool Value::isFloat() const
+bool Parameter::isFloat() const
 {
     return getType() == TYPE_FLOAT;
 }
 
-bool Value::isString() const
+bool Parameter::isString() const
 {
     return getType() == TYPE_STRING;
 }
 
-bool Value::isArray() const
+bool Parameter::isArray() const
 {
     return getType() == TYPE_ARRAY;
 }
 
-bool Value::isObject() const
+bool Parameter::isObject() const
 {
     return getType() == TYPE_OBJECT;
 }
 
-Boolean Value::getBoolean(Boolean defaultValue) const
+Boolean Parameter::getBoolean(Boolean defaultValue) const
 {
     Boolean value;
     get(value, defaultValue);
@@ -467,7 +467,7 @@ Boolean Value::getBoolean(Boolean defaultValue) const
     return value;
 }
 
-Integer Value::getInteger(Integer defaultValue) const
+Integer Parameter::getInteger(Integer defaultValue) const
 {
     Integer value;
     get(value, defaultValue);
@@ -475,7 +475,7 @@ Integer Value::getInteger(Integer defaultValue) const
     return value;
 }
 
-Float Value::getFloat(Float defaultValue) const
+Float Parameter::getFloat(Float defaultValue) const
 {
     Float value;
     get(value, defaultValue);
@@ -483,7 +483,7 @@ Float Value::getFloat(Float defaultValue) const
     return value;
 }
 
-String Value::getString(String defaultValue) const
+String Parameter::getString(String defaultValue) const
 {
     String value;
     get(value, defaultValue);
@@ -491,7 +491,7 @@ String Value::getString(String defaultValue) const
     return value;
 }
 
-Array Value::getArray(Array defaultValue) const
+Array Parameter::getArray(Array defaultValue) const
 {
     Array value;
     get(value, defaultValue);
@@ -499,7 +499,7 @@ Array Value::getArray(Array defaultValue) const
     return value;
 }
 
-Object Value::getObject(Object defaultValue) const
+Object Parameter::getObject(Object defaultValue) const
 {
     Object value;
     get(value, defaultValue);
@@ -507,87 +507,87 @@ Object Value::getObject(Object defaultValue) const
     return value;
 }
 
-bool Value::get(Boolean& value, Boolean defaultValue) const
+bool Parameter::get(Boolean& value, Boolean defaultValue) const
 {
     return getValue<Boolean>(value, defaultValue);
 }
 
-bool Value::get(Integer& value, Integer defaultValue) const
+bool Parameter::get(Integer& value, Integer defaultValue) const
 {
     return getValue<Integer>(value, defaultValue);
 }
 
-bool Value::get(Float& value, Float defaultValue) const
+bool Parameter::get(Float& value, Float defaultValue) const
 {
     return getValue<Float>(value, defaultValue);
 }
 
-bool Value::get(String& value, String defaultValue) const
+bool Parameter::get(String& value, String defaultValue) const
 {
     return getValue<String>(value, defaultValue);
 }
 
-bool Value::get(Array& value, Array defaultValue) const
+bool Parameter::get(Array& value, Array defaultValue) const
 {
     return getValue<Array>(value, defaultValue);
 }
 
-bool Value::get(Object& value, Object defaultValue) const
+bool Parameter::get(Object& value, Object defaultValue) const
 {
     return getValue<Object>(value, defaultValue);
 }
 
-void Value::set(const Boolean& value)
+void Parameter::set(const Boolean& value)
 {
     setValue<Boolean>(value);
 }
 
-void Value::set(const Integer& value)
+void Parameter::set(const Integer& value)
 {
     setValue<Integer>(value);
 }
 
-void Value::set(const Float& value)
+void Parameter::set(const Float& value)
 {
     setValue<Float>(value);
 }
 
-void Value::set(const char* value)
+void Parameter::set(const char* value)
 {
     set(String(value));
 }
 
-void Value::set(const String& value)
+void Parameter::set(const String& value)
 {
     setValue<String>(value);
 }
 
-void Value::set(const Array& value)
+void Parameter::set(const Array& value)
 {
     setValue<Array>(value);
 }
 
-void Value::set(const Object& value)
+void Parameter::set(const Object& value)
 {
     setValue<Object>(value);
 }
 
-void Value::undefined()
+void Parameter::undefined()
 {
     value->set<Undefined>(Undefined());
 }
 
-void Value::null()
+void Parameter::null()
 {
     value->set<Null>(Null());
 }
 
-const ArbitraryValueType& Value::getType() const
+const ValueType& Parameter::getType() const
 {
     return value->getType();
 }
 
-bool Value::toXml(QString& xml) const
+bool Parameter::toXml(QString& xml) const
 {
     pugi::xml_document doc;
     if (!buildToXml(this, &doc))
@@ -606,7 +606,7 @@ bool Value::toXml(QString& xml) const
     return true;
 }
 
-bool Value::toJson(QString& json) const
+bool Parameter::toJson(QString& json) const
 {
     Json::Value root;
     if (!buildToJson(this, &root))
@@ -622,7 +622,7 @@ bool Value::toJson(QString& json) const
     return true;
 }
 
-bool Value::toYaml(QString& yaml) const
+bool Parameter::toYaml(QString& yaml) const
 {
     YAML::Node root;
     if (!buildToYaml(this, &root))
@@ -639,7 +639,7 @@ bool Value::toYaml(QString& yaml) const
     return true;
 }
 
-bool Value::fromXml(const QString& xml)
+bool Parameter::fromXml(const QString& xml)
 {
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_buffer(xml.toStdString().c_str(), xml.size());
@@ -661,7 +661,7 @@ bool Value::fromXml(const QString& xml)
     return true;
 }
 
-bool Value::fromJson(const QString& json)
+bool Parameter::fromJson(const QString& json)
 {
     Json::Value root;
     Json::Reader reader;
@@ -682,7 +682,7 @@ bool Value::fromJson(const QString& json)
     return true;
 }
 
-bool Value::fromYaml(const QString& yaml)
+bool Parameter::fromYaml(const QString& yaml)
 {
     try
     {
@@ -705,63 +705,63 @@ bool Value::fromYaml(const QString& yaml)
     return false;
 }
 
-const Value& Value::operator=(const Boolean& value)
+const Parameter& Parameter::operator=(const Boolean& value)
 {
     set(value);
 
     return *this;
 }
 
-const Value& Value::operator=(const Integer& value)
+const Parameter& Parameter::operator=(const Integer& value)
 {
     set(value);
 
     return *this;
 }
 
-const Value& Value::operator=(const Float& value)
+const Parameter& Parameter::operator=(const Float& value)
 {
     set(value);
 
     return *this;
 }
 
-const Value& Value::operator=(const char* value)
+const Parameter& Parameter::operator=(const char* value)
 {
     set(value);
 
     return *this;
 }
 
-const Value& Value::operator=(const String& value)
+const Parameter& Parameter::operator=(const String& value)
 {
     set(value);
 
     return *this;
 }
 
-const Value& Value::operator=(const Array& value)
+const Parameter& Parameter::operator=(const Array& value)
 {
     set(value);
 
     return *this;
 }
 
-const Value& Value::operator=(const Object& value)
+const Parameter& Parameter::operator=(const Object& value)
 {
     set(value);
 
     return *this;
 }
 
-const Value& Value::operator=(const Value& other)
+const Parameter& Parameter::operator=(const Parameter& other)
 {
     this->value->set(*other.value);
 
     return *this;
 }
 
-const Value& Value::operator=(const Value* other)
+const Parameter& Parameter::operator=(const Parameter* other)
 {
     value->decReference();
     value = other->value;
@@ -770,16 +770,16 @@ const Value& Value::operator=(const Value* other)
     return *this;
 }
 
-bool Value::operator==(const Value& other) const
+bool Parameter::operator==(const Parameter& other) const
 {
     return value == other.value;
 }
 
-Value& Value::operator[](const QString& path)
+Parameter& Parameter::operator[](const QString& path)
 {
     QStringList splitPath = path.trimmed().split("/", QString::SkipEmptyParts);
 
-    Value* value = this;
+    Parameter* value = this;
     for (int i = 0; i < splitPath.size(); i++)
     {
         QString name = splitPath[i];
@@ -794,7 +794,7 @@ Value& Value::operator[](const QString& path)
         //value does not exist
         if (it == object.end())
         {
-            value = &object.insert(name.toStdString().c_str(), Value()).value();
+            value = &object.insert(name.toStdString().c_str(), Parameter()).value();
             value->null();
         }
         //value already exist
@@ -807,18 +807,18 @@ Value& Value::operator[](const QString& path)
     return *value;
 }
 
-const Value& Value::operator[](const QString& path) const
+const Parameter& Parameter::operator[](const QString& path) const
 {
     QStringList splitPath = path.trimmed().split("/", QString::SkipEmptyParts);
 
-    const Value* value = this;
+    const Parameter* value = this;
     for (int i = 0; i < splitPath.size(); i++)
     {
         QString name = splitPath[i];
 
         if (value->getType() != TYPE_OBJECT)
         {
-            throw ArbitraryValueException("value ist not of type object");
+            throw ValueException("value ist not of type object");
         }
 
         const Object& object = value->value->get<Object>();
@@ -826,7 +826,7 @@ const Value& Value::operator[](const QString& path) const
         //value does not exist
         if (it == object.end())
         {
-            throw ArbitraryValueException("member " + name + " not found");
+            throw ValueException("member " + name + " not found");
         }
         //value already exist
         else
@@ -839,7 +839,7 @@ const Value& Value::operator[](const QString& path) const
 }
 
 
-Value& Value::operator[](int i)
+Parameter& Parameter::operator[](int i)
 {
     if (getType() != TYPE_ARRAY)
     {
@@ -855,24 +855,24 @@ Value& Value::operator[](int i)
     return array[i];
 }
 
-const Value& Value::operator[](int i) const
+const Parameter& Parameter::operator[](int i) const
 {
     if (getType() != TYPE_ARRAY)
     {
-        throw ArbitraryValueException("value ist not of type array");
+        throw ValueException("value ist not of type array");
     }
 
     const Array& array = value->get<Array>();
     if (i >= array.size())
     {
-        throw ArbitraryValueException("index out of bound");
+        throw ValueException("index out of bound");
     }
 
     return array[i];
 }
 
 template<typename T>
-bool Value::getValue(T& value, T defaultValue) const
+bool Parameter::getValue(T& value, T defaultValue) const
 {
     try
     {
@@ -880,7 +880,7 @@ bool Value::getValue(T& value, T defaultValue) const
 
         return true;
     }
-    catch (ArbitraryValueException e)
+    catch (ValueException e)
     {
     }
 
@@ -890,12 +890,12 @@ bool Value::getValue(T& value, T defaultValue) const
 }
 
 template<typename T>
-void Value::setValue(const T& value)
+void Parameter::setValue(const T& value)
 {
     this->value->set<T>(value);
 }
 
-bool Value::buildToXml(const Value* value, void* data) const
+bool Parameter::buildToXml(const Parameter* value, void* data) const
 {
     pugi::xml_node* xmlValue = static_cast<pugi::xml_node*>(data);
 
@@ -961,7 +961,7 @@ bool Value::buildToXml(const Value* value, void* data) const
     return true;
 }
 
-bool Value::buildToJson(const Value* value, void* data) const
+bool Parameter::buildToJson(const Parameter* value, void* data) const
 {
     Json::Value* jsonValue = static_cast<Json::Value*>(data);
 
@@ -1031,7 +1031,7 @@ bool Value::buildToJson(const Value* value, void* data) const
     return true;
 }
 
-bool Value::buildToYaml(const Value* value, void* data) const
+bool Parameter::buildToYaml(const Parameter* value, void* data) const
 {
     YAML::Node* yamlValue = static_cast<YAML::Node*>(data);
 
@@ -1099,7 +1099,7 @@ bool Value::buildToYaml(const Value* value, void* data) const
     return true;
 }
 
-bool Value::buildFromXml(Value* value, void* data)
+bool Parameter::buildFromXml(Parameter* value, void* data)
 {
     pugi::xml_node* xmlValue = static_cast<pugi::xml_node*>(data);
     pugi::xml_attribute typeAttribute = xmlValue->attribute("type");
@@ -1128,7 +1128,7 @@ bool Value::buildFromXml(Value* value, void* data)
         Array array;
         for (pugi::xml_node_iterator i = xmlValue->begin(); i != xmlValue->end(); i++)
         {
-            Value v;
+            Parameter v;
             if (!buildFromXml(&v, &i))
             {
                 return false;
@@ -1142,7 +1142,7 @@ bool Value::buildFromXml(Value* value, void* data)
         Object object;
         for (pugi::xml_node_iterator i = xmlValue->begin(); i != xmlValue->end(); i++)
         {
-            Value v;
+            Parameter v;
             if (!buildFromXml(&v, &i))
             {
                 return false;
@@ -1164,7 +1164,7 @@ bool Value::buildFromXml(Value* value, void* data)
     return true;
 }
 
-bool Value::buildFromJson(Value* value, void* data)
+bool Parameter::buildFromJson(Parameter* value, void* data)
 {
     Json::Value* jsonValue = static_cast<Json::Value*>(data);
 
@@ -1193,7 +1193,7 @@ bool Value::buildFromJson(Value* value, void* data)
         Array array;
         for (unsigned int i = 0; i < jsonValue->size(); i++)
         {
-            Value v;
+            Parameter v;
             if (!buildFromJson(&v, &jsonValue[i]))
             {
                 return false;
@@ -1207,7 +1207,7 @@ bool Value::buildFromJson(Value* value, void* data)
         Object object;
         for (Json::ValueIterator i = jsonValue->begin(); i != jsonValue->end(); i++)
         {
-            Value v;
+            Parameter v;
             if (!buildFromJson(&v, &*i))
             {
                 return false;
@@ -1220,7 +1220,7 @@ bool Value::buildFromJson(Value* value, void* data)
     return true;
 }
 
-bool Value::buildFromYaml(Value* value, void* data)
+bool Parameter::buildFromYaml(Parameter* value, void* data)
 {
     YAML::Node* yamlValue = static_cast<YAML::Node*>(data);
 
@@ -1259,7 +1259,7 @@ bool Value::buildFromYaml(Value* value, void* data)
         Array array;
         for (unsigned int i = 0; i < yamlValue->size(); i++)
         {
-            Value v;
+            Parameter v;
             YAML::Node n = (*yamlValue)[i];
             if (!buildFromYaml(&v, &n))
             {
@@ -1274,7 +1274,7 @@ bool Value::buildFromYaml(Value* value, void* data)
         Object object;
         for (YAML::iterator i = yamlValue->begin(); i != yamlValue->end(); i++)
         {
-            Value v;
+            Parameter v;
             if (!buildFromYaml(&v, &i->second))
             {
                 return false;

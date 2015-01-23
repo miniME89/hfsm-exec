@@ -146,8 +146,8 @@ namespace hfsmexec
             InvokeState(const QString& stateId, const QString& type, const QString& parentStateId = "");
             virtual ~InvokeState();
 
-            Value& getEndpoint();
-            void setEndpoint(Value& value);
+            Parameter& getEndpoint();
+            void setEndpoint(Parameter& value);
 
             CommunicationPlugin* getCommunicationPlugin();
             void setCommunicationPlugin(CommunicationPlugin* value);
@@ -165,7 +165,7 @@ namespace hfsmexec
         private:
             QString type;
             CommunicationPlugin* communicationPlugin;
-            Value endpoint;
+            Parameter endpoint;
     };
 
     class StateMachine : public AbstractComplexState

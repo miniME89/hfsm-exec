@@ -21,7 +21,7 @@
 #define LOGGER_PLUGIN "plugins"
 
 #include <logger.h>
-#include <value.h>
+#include <parameter.h>
 
 #include <QList>
 #include <QtPlugin>
@@ -33,7 +33,7 @@ namespace hfsmexec
         public:
             CommunicationPlugin(const QString& pluginId);
             virtual ~CommunicationPlugin();
-            virtual bool invoke(Value& endpoint, Value& inputParameters, Value& outputParameters) = 0;
+            virtual bool invoke(Parameter& endpoint, Parameter& inputParameters, Parameter& outputParameters) = 0;
             virtual bool cancel() = 0;
 
             QString getPluginId() const;

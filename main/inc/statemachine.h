@@ -21,7 +21,7 @@
 #define LOGGER_STATEMACHINE "statemachine"
 
 #include <logger.h>
-#include <value.h>
+#include <parameter.h>
 
 #include <QEvent>
 #include <QAbstractTransition>
@@ -89,8 +89,8 @@ namespace hfsmexec
 
             AbstractState* getSourceState();
             AbstractState* getTargetState();
-            Value& getFromParameter();
-            Value& getToParameter();
+            Parameter& getFromParameter();
+            Parameter& getToParameter();
 
             QString toString() const;
 
@@ -101,8 +101,8 @@ namespace hfsmexec
             QString to;
             AbstractState* sourceState;
             AbstractState* targetState;
-            Value fromParameter;
-            Value toParameter;
+            Parameter fromParameter;
+            Parameter toParameter;
     };
 
     class AbstractState : public QObject
@@ -119,12 +119,12 @@ namespace hfsmexec
             const QString& getParentStateId() const;
             const StateMachine* getStateMachine() const;
 
-            Value& getInputParameters();
-            void setInputParameters(const Value& value);
-            Value& getOutputParameters();
-            void setOutputParameters(const Value& value);
+            Parameter& getInputParameters();
+            void setInputParameters(const Parameter& value);
+            Parameter& getOutputParameters();
+            void setOutputParameters(const Parameter& value);
 
-            const QList<Dataflow>& getDataflows() const;
+            const QList<Dataflow*>& getDataflows() const;
 
             AbstractState* getParentState();
 
@@ -145,9 +145,9 @@ namespace hfsmexec
             QString stateId;
             QString parentStateId;
             StateMachine* stateMachine;
-            Value inputParameters;
-            Value outputParameters;
-            QList<Dataflow> dataflows;
+            Parameter inputParameters;
+            Parameter outputParameters;
+            QList<Dataflow*> dataflows;
             QList<AbstractTransition*> transitions;
             QList<AbstractState*> childStates;
     };

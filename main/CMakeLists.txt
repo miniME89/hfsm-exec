@@ -25,7 +25,7 @@ set(SOURCES src/logger.cpp
             src/builder.cpp
             src/decoder.cpp
             src/decoder_impl.cpp
-            src/value.cpp
+            src/parameter.cpp
             src/plugins.cpp
             src/utils.cpp)
 
@@ -37,7 +37,7 @@ set(HEADERS inc/logger.h
             inc/builder.h
             inc/decoder.h
             inc/decoder_impl.h
-            inc/value.h
+            inc/parameter.h
             inc/plugins.h
             inc/utils.h)
 

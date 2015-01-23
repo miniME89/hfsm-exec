@@ -17,7 +17,7 @@
 
 #include <decoder_impl.h>
 #include <statemachine_impl.h>
-#include <value.h>
+#include <parameter.h>
 
 #include <QTextStream>
 
@@ -163,7 +163,7 @@ bool XmlDecoder::decodeInput(pugi::xml_node& node, AbstractState* state)
     node.print(stream);
     QString nodeStr = stream.str().c_str();
 
-    Value parameters;
+    Parameter parameters;
     if (!parameters.fromXml(nodeStr))
     {
         return false;
@@ -182,7 +182,7 @@ bool XmlDecoder::decodeOutput(pugi::xml_node& node, AbstractState* state)
     node.print(stream);
     QString nodeStr = stream.str().c_str();
 
-    Value parameters;
+    Parameter parameters;
     if (!parameters.fromXml(nodeStr))
     {
         return false;
@@ -266,7 +266,7 @@ AbstractState* XmlDecoder::decodeInvoke(pugi::xml_node& node, StateMachineBuilde
     endpoint.print(stream);
     QString endPointStr = stream.str().c_str();
 
-    Value endpointParameter;
+    Parameter endpointParameter;
     endpointParameter.fromXml(endPointStr);
 
     logger->info(QString("decode InvokeState: id=%1, type=%2, parent=%3").arg(id).arg(type).arg(parentState->getId()));

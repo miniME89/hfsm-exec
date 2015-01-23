@@ -32,7 +32,7 @@
 
 namespace hfsmexec
 {
-    class Value;
+    class Parameter;
 
     typedef enum
     {
@@ -44,7 +44,7 @@ namespace hfsmexec
         TYPE_STRING,
         TYPE_ARRAY,
         TYPE_OBJECT
-    } ArbitraryValueType;
+    } ValueType;
 
     struct Undefined {};
     struct Null {};
@@ -52,15 +52,15 @@ namespace hfsmexec
     typedef int Integer;
     typedef double Float;
     typedef QString String;
-    typedef QList<Value> Array;
-    typedef QMap<String, Value> Object;
+    typedef QList<Parameter> Array;
+    typedef QMap<String, Parameter> Object;
 
-    class ArbitraryValueException : public std::exception
+    class ValueException : public std::exception
     {
         public:
-            ArbitraryValueException();
-            ArbitraryValueException(QString const& message);
-            virtual ~ArbitraryValueException() throw();
+            ValueException();
+            ValueException(QString const& message);
+            virtual ~ValueException() throw();
 
             virtual const char* what() const throw();
 
@@ -68,16 +68,16 @@ namespace hfsmexec
             QString message;
     };
 
-    class ArbitraryValue
+    class Value
     {
         public:
-            ArbitraryValue();
-            ArbitraryValue(ArbitraryValue const &other);
+            Value();
+            Value(Value const &other);
             template<typename T>
-            ArbitraryValue(T const &v);
-            ~ArbitraryValue();
+            Value(T const &v);
+            ~Value();
 
-            const ArbitraryValueType& getType() const;
+            const ValueType& getType() const;
 
             void* ptr();
             void const* ptr() const;
@@ -89,9 +89,9 @@ namespace hfsmexec
 
             template<typename T>
             void set(T const& other);
-            void set(ArbitraryValue const& other);
+            void set(Value const& other);
 
-            bool operator==(ArbitraryValue const& other) const;
+            bool operator==(Value const& other) const;
 
             void incReference();
             void decReference();
@@ -100,7 +100,7 @@ namespace hfsmexec
             int refCounter;
             QMutex mutexRefCounter;
 
-            ArbitraryValueType type;
+            ValueType type;
 
             union DataUnion
             {
@@ -115,28 +115,28 @@ namespace hfsmexec
 
             template<typename T>
             void create(T const &v);
-            void create(ArbitraryValueType t);
-            void create(ArbitraryValueType t, DataUnion const& other);
+            void create(ValueType t);
+            void create(ValueType t, DataUnion const& other);
 
             void destroy();
     };
 
-    class Value
+    class Parameter
     {
         public:
-            Value();
-            Value(const Boolean& value);
-            Value(const Integer& value);
-            Value(const Float& value);
-            Value(const char* value);
-            Value(const String& value);
-            Value(const Array& value);
-            Value(const Object& value);
-            Value(const Value& value);
-            Value(const Value* value);
+            Parameter();
+            Parameter(const Boolean& value);
+            Parameter(const Integer& value);
+            Parameter(const Float& value);
+            Parameter(const char* value);
+            Parameter(const String& value);
+            Parameter(const Array& value);
+            Parameter(const Object& value);
+            Parameter(const Parameter& value);
+            Parameter(const Parameter* value);
             template<typename T>
-            Value(const T& value);
-            ~Value();
+            Parameter(const T& value);
+            ~Parameter();
 
             bool isUndefined() const;
             bool isNull() const;
@@ -172,7 +172,7 @@ namespace hfsmexec
             void undefined();
             void null();
 
-            const ArbitraryValueType& getType() const;
+            const ValueType& getType() const;
 
             bool toXml(QString& xml) const;
             bool toJson(QString& json) const;
@@ -182,26 +182,26 @@ namespace hfsmexec
             bool fromJson(const QString& json);
             bool fromYaml(const QString& yaml);
 
-            const Value& operator=(const Boolean& value);
-            const Value& operator=(const Integer& value);
-            const Value& operator=(const Float& value);
-            const Value& operator=(const char* value);
-            const Value& operator=(const String& value);
-            const Value& operator=(const Array& value);
-            const Value& operator=(const Object& value);
-            const Value& operator=(const Value& other);
-            const Value& operator=(const Value* other);
+            const Parameter& operator=(const Boolean& value);
+            const Parameter& operator=(const Integer& value);
+            const Parameter& operator=(const Float& value);
+            const Parameter& operator=(const char* value);
+            const Parameter& operator=(const String& value);
+            const Parameter& operator=(const Array& value);
+            const Parameter& operator=(const Object& value);
+            const Parameter& operator=(const Parameter& other);
+            const Parameter& operator=(const Parameter* other);
 
-            bool operator==(const Value& other) const;
+            bool operator==(const Parameter& other) const;
 
-            Value& operator[](const QString& path);
-            const Value& operator[](const QString& path) const;
-            Value& operator[](int i);
-            const Value& operator[](int i) const;
+            Parameter& operator[](const QString& path);
+            const Parameter& operator[](const QString& path) const;
+            Parameter& operator[](int i);
+            const Parameter& operator[](int i) const;
 
         private:
             static const Logger* logger;
-            ArbitraryValue* value;
+            Value* value;
 
             template <typename T>
             bool getValue(T& value, T defaultValue) const;
@@ -209,13 +209,13 @@ namespace hfsmexec
             template <typename T>
             void setValue(const T& value);
 
-            bool buildToXml(const Value* value, void* data) const;
-            bool buildToJson(const Value* value, void* data) const;
-            bool buildToYaml(const Value* value, void* data) const;
+            bool buildToXml(const Parameter* value, void* data) const;
+            bool buildToJson(const Parameter* value, void* data) const;
+            bool buildToYaml(const Parameter* value, void* data) const;
 
-            bool buildFromXml(Value* value, void* data);
-            bool buildFromJson(Value* value, void* data);
-            bool buildFromYaml(Value* value, void* data);
+            bool buildFromXml(Parameter* value, void* data);
+            bool buildFromJson(Parameter* value, void* data);
+            bool buildFromYaml(Parameter* value, void* data);
     };
 }
 

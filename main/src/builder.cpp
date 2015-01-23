@@ -124,15 +124,17 @@ StateMachine* StateMachineBuilder::build()
             return NULL;
         }
 
-        Value sourceParameters;
+        Parameter sourceParameters;
         sourceParameters["input"] = &sourceState->getInputParameters();
         sourceParameters["output"] = &sourceState->getOutputParameters();
 
-        Value targetParameters;
+        Parameter targetParameters;
         targetParameters["input"] = &targetState->getInputParameters();
         targetParameters["output"] = &targetState->getOutputParameters();
 
         targetParameters[dataflow->getTo()] = &sourceParameters[dataflow->getFrom()];
+
+        sourceState->dataflows.append(dataflow);
     }
 
     //initialize state machine
