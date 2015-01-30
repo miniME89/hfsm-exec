@@ -19,28 +19,27 @@
 #include <application.h>
 #include <statemachine_impl.h>
 
-#include <cppcms/http_response.h>
-#include <cppcms/http_request.h>
-#include <cppcms/http_context.h>
-#include <cppcms/url_dispatcher.h>
-#include <cppcms/url_mapper.h>
-
-#include <QtConcurrent/QtConcurrentRun>
+#include <jsoncpp/json/json.h>
 
 using namespace hfsmexec;
-
-static cppcms::service* serviceHandle = NULL;
 
 /*
  * Api
  */
 const Logger* Api::logger = Logger::getLogger(LOGGER_API);
 
-Api::Api(cppcms::service &srv) :
-    cppcms::application(srv)
+Api::Api()
 {
-    dispatcher().assign("/statemachine/event", &Api::handlerEvent, this);
-    mapper().assign("events", "/statemachine/event");
+    server.setHandler(std::bind(&Api::httpHandler, this, std::placeholders::_1, std::placeholders::_2));
+
+    assign("/log", "GET", std::bind(&Api::log, this, std::placeholders::_1, std::placeholders::_2));
+    assign("/statemachine/load", "POST", std::bind(&Api::statemachineLoad, this, std::placeholders::_1, std::placeholders::_2));
+    assign("/statemachine/unload", "POST", std::bind(&Api::statemachineUnload, this, std::placeholders::_1, std::placeholders::_2));
+    assign("/statemachine/start", "POST", std::bind(&Api::statemachineStart, this, std::placeholders::_1, std::placeholders::_2));
+    assign("/statemachine/stop", "POST", std::bind(&Api::statemachineStop, this, std::placeholders::_1, std::placeholders::_2));
+    assign("/statemachine/event", "POST", std::bind(&Api::statemachineEvent, this, std::placeholders::_1, std::placeholders::_2));
+
+    Logger::registerListener("api", std::bind(&Api::logListener, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 Api::~Api()
@@ -48,90 +47,109 @@ Api::~Api()
 
 }
 
-void Api::handlerEvent()
-{
-    if (request().request_method() == "PUT")
-    {
-        //parse JSON
-        cppcms::json::value event;
-        std::istringstream stream(content());
-        if (!event.load(stream, true))
-        {
-            response().out() <<"invalid JSON";
-
-            return;
-        }
-
-        //validate structure
-        if (event.type() != cppcms::json::is_object)
-        {
-            response().out() <<"invalid event structure";
-
-            return;
-        }
-
-        if (event["name"].type() != cppcms::json::is_string)
-        {
-            response().out() <<"invalid event structure";
-
-            return;
-        }
-
-        NamedEvent* namedEvent = new NamedEvent(event["name"].str().c_str());
-        Application::getInstance()->postEvent(namedEvent);
-    }
-    else
-    {
-        response().make_error_response(403);
-    }
-}
-
-void Api::main(std::string url)
-{
-    logger->info(QString("request: %1").arg(url.c_str()));
-
-    cppcms::application::main(url);
-}
-
-void Api::worker()
-{
-    logger->info("start http server");
-
-    try
-    {
-        cppcms::json::value config;
-        config["service"]["api"] = "http";
-        config["service"]["port"] = 8080;
-        config["service"]["disable_global_exit_handling"] = true;
-
-        serviceHandle = new cppcms::service(config);
-        serviceHandle->applications_pool().mount(cppcms::applications_factory<Api>());
-        serviceHandle->run();
-    }
-    catch(std::exception const& e)
-    {
-        logger->fatal(e.what());
-    }
-
-    logger->info("stopped http server");
-}
-
-std::string Api::content()
-{
-    std::pair<void*, size_t> body = request().raw_post_data();
-
-    return std::string((const char *)body.first, body.second);
-}
-
 void Api::exec()
 {
-    QtConcurrent::run(Api::worker);
+    logger->info("start HTTP server");
+
+    if (!server.start())
+    {
+        logger->warning("couldn't start HTTP server");
+    }
 }
 
 void Api::quit()
 {
-    if (serviceHandle != NULL)
+    logger->info("stop HTTP server");
+
+    server.stop();
+}
+
+void Api::logListener(const QString& name, Logger::Level level, const QString& message)
+{
+    logPushNotification.write(message.toStdString());
+}
+
+void Api::log(HttpRequest* request, HttpResponse* response)
+{
+    int index = std::strtol(request->getHeader("Push-Notification-Index").c_str(), NULL, 10);
+    std::string data;
+    if (logPushNotification.read(index, data))
     {
-        serviceHandle->shutdown();
+        response->setStatusCode(200);
+        response->setHeader("Push-Notification-Index", std::to_string(index + 1));
+        response->write(data);
+    }
+    else
+    {
+        response->setStatusCode(304);
+        response->setHeader("Push-Notification-Index", std::to_string(index));
+    }
+}
+
+void Api::statemachineLoad(HttpRequest* request, HttpResponse* response)
+{
+    response->setStatusCode(200);
+}
+
+void Api::statemachineUnload(HttpRequest* request, HttpResponse* response)
+{
+    response->setStatusCode(200);
+}
+
+void Api::statemachineStart(HttpRequest* request, HttpResponse* response)
+{
+    response->setStatusCode(200);
+}
+
+void Api::statemachineStop(HttpRequest* request, HttpResponse* response)
+{
+    response->setStatusCode(200);
+}
+
+void Api::statemachineEvent(HttpRequest* request, HttpResponse* response)
+{
+
+}
+
+void Api::assign(QString pattern, QString method, std::function<void(HttpRequest*, HttpResponse*)> handler)
+{
+    Service service;
+    service.pattern = pattern;
+    service.method = method;
+    service.regex = QRegExp(pattern);
+    service.handler = handler;
+
+    services.append(service);
+}
+
+void Api::httpHandler(HttpRequest* request, HttpResponse* response)
+{
+    //allow CORS
+    response->setHeader("Access-Control-Allow-Origin", "*");
+    response->setHeader("Access-Control-Expose-Headers", "Push-Notification-Index");
+    response->setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
+    response->setHeader("Access-Control-Allow-Headers", "Push-Notification-Index");
+
+    //handle OPTIONS method send by browsers before actual request
+    if (request->getMethod() == "OPTIONS")
+    {
+        response->setStatusCode(HttpResponse::STATUS_OK);
+
+        return;
+    }
+
+    //lookup service
+    for (int i = 0; i < services.size(); i++)
+    {
+        Service service = services[i];
+        if (service.regex.exactMatch(request->getUrl().c_str()))
+        {
+            if (service.method == request->getMethod().c_str())
+            {
+                service.handler(request, response);
+
+                return;
+            }
+        }
     }
 }

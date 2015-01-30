@@ -19,12 +19,23 @@
 #define LOGGER_H
 
 #include <QString>
+#include <QMap>
 
 namespace hfsmexec
 {
     class Logger
     {
         public:
+            typedef enum Level
+            {
+                INFO,
+                WARNING,
+                ERROR,
+                FATAL,
+                DEBUG
+            } Level;
+            typedef void LogCallback(const QString& name, Level level, const QString& message);
+
             static Logger* getLogger(const QString& name);
 
             ~Logger();
@@ -35,25 +46,25 @@ namespace hfsmexec
             void fatal(const QString& message) const;
             void debug(const QString& message) const;
 
+            static void registerListener(const QString& id, const std::function<LogCallback>& listener);
+            static void unregisterListener(const QString& id);
+
+            static void setLoggerEnabled(bool enabled);
+            static void setLoggerEnabled(const QString& name, bool enabled);
+
+            static void setFileOut(bool enabled);
+            static void setFilename(const QString& filename);
+
+            static void setConsoleOut(bool enabled);
+
         private:
+            static QMap<QString, Logger*> loggers;
+            static QMap<QString, std::function<LogCallback>> listeners;
             const QString name;
 
             Logger(const QString& name);
-    };
 
-    class LoggerController
-    {
-        public:
-            LoggerController();
-            ~LoggerController();
-
-            void setLoggerEnabled(bool enabled);
-            void setLoggerEnabled(const QString& name, bool enabled);
-
-            void setFileOut(bool enabled);
-            void setFilename(const QString& filename);
-
-            void setConsoleOut(bool enabled);
+            void notifyListeners(const QString& name, Level level, const QString& message) const;
     };
 }
 

@@ -69,7 +69,7 @@ int Application::exec()
 
     if (!getCommandLineOption("api"))
     {
-        Api::exec();
+        api.exec();
     }
 
     return qtApplication.exec();
@@ -81,7 +81,7 @@ void Application::quit()
 
     unloadStateMachine();
 
-    Api::quit();
+    api.quit();
     Application::getInstance()->getQtApplication()->quit();
 }
 
@@ -256,7 +256,7 @@ void Application::processCommandLineOptions()
         }
     }
 
-    loggerController.setFilename(logFile);
+    Logger::setFilename(logFile);
 
     //plugindir
     QStringList pluginDirValues;

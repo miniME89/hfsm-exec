@@ -27,6 +27,10 @@ _INITIALIZE_EASYLOGGINGPP
 /*
  * Logger
  */
+QMap<QString, Logger*> Logger::loggers;
+
+QMap<QString, std::function<Logger::LogCallback>> Logger::listeners;
+
 Logger::Logger(const QString& name) :
     name(name)
 {
@@ -35,7 +39,16 @@ Logger::Logger(const QString& name) :
 
 Logger* Logger::getLogger(const QString& name)
 {
-    return new Logger(name);
+    if (loggers.contains(name))
+    {
+        return loggers[name];
+    }
+
+    Logger* logger = new Logger(name);
+
+    loggers[name] = logger;
+
+    return logger;
 }
 
 Logger::~Logger()
@@ -46,72 +59,83 @@ Logger::~Logger()
 void Logger::info(const QString& message) const
 {
     CLOG(INFO, name.toStdString().c_str()) <<message;
+    notifyListeners(name, INFO, message);
 }
 
 void Logger::warning(const QString& message) const
 {
     CLOG(WARNING, name.toStdString().c_str()) <<message;
+    notifyListeners(name, WARNING, message);
 }
 
 void Logger::error(const QString& message) const
 {
     CLOG(ERROR, name.toStdString().c_str()) <<message;
+    notifyListeners(name, ERROR, message);
 }
 
 void Logger::fatal(const QString& message) const
 {
     CLOG(FATAL, name.toStdString().c_str()) <<message;
+    notifyListeners(name, FATAL, message);
 }
 
 void Logger::debug(const QString& message) const
 {
     CLOG(DEBUG, name.toStdString().c_str()) <<message;
+    notifyListeners(name, DEBUG, message);
 }
 
-/*
- * LoggerController
- */
-LoggerController::LoggerController()
+void Logger::registerListener(const QString& id, const std::function<LogCallback>& listener)
 {
-
+    listeners[id] = listener;
 }
 
-LoggerController::~LoggerController()
+void Logger::unregisterListener(const QString& id)
 {
-
+    listeners.remove(id);
 }
 
-void LoggerController::setLoggerEnabled(bool enabled)
+void Logger::setLoggerEnabled(bool enabled)
 {
     el::Configurations config;
     config.set(el::Level::Global, el::ConfigurationType::Enabled, (enabled) ? "true" : "false");
     el::Loggers::reconfigureAllLoggers(config);
 }
 
-void LoggerController::setLoggerEnabled(const QString& name, bool enabled)
+void Logger::setLoggerEnabled(const QString& name, bool enabled)
 {
     el::Configurations config;
     config.set(el::Level::Global, el::ConfigurationType::Enabled, (enabled) ? "true" : "false");
     el::Loggers::reconfigureLogger(name.toStdString(), config);
 }
 
-void LoggerController::setFileOut(bool enabled)
+void Logger::setFileOut(bool enabled)
 {
     el::Configurations config;
     config.set(el::Level::Global, el::ConfigurationType::ToFile, (enabled) ? "true" : "false");
     el::Loggers::reconfigureAllLoggers(config);
 }
 
-void LoggerController::setFilename(const QString& filename)
+void Logger::setFilename(const QString& filename)
 {
     el::Configurations config;
     config.set(el::Level::Global, el::ConfigurationType::Filename, filename.toStdString());
     el::Loggers::reconfigureAllLoggers(config);
 }
 
-void LoggerController::setConsoleOut(bool enabled)
+void Logger::setConsoleOut(bool enabled)
 {
     el::Configurations config;
     config.set(el::Level::Global, el::ConfigurationType::ToStandardOutput, (enabled) ? "true" : "false");
     el::Loggers::reconfigureAllLoggers(config);
+}
+
+void Logger::notifyListeners(const QString& name, Level level, const QString& message) const
+{
+    QMap<QString, std::function<LogCallback>>::iterator i;
+    for (i = listeners.begin(); i != listeners.end(); i++)
+    {
+        i.value()(name, level, message);
+    }
 }

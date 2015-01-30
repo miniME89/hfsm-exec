@@ -19,6 +19,7 @@ set(${PROJECT_NAME}_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/inc PARENT_SCOPE)
 ####################
 set(SOURCES src/logger.cpp
             src/application.cpp
+            src/httpserver.cpp
             src/api.cpp
             src/statemachine.cpp
             src/statemachine_impl.cpp
@@ -31,6 +32,7 @@ set(SOURCES src/logger.cpp
 
 set(HEADERS inc/logger.h
             inc/application.h
+            inc/httpserver.h
             inc/api.h
             inc/statemachine.h
             inc/statemachine_impl.h
@@ -52,7 +54,7 @@ set(LIBRARIES ${Qt5Core_LIBRARIES}
               pugixml
               jsoncpp
               yaml-cpp
-              cppcms)
+              microhttpd)
 
 include_directories(${INCLUDE_DIRS})
 

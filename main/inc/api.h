@@ -21,31 +21,49 @@
 #define LOGGER_API "api"
 
 #include <logger.h>
+#include <httpserver.h>
 
-#include <cppcms/application.h>
-#include <cppcms/service.h>
-#include <cppcms/applications_pool.h>
+#include <jsoncpp/json/json.h>
+
+#include <QRegExp>
 
 namespace hfsmexec
 {
-    class Api : public cppcms::application
+    class Api
     {
         public:
-            static void exec();
-            static void quit();
-
-            Api(cppcms::service &srv);
+            Api();
             ~Api();
 
-            void handlerEvent();
-            void main(std::string url);
+            void exec();
+            void quit();
 
         private:
+            typedef struct Service
+            {
+                QString pattern;
+                QString method;
+                QRegExp regex;
+                std::function<void(HttpRequest*, HttpResponse*)> handler;
+            } Service;
+
             static const Logger* logger;
+            HttpServer server;
+            QList<Service> services;
 
-            static void worker();
+            PushNotification logPushNotification;
 
-            std::string content();
+            void logListener(const QString& name, Logger::Level level, const QString& message);
+
+            void log(HttpRequest* request, HttpResponse* response);
+            void statemachineLoad(HttpRequest* request, HttpResponse* response);
+            void statemachineUnload(HttpRequest* request, HttpResponse* response);
+            void statemachineStart(HttpRequest* request, HttpResponse* response);
+            void statemachineStop(HttpRequest* request, HttpResponse* response);
+            void statemachineEvent(HttpRequest* request, HttpResponse* response);
+
+            void assign(QString pattern, QString method, std::function<void(HttpRequest*, HttpResponse*)> handler);
+            void httpHandler(HttpRequest* request, HttpResponse* response);
     };
 }
 

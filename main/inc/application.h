@@ -71,7 +71,7 @@ namespace hfsmexec
             QCoreApplication qtApplication;
             DecoderProvider decoderProvider;
             CommunicationPluginLoader communicationPluginLoader;
-            LoggerController loggerController;
+            Api api;
 
             StateMachine* stateMachine;
 
