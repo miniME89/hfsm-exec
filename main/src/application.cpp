@@ -18,11 +18,96 @@
 #include <application.h>
 #include <decoder_impl.h>
 #include <statemachine_impl.h>
-#include <utils.h>
 
 #include <signal.h>
 
+#include <QCommandLineParser>
+#include <QFile>
+#include <QTextStream>
+
 using namespace hfsmexec;
+
+/*
+ * Configuration
+ */
+Configuration::Configuration()
+{
+    api = false;
+    apiPort = 8080;
+    logFile = "hfsm-exec.log";
+    pluginDirs = QStringList() <<"plugins";
+}
+
+Configuration::~Configuration()
+{
+
+}
+
+void Configuration::load()
+{
+    QCommandLineParser commandLineParser;
+
+    QCoreApplication::setApplicationName(APPLICATION_NAME);
+    QCoreApplication::setApplicationVersion(APPLICATION_VERSION);
+
+    commandLineParser.setApplicationDescription(APPLICATION_DESCRIPTION);
+
+    //add options
+    QCommandLineOption commandLogger(QStringList() <<"l" <<"logger", "Enable only the specified loggers. Possible Loggers are: api, application, builder, decoder, parameter, plugin, statemachine. [Default: all]", "logger");
+    QCommandLineOption commandLogFle(QStringList() <<"f" <<"logfile", "Set the filename (including the path) for the log file.", "filename");
+    QCommandLineOption commandPluginDir(QStringList() <<"d" <<"plugindir", "Set the path to the directories where the plugins will be loaded from. [Default: ./plugins/]", "directory");
+    QCommandLineOption commandApi(QStringList() <<"a" <<"api", "Enable the REST API. This will startup the internal HTTP server.");
+    QCommandLineOption commandApiPort(QStringList() <<"p" <<"apiport", "Set port of the HTTP server for the REST API. [Default: 8080]", "port");
+    QCommandLineOption commandStatemachine(QStringList() <<"s" <<"statemachine", "Set the filename (including the path) for the state machine file which will be loaded, build and executed after startup.", "filename");
+
+    commandLineParser.addHelpOption();
+    commandLineParser.addVersionOption();
+    commandLineParser.addOption(commandLogger);
+    commandLineParser.addOption(commandLogFle);
+    commandLineParser.addOption(commandPluginDir);
+    commandLineParser.addOption(commandApi);
+    commandLineParser.addOption(commandApiPort);
+    commandLineParser.addOption(commandStatemachine);
+
+    //process command line
+    commandLineParser.process(Application::getInstance()->getQtApplication());
+
+    //logger
+    if (commandLineParser.isSet(commandLogger))
+    {
+        loggers = commandLineParser.values(commandLogger);
+    }
+
+    //logfile
+    if (commandLineParser.isSet(commandLogFle))
+    {
+        logFile = commandLineParser.value(commandLogFle);
+    }
+
+    //plugindir
+    if (commandLineParser.isSet(commandPluginDir))
+    {
+        pluginDirs = commandLineParser.values(commandPluginDir);
+    }
+
+    //api
+    if (commandLineParser.isSet(commandApi))
+    {
+        api = true;
+    }
+
+    //apiport
+    if (commandLineParser.isSet(commandApiPort))
+    {
+        apiPort = commandLineParser.value(commandApiPort).toInt();
+    }
+
+    //statemachine
+    if (commandLineParser.isSet(commandStatemachine))
+    {
+        statemachine = commandLineParser.value(commandStatemachine);
+    }
+}
 
 /*
  * Application
@@ -49,9 +134,7 @@ Application::Application(int argc, char** argv) :
 {
     instance = this;
 
-    createCommandLineOptions();
-
-    signal(SIGINT, Application::signalHandler);
+    configuration.load();
 }
 
 Application::~Application()
@@ -63,13 +146,49 @@ int Application::exec()
 {
     logger->info("start application");
 
+    signal(SIGINT, Application::signalHandler);
+
+    //enable loggers
+    if (configuration.loggers.size() > 0)
+    {
+        Logger::setLoggerEnabled(false);
+    }
+
+    for (int i = 0; i < configuration.loggers.size(); i++)
+    {
+        Logger::setLoggerEnabled(configuration.loggers[i], true);
+    }
+
+    //load plugins
+    for (int i = 0; i < configuration.pluginDirs.size(); i++)
+    {
+        communicationPluginLoader.load(configuration.pluginDirs[i]);
+    }
+
+    //enable API
+    if (configuration.api)
+    {
+        api.exec(configuration.apiPort);
+    }
+
+    //add decoder
     decoderProvider.addDecoder(new XmlDecoder());
 
-    processCommandLineOptions();
-
-    if (!getCommandLineOption("api"))
+    //load statemachine from file
+    if (!configuration.statemachine.isEmpty())
     {
-        api.exec();
+        QFile file(configuration.statemachine);
+        if (file.open(QIODevice::ReadOnly))
+        {
+            QTextStream stream(&file);
+            QString stateMachine = stream.readAll();
+            file.close();
+
+            if (loadStateMachine(stateMachine))
+            {
+                startStateMachine();
+            }
+        }
     }
 
     return qtApplication.exec();
@@ -82,42 +201,32 @@ void Application::quit()
     unloadStateMachine();
 
     api.quit();
-    Application::getInstance()->getQtApplication()->quit();
+    qtApplication.quit();
 }
 
-QCoreApplication* Application::getQtApplication()
+Configuration& Application::getConfiguration()
 {
-    return &qtApplication;
+    return configuration;
 }
 
-DecoderProvider* Application::getDecoderProvider()
+QCoreApplication& Application::getQtApplication()
 {
-    return &decoderProvider;
+    return qtApplication;
 }
 
-CommunicationPluginLoader* Application::getCommunicationPluginLoader()
+DecoderProvider& Application::getDecoderProvider()
 {
-    return &communicationPluginLoader;
+    return decoderProvider;
 }
 
-bool Application::getCommandLineOption(const QString& optionName, QStringList* values)
+CommunicationPluginLoader& Application::getCommunicationPluginLoader()
 {
-    if (!commandLineOptions.contains(optionName))
-    {
-        return false;
-    }
+    return communicationPluginLoader;
+}
 
-    if (!commandLineParser.isSet(optionName))
-    {
-        return false;
-    }
-
-    if (values != NULL)
-    {
-        *values = commandLineParser.values(*commandLineOptions[optionName]);
-    }
-
-    return true;
+Api& Application::getApi()
+{
+    return api;
 }
 
 bool Application::postEvent(AbstractEvent* event)
@@ -217,81 +326,6 @@ bool Application::stopStateMachine()
     stateMachine->stop();
 
     return true;
-}
-
-void Application::createCommandLineOptions()
-{
-    QCoreApplication::setApplicationName(APPLICATION_NAME);
-    QCoreApplication::setApplicationVersion(APPLICATION_VERSION);
-
-    commandLineParser.setApplicationDescription(APPLICATION_DESCRIPTION);
-
-    //add options
-    commandLineParser.addHelpOption();
-    commandLineParser.addVersionOption();
-    commandLineOptions["logfile"] = new QCommandLineOption(QStringList() <<"f" <<"logfile", "Set the filename (including the path) for the log file.", "filename");
-    commandLineOptions["logger"] = new QCommandLineOption(QStringList() <<"l" <<"logger", "Enable only the specified logger. Possible Loggers are: api, application, decoder, plugin, statemachine, builder, value", "logger");
-    commandLineOptions["plugindir"] = new QCommandLineOption(QStringList() <<"p" <<"plugindir", "Set the path to the directory where the plugins will be loaded from.", "directory");
-    commandLineOptions["smfile"] = new QCommandLineOption(QStringList() <<"s" <<"smfile", "Set the filename (including the path) for the state machine file which will be loaded, build and executed after startup.", "filename");
-    commandLineOptions["api"] = new QCommandLineOption(QStringList() <<"a" <<"api", "Disable the API. This will avoid the startup of the HTTP server.");
-
-    for (QMap<QString, QCommandLineOption*>::iterator i = commandLineOptions.begin(); i != commandLineOptions.end(); i++)
-    {
-        commandLineParser.addOption(*i.value());
-    }
-
-    commandLineParser.process(qtApplication);
-}
-
-void Application::processCommandLineOptions()
-{
-    //logfile
-    QString logFile = "hfsm-exec.log";
-    QStringList logFileValues;
-    if (getCommandLineOption("logfile", &logFileValues))
-    {
-        if (logFileValues.size() > 0)
-        {
-            logFile = logFileValues.first();
-        }
-    }
-
-    Logger::setFilename(logFile);
-
-    //plugindir
-    QStringList pluginDirValues;
-    if (getCommandLineOption("plugindir", &pluginDirValues))
-    {
-        for (int i = 0; i < pluginDirValues.size(); i++)
-        {
-            communicationPluginLoader.load(pluginDirValues[i]);
-        }
-    }
-    else
-    {
-        communicationPluginLoader.load("plugins");
-    }
-
-    //smfile
-    QStringList smfileValues;
-    if (getCommandLineOption("smfile", &smfileValues))
-    {
-        if (smfileValues.size() > 0)
-        {
-            QString path = smfileValues.first();
-            Downloader downloader;
-
-            downloader.download(path, true);
-            if (!downloader.getError())
-            {
-                QString stateMachine = downloader.getData();
-                if (loadStateMachine(stateMachine))
-                {
-                    startStateMachine();
-                }
-            }
-        }
-    }
 }
 
 /*

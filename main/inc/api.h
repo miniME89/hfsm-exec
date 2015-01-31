@@ -35,7 +35,7 @@ namespace hfsmexec
             Api();
             ~Api();
 
-            void exec();
+            void exec(int port = 8080);
             void quit();
 
         private:

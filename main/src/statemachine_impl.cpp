@@ -254,7 +254,7 @@ QString ParallelState::toString() const
 InvokeState::InvokeState(const QString& stateId, const QString& type, const QString& parentStateId) :
     AbstractComplexState(stateId, parentStateId),
     type(type),
-    communicationPlugin(Application::getInstance()->getCommunicationPluginLoader()->getPlugin(type))
+    communicationPlugin(Application::getInstance()->getCommunicationPluginLoader().getPlugin(type))
 {
     QState* stateInvoke = new QState(delegate);
     QFinalState* stateFinal = new QFinalState(delegate);

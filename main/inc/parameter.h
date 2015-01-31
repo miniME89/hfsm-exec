@@ -15,10 +15,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef VALUECONTAINER_H
-#define VALUECONTAINER_H
+#ifndef PARAMETER_H
+#define PARAMETER_H
 
-#define LOGGER_VALUE "value"
+#define LOGGER_VALUE "parameter"
 
 #include <logger.h>
 

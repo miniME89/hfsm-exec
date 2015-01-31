@@ -27,8 +27,7 @@ set(SOURCES src/logger.cpp
             src/decoder.cpp
             src/decoder_impl.cpp
             src/parameter.cpp
-            src/plugins.cpp
-            src/utils.cpp)
+            src/plugins.cpp)
 
 set(HEADERS inc/logger.h
             inc/application.h
@@ -40,8 +39,7 @@ set(HEADERS inc/logger.h
             inc/decoder.h
             inc/decoder_impl.h
             inc/parameter.h
-            inc/plugins.h
-            inc/utils.h)
+            inc/plugins.h)
 
 set(INCLUDE_DIRS inc
                  ext/easyloggingpp/inc

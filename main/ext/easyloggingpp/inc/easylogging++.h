@@ -4186,8 +4186,7 @@ private:
                 }
             }
             if (m_data->logMessage()->logger()->m_typedConfigurations->toStandardOutput(m_data->logMessage()->level())) {
-                if (ELPP->hasFlag(LoggingFlag::ColoredTerminalOutput))
-                    m_data->logMessage()->logger()->logBuilder()->convertToColoredOutput(&logLine, m_data->logMessage()->level());
+                m_data->logMessage()->logger()->logBuilder()->convertToColoredOutput(&logLine, m_data->logMessage()->level());
                 ELPP_COUT << ELPP_COUT_LINE(logLine);
              }
         }

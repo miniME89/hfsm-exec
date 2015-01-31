@@ -47,11 +47,11 @@ Api::~Api()
 
 }
 
-void Api::exec()
+void Api::exec(int port)
 {
-    logger->info("start HTTP server");
+    logger->info(QString("start HTTP server on port %1").arg(port));
 
-    if (!server.start())
+    if (!server.start(port))
     {
         logger->warning("couldn't start HTTP server");
     }

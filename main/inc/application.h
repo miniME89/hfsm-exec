@@ -22,7 +22,7 @@
 
 #define APPLICATION_NAME "hfsm-exec"
 #define APPLICATION_VERSION "0.5"
-#define APPLICATION_DESCRIPTION "some description"
+#define APPLICATION_DESCRIPTION ""
 
 #include <logger.h>
 #include <api.h>
@@ -31,10 +31,26 @@
 #include <plugins.h>
 
 #include <QCoreApplication>
-#include <QCommandLineParser>
+#include <QStringList>
 
 namespace hfsmexec
 {
+    class Configuration
+    {
+        public:
+            Configuration();
+            ~Configuration();
+
+            bool api;
+            int apiPort;
+            QString logFile;
+            QStringList loggers;
+            QStringList pluginDirs;
+            QString statemachine;
+
+            void load();
+    };
+
     class Application
     {
         public:
@@ -46,11 +62,11 @@ namespace hfsmexec
             int exec();
             void quit();
 
-            QCoreApplication* getQtApplication();
-            DecoderProvider* getDecoderProvider();
-            CommunicationPluginLoader* getCommunicationPluginLoader();
-
-            bool getCommandLineOption(const QString& optionName, QStringList* values = NULL);
+            Configuration& getConfiguration();
+            QCoreApplication& getQtApplication();
+            DecoderProvider& getDecoderProvider();
+            CommunicationPluginLoader& getCommunicationPluginLoader();
+            Api& getApi();
 
             bool postEvent(AbstractEvent* event);
 
@@ -65,9 +81,7 @@ namespace hfsmexec
             static Application* instance;
             static const Logger* logger;
 
-            QCommandLineParser commandLineParser;
-            QMap<QString, QCommandLineOption*> commandLineOptions;
-
+            Configuration configuration;
             QCoreApplication qtApplication;
             DecoderProvider decoderProvider;
             CommunicationPluginLoader communicationPluginLoader;
@@ -76,9 +90,6 @@ namespace hfsmexec
             StateMachine* stateMachine;
 
             static void signalHandler(int signal);
-
-            void createCommandLineOptions();
-            void processCommandLineOptions();
     };
 }
 
