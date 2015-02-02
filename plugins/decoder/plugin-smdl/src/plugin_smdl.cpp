@@ -15,12 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <decoder_impl.h>
-#include <statemachine_impl.h>
-#include <parameter.h>
-
-#include <QTextStream>
-
+#include <plugin_smdl.h>
 #include <sstream>
 
 using namespace hfsmexec;
@@ -29,7 +24,12 @@ using namespace hfsmexec;
  * XmlDecoder
  */
 XmlDecoder::XmlDecoder() :
-    AbstractDecoder("XML")
+    DecoderPlugin("SMDL/XML", "SMDL/XML")
+{
+
+}
+
+XmlDecoder::~XmlDecoder()
 {
 
 }
@@ -288,32 +288,4 @@ AbstractState* XmlDecoder::decodeFinal(pugi::xml_node& node, StateMachineBuilder
     builder <<state;
 
     return state;
-}
-
-/*
- * JsonDecoder
- */
-JsonDecoder::JsonDecoder() :
-    AbstractDecoder("JSON")
-{
-
-}
-
-StateMachine* JsonDecoder::decode(const QString& data)
-{
-
-}
-
-/*
- * YamlDecoder
- */
-YamlDecoder::YamlDecoder() :
-    AbstractDecoder("YAML")
-{
-
-}
-
-StateMachine* YamlDecoder::decode(const QString &data)
-{
-
 }

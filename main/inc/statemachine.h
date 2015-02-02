@@ -25,13 +25,15 @@
 
 #include <QEvent>
 #include <QAbstractTransition>
+#include <QFinalState>
 #include <QState>
-#include <QAbstractState>
+#include <QStateMachine>
 
 namespace hfsmexec
 {
     class AbstractState;
     class StateMachine;
+    class CommunicationPlugin;
 
     class AbstractEvent : public QEvent
     {
@@ -171,6 +173,177 @@ namespace hfsmexec
 
         protected:
             QState* delegate;
+    };
+
+    class NamedEvent : public AbstractEvent
+    {
+        public:
+            static const QEvent::Type type;
+
+            NamedEvent(const QString& eventName);
+            ~NamedEvent();
+
+            const QString& getEventName() const;
+            void setEventName(const QString& eventName);
+
+            const QString& getOrigin() const;
+            void setOrigin(const QString& origin);
+
+            const QString& getMessage() const;
+            void setMessage(const QString& message);
+
+            virtual QString toString() const;
+
+        private:
+            QString eventName;
+            QString origin;
+            QString message;
+    };
+
+    class NamedTransition : public AbstractTransition
+    {
+        public:
+            NamedTransition(const QString& transitionId, const QString& sourceStateId, const QString& targetStateId, const QString& eventName);
+
+            virtual QString toString() const;
+
+        protected:
+            virtual bool eventTest(QEvent* e);
+            virtual void onTransition(QEvent* e);
+
+        private:
+            QString eventName;
+    };
+
+    class InternalEvent : public QEvent
+    {
+        public:
+            static const QEvent::Type type;
+
+            InternalEvent(const QString& eventName);
+
+            const QString& getEventName() const;
+
+        private:
+            QString eventName;
+    };
+
+    class InternalTransition : public QAbstractTransition
+    {
+        public:
+            InternalTransition(const QString& eventName);
+
+        protected:
+            virtual bool eventTest(QEvent* e);
+            virtual void onTransition(QEvent* e);
+
+        private:
+            QString eventName;
+    };
+
+    class FinalState : public AbstractState
+    {
+        Q_OBJECT
+
+        public:
+            FinalState(const QString& stateId, const QString& parentStateId = "");
+            ~FinalState();
+
+            virtual QFinalState* getDelegate() const;
+            virtual bool initialize();
+            virtual QString toString() const;
+
+        private:
+            QFinalState* delegate;
+    };
+
+
+    class CompositeState : public AbstractComplexState
+    {
+        Q_OBJECT
+
+        public:
+            CompositeState(const QString& stateId, const QString &initialStateId, const QString& parentStateId = "");
+            ~CompositeState();
+
+            virtual bool initialize();
+            virtual QString toString() const;
+
+        private:
+            QString initialStateId;
+    };
+
+    class ParallelState : public AbstractComplexState
+    {
+        Q_OBJECT
+
+        public:
+            ParallelState(const QString& stateId, const QString& parentStateId = "");
+            ~ParallelState();
+
+            virtual bool initialize();
+            virtual QString toString() const;
+    };
+
+    class InvokeState : public AbstractComplexState
+    {
+        Q_OBJECT
+
+        public:
+            InvokeState(const QString& stateId, const QString& type, const QString& parentStateId = "");
+            virtual ~InvokeState();
+
+            Parameter& getEndpoint();
+            void setEndpoint(Parameter& value);
+
+            CommunicationPlugin* getCommunicationPlugin();
+            void setCommunicationPlugin(CommunicationPlugin* value);
+
+            void done();
+
+            virtual bool initialize();
+            virtual QString toString() const;
+
+        protected slots:
+            virtual void eventEntered();
+            virtual void eventExited();
+            virtual void eventFinished();
+
+        private:
+            QString type;
+            CommunicationPlugin* communicationPlugin;
+            Parameter endpoint;
+    };
+
+    class StateMachine : public AbstractComplexState
+    {
+        Q_OBJECT
+
+        friend class StateMachineBuilder;
+
+        public:
+            StateMachine(const QString& stateId, const QString& initialId, const QString& parentStateId = "");
+            ~StateMachine();
+
+            void start() const;
+            void stop() const;
+
+            int postDelayedEvent(QEvent* event, int delay);
+            void postEvent(QEvent* event, QStateMachine::EventPriority priority = QStateMachine::NormalPriority);
+
+            virtual QStateMachine* getDelegate() const;
+            virtual bool initialize();
+            virtual QString toString() const;
+
+        protected slots:
+            virtual void eventStarted();
+            virtual void eventStopped();
+
+        protected:
+            QStateMachine* delegate;
+
+        private:
+            QString initialId;
     };
 }
 

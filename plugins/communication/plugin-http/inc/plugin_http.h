@@ -18,10 +18,7 @@
 #ifndef PLUGIN_HTTP_H
 #define PLUGIN_HTTP_H
 
-#include <statemachine.h>
 #include <plugins.h>
-
-#include <QtPlugin>
 
 namespace hfsmexec
 {

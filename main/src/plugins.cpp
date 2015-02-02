@@ -38,103 +38,172 @@ CommunicationPlugin::~CommunicationPlugin()
 
 }
 
-QString CommunicationPlugin::getPluginId() const
+const QString& CommunicationPlugin::getPluginId() const
 {
     return pluginId;
 }
 
 /*
- * CommunicationPluginLoader
+ * DecoderPlugin
  */
-const Logger* CommunicationPluginLoader::logger = Logger::getLogger(LOGGER_PLUGIN);
+const Logger* DecoderPlugin::logger = Logger::getLogger(LOGGER_PLUGIN);
 
-CommunicationPluginLoader::CommunicationPluginLoader()
+DecoderPlugin::DecoderPlugin(const QString& pluginId, const QString& encoding) :
+    pluginId(pluginId),
+    encoding(encoding)
 {
 
 }
 
-CommunicationPluginLoader::~CommunicationPluginLoader()
+DecoderPlugin::~DecoderPlugin()
 {
 
 }
 
-CommunicationPlugin* CommunicationPluginLoader::getPlugin(const QString& pluginId)
+const QString& DecoderPlugin::getPluginId() const
 {
-    for (int i = 0; i < plugins.size(); i++)
-    {
-        if (plugins[i]->getPluginId() == pluginId)
-        {
-            return plugins[i];
-        }
-    }
-
-    return NULL;
+    return pluginId;
 }
 
-const QList<CommunicationPlugin*>& CommunicationPluginLoader::getPlugins() const
+const QString& DecoderPlugin::getEncoding() const
 {
-    return plugins;
+    return encoding;
 }
 
-bool CommunicationPluginLoader::load(const QString &path)
+/*
+ * PluginLoader
+ */
+const Logger* PluginLoader::logger = Logger::getLogger(LOGGER_PLUGIN);
+
+PluginLoader::PluginLoader()
+{
+
+}
+
+PluginLoader::~PluginLoader()
+{
+
+}
+
+CommunicationPlugin* PluginLoader::getCommunicationPlugin(const QString& pluginId)
+{
+    return communicationPlugins.find(pluginId).value();
+}
+
+DecoderPlugin* PluginLoader::getDecoderPlugin(const QString& pluginId)
+{
+    return decoderPlugins.find(pluginId).value();
+}
+
+const QMap<QString, CommunicationPlugin*>& PluginLoader::getCommunicationPlugins() const
+{
+    return communicationPlugins;
+}
+
+const QMap<QString, DecoderPlugin*>& PluginLoader::getDecoderPlugins() const
+{
+    return decoderPlugins;
+}
+
+bool PluginLoader::load(const QString &path)
 {
     QDir pluginsDir = QDir(path);
     pluginsDir.setNameFilters(QStringList("*.so"));
 
     if (!pluginsDir.exists())
     {
-        logger->warning(QString("couldn't load communication plugins in directory \"%1\": directory doesn't exist").arg(path));
+        logger->warning(QString("couldn't load plugins in directory \"%1\": directory doesn't exist").arg(path));
 
         return false;
     }
 
-    logger->info(QString("loading all communication plugins in directory %1").arg(pluginsDir.absolutePath()));
+    logger->info(QString("loading all plugins in directory %1").arg(pluginsDir.absolutePath()));
 
     foreach (QString fileName, pluginsDir.entryList(QDir::Files))
     {
         QString filePath = pluginsDir.absoluteFilePath(fileName);
+
+        logger->info(QString("load plugin from file %1").arg(filePath));
 
         //load plugin
         QPluginLoader pluginLoader(filePath);
         QObject* plugin = pluginLoader.instance();
         if (!plugin)
         {
-            logger->warning(QString("invalid communication plugin: %1").arg(pluginLoader.errorString()));
+            logger->warning(QString("invalid plugin: %1").arg(pluginLoader.errorString()));
 
             continue;
         }
 
-        //cast plugin
-        CommunicationPlugin* instance = qobject_cast<CommunicationPlugin*>(plugin);
-        if (!instance)
+        if (loadCommunicationPlugin(plugin))
         {
-            logger->warning("invalid communication plugin: plugin is not of type \"CommunicationPlugin\"");
 
-            continue;
         }
-
-        QString pluginId = instance->getPluginId();
-
-        //validate plugin id
-        if (pluginId.isEmpty())
+        else if (loadDecoderPlugin(plugin))
         {
-            logger->warning("invalid communication plugin id: empty communication plugin id");
 
-            continue;
         }
-
-        //verify unique plugin id
-        for (int i = 0; plugins.size(); i++)
+        else
         {
-            logger->warning(QString("invalid communication plugin id: communication plugin with plugin id \"%1\" already loaded").arg(pluginId));
-
-            continue;
+            logger->warning("couldn't load plugin: unknown plugin instance");
         }
-
-        plugins.append(instance);
-
-        logger->info(QString("loaded communication plugin with pluginId %1").arg(pluginId));
     }
+
+    return true;
+}
+
+bool PluginLoader::loadCommunicationPlugin(QObject* plugin)
+{
+    //cast plugin
+    CommunicationPlugin* instance = qobject_cast<CommunicationPlugin*>(plugin);
+    if (!instance)
+    {
+        return false;
+    }
+
+    logger->info("plugin is of type \"CommunicationPlugin\"");
+
+    //verify unique plugin id
+    QString pluginId = instance->getPluginId();
+    if (communicationPlugins.contains(pluginId))
+    {
+        logger->warning(QString("unload already loaded communication plugin with plugin id \"%1\"").arg(pluginId));
+
+        delete communicationPlugins[pluginId];
+    }
+
+    communicationPlugins[pluginId] = instance;
+
+    logger->info(QString("successfully loaded communication plugin with pluginId %1").arg(pluginId));
+
+    return true;
+}
+
+bool PluginLoader::loadDecoderPlugin(QObject* plugin)
+{
+    //cast plugin
+    DecoderPlugin* instance = qobject_cast<DecoderPlugin*>(plugin);
+    if (!instance)
+    {
+        logger->warning("invalid decoder plugin: plugin is not of type \"DecoderPlugin\"");
+
+        return false;
+    }
+
+    logger->info("plugin is of type \"DecoderPlugin\"");
+
+    //verify unique plugin id
+    QString pluginId = instance->getPluginId();
+    if (decoderPlugins.contains(pluginId))
+    {
+        logger->warning(QString("unload already loaded decoder plugin with plugin id \"%1\"").arg(pluginId));
+
+        delete decoderPlugins[pluginId];
+    }
+
+    decoderPlugins[pluginId] = instance;
+
+    logger->info(QString("successfully loaded decoder plugin with pluginId \"%1\"").arg(pluginId));
 
     return true;
 }

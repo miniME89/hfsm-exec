@@ -16,8 +16,6 @@
  */
 
 #include <application.h>
-#include <decoder_impl.h>
-#include <statemachine_impl.h>
 
 #include <signal.h>
 
@@ -162,7 +160,7 @@ int Application::exec()
     //load plugins
     for (int i = 0; i < configuration.pluginDirs.size(); i++)
     {
-        communicationPluginLoader.load(configuration.pluginDirs[i]);
+        pluginLoader.load(configuration.pluginDirs[i]);
     }
 
     //enable API
@@ -170,9 +168,6 @@ int Application::exec()
     {
         api.exec(configuration.apiPort);
     }
-
-    //add decoder
-    decoderProvider.addDecoder(new XmlDecoder());
 
     //load statemachine from file
     if (!configuration.statemachine.isEmpty())
@@ -214,14 +209,9 @@ QCoreApplication& Application::getQtApplication()
     return qtApplication;
 }
 
-DecoderProvider& Application::getDecoderProvider()
+PluginLoader& Application::getCommunicationPluginLoader()
 {
-    return decoderProvider;
-}
-
-CommunicationPluginLoader& Application::getCommunicationPluginLoader()
-{
-    return communicationPluginLoader;
+    return pluginLoader;
 }
 
 Api& Application::getApi()
@@ -263,7 +253,7 @@ bool Application::loadStateMachine(const QString& data)
 {
     logger->info("load state machine from encoded data");
 
-    StateMachine* stateMachine = decoderProvider.decode("XML", data);
+    StateMachine* stateMachine = pluginLoader.getDecoderPlugin("SMDL/XML")->decode(data); //TODO
     if (stateMachine == NULL)
     {
         logger->warning("couldn't load state machine: decoding of encoded state machine failed");

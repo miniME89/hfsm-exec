@@ -25,4 +25,5 @@ ExternalProject_Get_Property(googletest source_dir)
 include_directories(${source_dir}/include)
 
 add_subdirectory(main)
-add_subdirectory(plugins)
+add_subdirectory(plugins/communication)
+add_subdirectory(plugins/decoder)

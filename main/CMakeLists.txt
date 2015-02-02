@@ -22,10 +22,7 @@ set(SOURCES src/logger.cpp
             src/httpserver.cpp
             src/api.cpp
             src/statemachine.cpp
-            src/statemachine_impl.cpp
             src/builder.cpp
-            src/decoder.cpp
-            src/decoder_impl.cpp
             src/parameter.cpp
             src/plugins.cpp)
 
@@ -34,10 +31,7 @@ set(HEADERS inc/logger.h
             inc/httpserver.h
             inc/api.h
             inc/statemachine.h
-            inc/statemachine_impl.h
             inc/builder.h
-            inc/decoder.h
-            inc/decoder_impl.h
             inc/parameter.h
             inc/plugins.h)
 

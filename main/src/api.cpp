@@ -17,7 +17,7 @@
 
 #include <api.h>
 #include <application.h>
-#include <statemachine_impl.h>
+#include <statemachine.h>
 
 #include <jsoncpp/json/json.h>
 

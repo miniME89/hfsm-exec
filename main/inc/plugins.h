@@ -21,9 +21,8 @@
 #define LOGGER_PLUGIN "plugins"
 
 #include <logger.h>
-#include <parameter.h>
+#include <statemachine.h>
 
-#include <QList>
 #include <QtPlugin>
 
 namespace hfsmexec
@@ -33,33 +32,59 @@ namespace hfsmexec
         public:
             CommunicationPlugin(const QString& pluginId);
             virtual ~CommunicationPlugin();
+
+            const QString& getPluginId() const;
+
             virtual bool invoke(Parameter& endpoint, Parameter& inputParameters, Parameter& outputParameters) = 0;
             virtual bool cancel() = 0;
-
-            QString getPluginId() const;
 
         protected:
             static const Logger* logger;
             const QString pluginId;
     };
 
-    class CommunicationPluginLoader
+    class DecoderPlugin
     {
         public:
-            CommunicationPluginLoader();
-            ~CommunicationPluginLoader();
+            DecoderPlugin(const QString& pluginId, const QString& encoding);
+            virtual ~DecoderPlugin();
 
-            CommunicationPlugin* getPlugin(const QString& pluginId);
-            const QList<CommunicationPlugin*>& getPlugins() const;
+            const QString& getPluginId() const;
+            const QString& getEncoding() const;
+
+            virtual StateMachine* decode(const QString& data) = 0;
+
+        protected:
+            static const Logger* logger;
+            const QString pluginId;
+            const QString encoding;
+    };
+
+    class PluginLoader
+    {
+        public:
+            PluginLoader();
+            ~PluginLoader();
+
+            CommunicationPlugin* getCommunicationPlugin(const QString& pluginId);
+            const QMap<QString, CommunicationPlugin*>& getCommunicationPlugins() const;
+
+            DecoderPlugin* getDecoderPlugin(const QString& pluginId);
+            const QMap<QString, DecoderPlugin*>& getDecoderPlugins() const;
 
             bool load(const QString& path);
 
         private:
             static const Logger* logger;
-            QList<CommunicationPlugin*> plugins;
+            QMap<QString, CommunicationPlugin*> communicationPlugins;
+            QMap<QString, DecoderPlugin*> decoderPlugins;
+
+            bool loadCommunicationPlugin(QObject* plugin);
+            bool loadDecoderPlugin(QObject* plugin);
     };
 }
 
 Q_DECLARE_INTERFACE(hfsmexec::CommunicationPlugin, "hfsmexec.Plugins.CommunicationPlugin")
+Q_DECLARE_INTERFACE(hfsmexec::DecoderPlugin, "hfsmexec.Plugins.DecoderPlugin")
 
 #endif

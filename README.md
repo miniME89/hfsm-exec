@@ -43,10 +43,10 @@
 - doc/ - Documentation
 - examples/ - Examples
 - main/ - The source code of the main program
-- plugins/ - Implementations of communication plugins
+- plugins/ - Implementations of communication and decoder plugins
 
 ### API
-A RESTful API using HTTP provides an interface for interacting with the executor.
+A RESTful API provides an easy interface for interacting with the executor.
 
 | Status  | Method | Location              | Description                                 |
 |---------|--------|-----------------------|---------------------------------------------|

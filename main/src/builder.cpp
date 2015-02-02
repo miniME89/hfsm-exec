@@ -1,5 +1,4 @@
 #include <builder.h>
-#include <statemachine_impl.h>
 
 using namespace hfsmexec;
 

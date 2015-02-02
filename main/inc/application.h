@@ -26,7 +26,6 @@
 
 #include <logger.h>
 #include <api.h>
-#include <decoder.h>
 #include <statemachine.h>
 #include <plugins.h>
 
@@ -64,8 +63,7 @@ namespace hfsmexec
 
             Configuration& getConfiguration();
             QCoreApplication& getQtApplication();
-            DecoderProvider& getDecoderProvider();
-            CommunicationPluginLoader& getCommunicationPluginLoader();
+            PluginLoader& getCommunicationPluginLoader();
             Api& getApi();
 
             bool postEvent(AbstractEvent* event);
@@ -83,8 +81,7 @@ namespace hfsmexec
 
             Configuration configuration;
             QCoreApplication qtApplication;
-            DecoderProvider decoderProvider;
-            CommunicationPluginLoader communicationPluginLoader;
+            PluginLoader pluginLoader;
             Api api;
 
             StateMachine* stateMachine;
