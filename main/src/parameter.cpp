@@ -402,7 +402,7 @@ Parameter::Parameter(const Parameter& value) :
     *this = value;
 }
 
-Parameter::Parameter(const Parameter* value) :
+Parameter::Parameter(Parameter* const & value) :
     value(new Value())
 {
     *this = value;

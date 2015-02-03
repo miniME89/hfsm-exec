@@ -20,32 +20,18 @@ StateMachineBuilder::~StateMachineBuilder()
 
 void StateMachineBuilder::addState(StateMachine* stateMachine)
 {
-    if (this->stateMachine != NULL)
+    if (this->stateMachine == NULL)
     {
-        logger->warning("can't add state machine: another state machine was already provided");
-
-        return;
+        this->stateMachine = stateMachine;
     }
-
-    if (stateMachine->stateMachine != NULL)
+    else
     {
-        logger->warning("can't add state machine: state machine is already part of another state machine");
-
-        return;
+        states.append(stateMachine);
     }
-
-    this->stateMachine = stateMachine;
 }
 
 void StateMachineBuilder::addState(AbstractState* state)
 {
-    if (state->stateMachine != NULL)
-    {
-        logger->warning("can't add state: state is already part of another state machine");
-
-        return;
-    }
-
     states.append(state);
 }
 

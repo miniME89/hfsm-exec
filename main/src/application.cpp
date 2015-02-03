@@ -253,7 +253,7 @@ bool Application::loadStateMachine(const QString& data)
 {
     logger->info("load state machine from encoded data");
 
-    StateMachine* stateMachine = pluginLoader.getDecoderPlugin("SMDL/XML")->decode(data); //TODO
+    StateMachine* stateMachine = pluginLoader.getDecoderPlugin("FHG")->decode(data); //TODO
     if (stateMachine == NULL)
     {
         logger->warning("couldn't load state machine: decoding of encoded state machine failed");

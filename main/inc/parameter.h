@@ -133,7 +133,7 @@ namespace hfsmexec
             Parameter(const Array& value);
             Parameter(const Object& value);
             Parameter(const Parameter& value);
-            Parameter(const Parameter* value);
+            Parameter(Parameter* const & value);
             template<typename T>
             Parameter(const T& value);
             ~Parameter();
