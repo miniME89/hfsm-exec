@@ -32,7 +32,7 @@ Configuration::Configuration()
 {
     api = false;
     apiPort = 8080;
-    logFile = "hfsm-exec.log";
+    loggerFile = "hfsm-exec.log";
     pluginDirs = QStringList() <<"plugins";
 }
 
@@ -51,21 +51,23 @@ void Configuration::load()
     commandLineParser.setApplicationDescription(APPLICATION_DESCRIPTION);
 
     //add options
-    QCommandLineOption commandLogger(QStringList() <<"l" <<"logger", "Enable only the specified loggers. Possible Loggers are: api, application, builder, decoder, parameter, plugin, statemachine. [Default: all]", "logger");
-    QCommandLineOption commandLogFle(QStringList() <<"f" <<"logfile", "Set the filename (including the path) for the log file.", "filename");
-    QCommandLineOption commandPluginDir(QStringList() <<"d" <<"plugindir", "Set the path to the directories where the plugins will be loaded from. [Default: ./plugins/]", "directory");
+    QCommandLineOption commandLogger(QStringList() <<"l" <<"logger", "Enable only the specified loggers. Possible Loggers are: api, application, builder, parameter, plugin, statemachine. [Default: all]", "logger");
+    QCommandLineOption commandLoggerFile(QStringList() <<"o" <<"logger-file", "Set the filename (including the path) for the log file.", "filename");
+    QCommandLineOption commandPluginDir(QStringList() <<"d" <<"plugin-dir", "Set the path to the directories where the plugins will be loaded from. [Default: ./plugins/]", "directory");
     QCommandLineOption commandApi(QStringList() <<"a" <<"api", "Enable the REST API. This will startup the internal HTTP server.");
-    QCommandLineOption commandApiPort(QStringList() <<"p" <<"apiport", "Set port of the HTTP server for the REST API. [Default: 8080]", "port");
-    QCommandLineOption commandStatemachine(QStringList() <<"s" <<"statemachine", "Set the filename (including the path) for the state machine file which will be loaded, build and executed after startup.", "filename");
+    QCommandLineOption commandApiPort(QStringList() <<"p" <<"api-port", "Set port of the HTTP server for the REST API. [Default: 8080]", "port");
+    QCommandLineOption commandImportStatemachine(QStringList() <<"i" <<"import", "Import a state machine at startup.", "filename");
+    QCommandLineOption commandExportStatemachine(QStringList() <<"e" <<"export", "Export the imported state machine at startup.", "filename");
 
     commandLineParser.addHelpOption();
     commandLineParser.addVersionOption();
     commandLineParser.addOption(commandLogger);
-    commandLineParser.addOption(commandLogFle);
+    commandLineParser.addOption(commandLoggerFile);
     commandLineParser.addOption(commandPluginDir);
     commandLineParser.addOption(commandApi);
     commandLineParser.addOption(commandApiPort);
-    commandLineParser.addOption(commandStatemachine);
+    commandLineParser.addOption(commandImportStatemachine);
+    commandLineParser.addOption(commandExportStatemachine);
 
     //process command line
     commandLineParser.process(Application::getInstance()->getQtApplication());
@@ -76,13 +78,13 @@ void Configuration::load()
         loggers = commandLineParser.values(commandLogger);
     }
 
-    //logfile
-    if (commandLineParser.isSet(commandLogFle))
+    //logger file
+    if (commandLineParser.isSet(commandLoggerFile))
     {
-        logFile = commandLineParser.value(commandLogFle);
+        loggerFile = commandLineParser.value(commandLoggerFile);
     }
 
-    //plugindir
+    //plugin dir
     if (commandLineParser.isSet(commandPluginDir))
     {
         pluginDirs = commandLineParser.values(commandPluginDir);
@@ -94,16 +96,22 @@ void Configuration::load()
         api = true;
     }
 
-    //apiport
+    //api port
     if (commandLineParser.isSet(commandApiPort))
     {
         apiPort = commandLineParser.value(commandApiPort).toInt();
     }
 
-    //statemachine
-    if (commandLineParser.isSet(commandStatemachine))
+    //import
+    if (commandLineParser.isSet(commandImportStatemachine))
     {
-        statemachine = commandLineParser.value(commandStatemachine);
+        importStateMachine = commandLineParser.value(commandImportStatemachine);
+    }
+
+    //export
+    if (commandLineParser.isSet(commandExportStatemachine))
+    {
+        exportStateMachine = commandLineParser.value(commandExportStatemachine);
     }
 }
 
@@ -169,20 +177,32 @@ int Application::exec()
         api.exec(configuration.apiPort);
     }
 
-    //load statemachine from file
-    if (!configuration.statemachine.isEmpty())
+    //import state machine
+    if (!configuration.importStateMachine.isEmpty())
     {
-        QFile file(configuration.statemachine);
+        QFile file(configuration.importStateMachine);
         if (file.open(QIODevice::ReadOnly))
         {
             QTextStream stream(&file);
-            QString stateMachine = stream.readAll();
+            QString data = stream.readAll();
             file.close();
 
-            if (loadStateMachine(stateMachine))
-            {
-                startStateMachine();
-            }
+            StateMachine* stateMachine = pluginLoader.getImporterPlugin("FHG")->importStateMachine(data);
+            loadStateMachine(stateMachine);
+        }
+    }
+
+    //export state machine
+    if (!configuration.exportStateMachine.isEmpty() && stateMachine != NULL)
+    {
+        QFile file(configuration.exportStateMachine);
+        if (file.open(QIODevice::WriteOnly))
+        {
+            QString data = pluginLoader.getExporterPlugin("DOT")->exportStateMachine(stateMachine);
+
+            QTextStream stream(&file);
+            stream <<data;
+            file.close();
         }
     }
 
@@ -245,23 +265,6 @@ bool Application::loadStateMachine(StateMachine* stateMachine)
     }
 
     this->stateMachine = stateMachine;
-
-    return true;
-}
-
-bool Application::loadStateMachine(const QString& data)
-{
-    logger->info("load state machine from encoded data");
-
-    StateMachine* stateMachine = pluginLoader.getDecoderPlugin("FHG")->decode(data); //TODO
-    if (stateMachine == NULL)
-    {
-        logger->warning("couldn't load state machine: decoding of encoded state machine failed");
-
-        return false;
-    }
-
-    loadStateMachine(stateMachine);
 
     return true;
 }

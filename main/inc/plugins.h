@@ -43,21 +43,34 @@ namespace hfsmexec
             const QString pluginId;
     };
 
-    class DecoderPlugin
+    class ImporterPlugin
     {
         public:
-            DecoderPlugin(const QString& pluginId, const QString& encoding);
-            virtual ~DecoderPlugin();
+            ImporterPlugin(const QString& pluginId);
+            virtual ~ImporterPlugin();
 
             const QString& getPluginId() const;
-            const QString& getEncoding() const;
 
-            virtual StateMachine* decode(const QString& data) = 0;
+            virtual StateMachine* importStateMachine(const QString& data) = 0;
 
         protected:
             static const Logger* logger;
             const QString pluginId;
-            const QString encoding;
+    };
+
+    class ExporterPlugin
+    {
+        public:
+            ExporterPlugin(const QString& pluginId);
+            virtual ~ExporterPlugin();
+
+            const QString& getPluginId() const;
+
+            virtual QString exportStateMachine(StateMachine* stateMachine) = 0;
+
+        protected:
+            static const Logger* logger;
+            const QString pluginId;
     };
 
     class PluginLoader
@@ -69,22 +82,28 @@ namespace hfsmexec
             CommunicationPlugin* getCommunicationPlugin(const QString& pluginId);
             const QMap<QString, CommunicationPlugin*>& getCommunicationPlugins() const;
 
-            DecoderPlugin* getDecoderPlugin(const QString& pluginId);
-            const QMap<QString, DecoderPlugin*>& getDecoderPlugins() const;
+            ImporterPlugin* getImporterPlugin(const QString& pluginId);
+            const QMap<QString, ImporterPlugin*>& getImporterPlugins() const;
+
+            ExporterPlugin* getExporterPlugin(const QString& pluginId);
+            const QMap<QString, ExporterPlugin*>& getExporterPlugins() const;
 
             bool load(const QString& path);
 
         private:
             static const Logger* logger;
             QMap<QString, CommunicationPlugin*> communicationPlugins;
-            QMap<QString, DecoderPlugin*> decoderPlugins;
+            QMap<QString, ImporterPlugin*> importerPlugins;
+            QMap<QString, ExporterPlugin*> exporterPlugins;
 
             bool loadCommunicationPlugin(QObject* plugin);
-            bool loadDecoderPlugin(QObject* plugin);
+            bool loadImporterPlugin(QObject* plugin);
+            bool loadExporterPlugin(QObject* plugin);
     };
 }
 
 Q_DECLARE_INTERFACE(hfsmexec::CommunicationPlugin, "hfsmexec.Plugins.CommunicationPlugin")
-Q_DECLARE_INTERFACE(hfsmexec::DecoderPlugin, "hfsmexec.Plugins.DecoderPlugin")
+Q_DECLARE_INTERFACE(hfsmexec::ImporterPlugin, "hfsmexec.Plugins.ImporterPlugin")
+Q_DECLARE_INTERFACE(hfsmexec::ExporterPlugin, "hfsmexec.Plugins.ExporterPlugin")
 
 #endif

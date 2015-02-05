@@ -118,7 +118,9 @@ namespace hfsmexec
             virtual ~AbstractState();
 
             const QString& getId() const;
+            void setId(const QString& stateId);
             const QString& getParentStateId() const;
+            void setParentStateId(const QString& parentStateId);
             const StateMachine* getStateMachine() const;
 
             Parameter& getInputParameters();

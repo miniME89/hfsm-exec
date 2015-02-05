@@ -44,30 +44,45 @@ const QString& CommunicationPlugin::getPluginId() const
 }
 
 /*
- * DecoderPlugin
+ * ImporterPlugin
  */
-const Logger* DecoderPlugin::logger = Logger::getLogger(LOGGER_PLUGIN);
+const Logger* ImporterPlugin::logger = Logger::getLogger(LOGGER_PLUGIN);
 
-DecoderPlugin::DecoderPlugin(const QString& pluginId, const QString& encoding) :
-    pluginId(pluginId),
-    encoding(encoding)
+ImporterPlugin::ImporterPlugin(const QString& pluginId) :
+    pluginId(pluginId)
 {
 
 }
 
-DecoderPlugin::~DecoderPlugin()
+ImporterPlugin::~ImporterPlugin()
 {
 
 }
 
-const QString& DecoderPlugin::getPluginId() const
+const QString& ImporterPlugin::getPluginId() const
 {
     return pluginId;
 }
 
-const QString& DecoderPlugin::getEncoding() const
+/*
+ * ExporterPlugin
+ */
+const Logger* ExporterPlugin::logger = Logger::getLogger(LOGGER_PLUGIN);
+
+ExporterPlugin::ExporterPlugin(const QString& pluginId) :
+    pluginId(pluginId)
 {
-    return encoding;
+
+}
+
+ExporterPlugin::~ExporterPlugin()
+{
+
+}
+
+const QString& ExporterPlugin::getPluginId() const
+{
+    return pluginId;
 }
 
 /*
@@ -90,19 +105,29 @@ CommunicationPlugin* PluginLoader::getCommunicationPlugin(const QString& pluginI
     return communicationPlugins.find(pluginId).value();
 }
 
-DecoderPlugin* PluginLoader::getDecoderPlugin(const QString& pluginId)
-{
-    return decoderPlugins.find(pluginId).value();
-}
-
 const QMap<QString, CommunicationPlugin*>& PluginLoader::getCommunicationPlugins() const
 {
     return communicationPlugins;
 }
 
-const QMap<QString, DecoderPlugin*>& PluginLoader::getDecoderPlugins() const
+ImporterPlugin* PluginLoader::getImporterPlugin(const QString& pluginId)
 {
-    return decoderPlugins;
+    return importerPlugins.find(pluginId).value();
+}
+
+const QMap<QString, ImporterPlugin*>& PluginLoader::getImporterPlugins() const
+{
+    return importerPlugins;
+}
+
+ExporterPlugin* PluginLoader::getExporterPlugin(const QString& pluginId)
+{
+    return exporterPlugins.find(pluginId).value();
+}
+
+const QMap<QString, ExporterPlugin*>& PluginLoader::getExporterPlugins() const
+{
+    return exporterPlugins;
 }
 
 bool PluginLoader::load(const QString &path)
@@ -139,7 +164,11 @@ bool PluginLoader::load(const QString &path)
         {
 
         }
-        else if (loadDecoderPlugin(plugin))
+        else if (loadImporterPlugin(plugin))
+        {
+
+        }
+        else if (loadExporterPlugin(plugin))
         {
 
         }
@@ -161,49 +190,68 @@ bool PluginLoader::loadCommunicationPlugin(QObject* plugin)
         return false;
     }
 
-    logger->info("plugin is of type \"CommunicationPlugin\"");
-
     //verify unique plugin id
     QString pluginId = instance->getPluginId();
     if (communicationPlugins.contains(pluginId))
     {
-        logger->warning(QString("unload already loaded communication plugin with plugin id \"%1\"").arg(pluginId));
+        logger->warning(QString("unload already loaded communication plugin \"%1\"").arg(pluginId));
 
         delete communicationPlugins[pluginId];
     }
 
     communicationPlugins[pluginId] = instance;
 
-    logger->info(QString("successfully loaded communication plugin with pluginId %1").arg(pluginId));
+    logger->info(QString("successfully loaded communication plugin \"%1\"").arg(pluginId));
 
     return true;
 }
 
-bool PluginLoader::loadDecoderPlugin(QObject* plugin)
+bool PluginLoader::loadImporterPlugin(QObject* plugin)
 {
     //cast plugin
-    DecoderPlugin* instance = qobject_cast<DecoderPlugin*>(plugin);
+    ImporterPlugin* instance = qobject_cast<ImporterPlugin*>(plugin);
     if (!instance)
     {
-        logger->warning("invalid decoder plugin: plugin is not of type \"DecoderPlugin\"");
-
         return false;
     }
 
-    logger->info("plugin is of type \"DecoderPlugin\"");
+    //verify unique plugin id
+    QString pluginId = instance->getPluginId();
+    if (importerPlugins.contains(pluginId))
+    {
+        logger->warning(QString("unload already loaded importer plugin \"%1\"").arg(pluginId));
+
+        delete importerPlugins[pluginId];
+    }
+
+    importerPlugins[pluginId] = instance;
+
+    logger->info(QString("successfully loaded importer plugin \"%1\"").arg(pluginId));
+
+    return true;
+}
+
+bool PluginLoader::loadExporterPlugin(QObject* plugin)
+{
+    //cast plugin
+    ExporterPlugin* instance = qobject_cast<ExporterPlugin*>(plugin);
+    if (!instance)
+    {
+        return false;
+    }
 
     //verify unique plugin id
     QString pluginId = instance->getPluginId();
-    if (decoderPlugins.contains(pluginId))
+    if (exporterPlugins.contains(pluginId))
     {
-        logger->warning(QString("unload already loaded decoder plugin with plugin id \"%1\"").arg(pluginId));
+        logger->warning(QString("unload already loaded exporter plugin \"%1\"").arg(pluginId));
 
-        delete decoderPlugins[pluginId];
+        delete exporterPlugins[pluginId];
     }
 
-    decoderPlugins[pluginId] = instance;
+    exporterPlugins[pluginId] = instance;
 
-    logger->info(QString("successfully loaded decoder plugin with pluginId \"%1\"").arg(pluginId));
+    logger->info(QString("successfully loaded exporter plugin \"%1\"").arg(pluginId));
 
     return true;
 }

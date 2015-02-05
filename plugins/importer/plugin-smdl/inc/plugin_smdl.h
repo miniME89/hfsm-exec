@@ -22,17 +22,17 @@
 #include <builder.h>
 #include <pugixml.hpp>
 
-class XmlDecoder : public QObject, public hfsmexec::DecoderPlugin
+class Importer : public QObject, public hfsmexec::ImporterPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "hfsmexec.Plugins.DecoderPlugin")
-    Q_INTERFACES(hfsmexec::DecoderPlugin)
+    Q_PLUGIN_METADATA(IID "hfsmexec.Plugins.ImporterPlugin")
+    Q_INTERFACES(hfsmexec::ImporterPlugin)
 
     public:
-        XmlDecoder();
-        virtual ~XmlDecoder();
+        Importer();
+        virtual ~Importer();
 
-        hfsmexec::StateMachine* decode(const QString &data);
+        hfsmexec::StateMachine* importStateMachine(const QString &data);
 
     private:
         bool decodeChilds(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);

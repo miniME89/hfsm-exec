@@ -42,10 +42,11 @@ namespace hfsmexec
 
             bool api;
             int apiPort;
-            QString logFile;
+            QString loggerFile;
             QStringList loggers;
             QStringList pluginDirs;
-            QString statemachine;
+            QString importStateMachine;
+            QString exportStateMachine;
 
             void load();
     };
@@ -69,7 +70,6 @@ namespace hfsmexec
             bool postEvent(AbstractEvent* event);
 
             bool loadStateMachine(StateMachine* stateMachine);
-            bool loadStateMachine(const QString& data);
             bool unloadStateMachine();
 
             bool startStateMachine();

@@ -26,4 +26,5 @@ include_directories(${source_dir}/include)
 
 add_subdirectory(main)
 add_subdirectory(plugins/communication)
-add_subdirectory(plugins/decoder)
+add_subdirectory(plugins/importer)
+add_subdirectory(plugins/exporter)

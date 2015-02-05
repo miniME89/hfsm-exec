@@ -194,9 +194,19 @@ const QString& AbstractState::getId() const
     return stateId;
 }
 
+void AbstractState::setId(const QString& stateId)
+{
+    this->stateId = stateId;
+}
+
 const QString& AbstractState::getParentStateId() const
 {
     return parentStateId;
+}
+
+void AbstractState::setParentStateId(const QString& parentStateId)
+{
+    this->parentStateId = parentStateId;
 }
 
 const StateMachine* AbstractState::getStateMachine() const
