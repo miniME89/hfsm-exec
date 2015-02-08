@@ -187,7 +187,7 @@ int Application::exec()
             QString data = stream.readAll();
             file.close();
 
-            StateMachine* stateMachine = pluginLoader.getImporterPlugin("FHG")->importStateMachine(data);
+            StateMachine* stateMachine = pluginLoader.getImporterPlugin("SMDL/XML")->importStateMachine(data);
             loadStateMachine(stateMachine);
         }
     }

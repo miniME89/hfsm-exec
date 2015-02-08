@@ -153,12 +153,12 @@ AbstractState* Dataflow::getTargetState()
     return targetState;
 }
 
-Parameter& Dataflow::getFromParameter()
+Value& Dataflow::getFromParameter()
 {
     return fromParameter;
 }
 
-Parameter& Dataflow::getToParameter()
+Value& Dataflow::getToParameter()
 {
     return toParameter;
 }
@@ -180,8 +180,8 @@ AbstractState::AbstractState(const QString& stateId, const QString& parentStateI
 {
     setObjectName("AbstractState");
 
-    inputParameters = Object();
-    outputParameters = Object();
+    inputParameters = Value::Object();
+    outputParameters = Value::Object();
 }
 
 AbstractState::~AbstractState()
@@ -214,22 +214,22 @@ const StateMachine* AbstractState::getStateMachine() const
     return stateMachine;
 }
 
-Parameter& AbstractState::getInputParameters()
+Value& AbstractState::getInputParameters()
 {
     return inputParameters;
 }
 
-void AbstractState::setInputParameters(const Parameter& value)
+void AbstractState::setInputParameters(const Value& value)
 {
     inputParameters = value;
 }
 
-Parameter& AbstractState::getOutputParameters()
+Value& AbstractState::getOutputParameters()
 {
     return outputParameters;
 }
 
-void AbstractState::setOutputParameters(const Parameter& value)
+void AbstractState::setOutputParameters(const Value& value)
 {
     outputParameters = value;
 }
@@ -584,20 +584,23 @@ InvokeState::InvokeState(const QString& stateId, const QString& type, const QStr
 
     delegate->setInitialState(stateInvoke);
 
-    endpoint = Object();
+    endpoint = Value::Object();
 }
 
 InvokeState::~InvokeState()
 {
-
+    if (communicationPlugin != NULL)
+    {
+        delete communicationPlugin;
+    }
 }
 
-Parameter& InvokeState::getEndpoint()
+Value& InvokeState::getEndpoint()
 {
     return endpoint;
 }
 
-void InvokeState::setEndpoint(Parameter& value)
+void InvokeState::setEndpoint(Value& value)
 {
     endpoint = value;
 }
@@ -631,27 +634,15 @@ void InvokeState::eventEntered()
 
     if (communicationPlugin == NULL)
     {
-        logger->warning(QString("%1 invalid communication plugin. Skip invocation.").arg(toString()));
+        logger->warning(QString("%1 can't invoke application: invalid communication plugin").arg(toString()));
 
         return;
     }
 
-    Parameter all;
-    all["input"] = &inputParameters;
-    all["output"] = &outputParameters;
-    all["endpoint"] = &endpoint;
-
-    QString json;
-    all.toJson(json);
-    logger->info(json);
-
     communicationPlugin->invoke(endpoint, inputParameters, outputParameters);
 
-    QString json2;
-    all.toJson(json2);
-    logger->info(json2);
-
-    done(); //TODO temporary
+    if (type != "ROS")
+        done(); //TODO temporary
 }
 
 void InvokeState::eventExited()

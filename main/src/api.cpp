@@ -19,8 +19,6 @@
 #include <application.h>
 #include <statemachine.h>
 
-#include <jsoncpp/json/json.h>
-
 using namespace hfsmexec;
 
 /*
@@ -98,6 +96,7 @@ void Api::statemachineUnload(HttpRequest* request, HttpResponse* response)
 
 void Api::statemachineStart(HttpRequest* request, HttpResponse* response)
 {
+    Application::getInstance()->startStateMachine();
     response->setStatusCode(200);
 }
 

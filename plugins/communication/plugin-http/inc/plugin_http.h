@@ -32,7 +32,8 @@ namespace hfsmexec
             HTTPCommunicationPlugin();
             virtual ~HTTPCommunicationPlugin();
 
-            virtual bool invoke(Parameter& endpoint, Parameter& inputParameters, Parameter& outputParameters);
+            virtual CommunicationPlugin* create();
+            virtual bool invoke(Value& endpoint, Value& inputParameters, Value& outputParameters);
             virtual bool cancel();
     };
 }

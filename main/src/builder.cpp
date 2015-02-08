@@ -109,11 +109,11 @@ StateMachine* StateMachineBuilder::build()
             return NULL;
         }
 
-        Parameter sourceParameters;
+        Value sourceParameters;
         sourceParameters["input"] = &sourceState->getInputParameters();
         sourceParameters["output"] = &sourceState->getOutputParameters();
 
-        Parameter targetParameters;
+        Value targetParameters;
         targetParameters["input"] = &targetState->getInputParameters();
         targetParameters["output"] = &targetState->getOutputParameters();
 

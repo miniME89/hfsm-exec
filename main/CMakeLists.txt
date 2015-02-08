@@ -23,8 +23,8 @@ set(SOURCES src/logger.cpp
             src/api.cpp
             src/statemachine.cpp
             src/builder.cpp
-            src/parameter.cpp
-            src/plugins.cpp)
+            src/plugins.cpp
+            src/value.cpp)
 
 set(HEADERS inc/logger.h
             inc/application.h
@@ -32,8 +32,8 @@ set(HEADERS inc/logger.h
             inc/api.h
             inc/statemachine.h
             inc/builder.h
-            inc/parameter.h
-            inc/plugins.h)
+            inc/plugins.h
+            inc/value.h)
 
 set(INCLUDE_DIRS inc
                  ext/easyloggingpp/inc

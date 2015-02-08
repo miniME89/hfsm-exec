@@ -30,7 +30,12 @@ HTTPCommunicationPlugin::~HTTPCommunicationPlugin()
 
 }
 
-bool HTTPCommunicationPlugin::invoke(Parameter& endpoint, Parameter& inputParameters, Parameter& outputParameters)
+CommunicationPlugin* HTTPCommunicationPlugin::create()
+{
+	return new HTTPCommunicationPlugin();
+}
+
+bool HTTPCommunicationPlugin::invoke(Value& endpoint, Value& inputParameters, Value& outputParameters)
 {
     outputParameters["/some/test/value"].set(5);
     logger->info("test");

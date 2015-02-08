@@ -163,7 +163,7 @@ bool Importer::decodeInput(pugi::xml_node& node, AbstractState* state)
     node.print(stream);
     QString nodeStr = stream.str().c_str();
 
-    Parameter parameters;
+    Value parameters;
     if (!parameters.fromXml(nodeStr))
     {
         return false;
@@ -182,7 +182,7 @@ bool Importer::decodeOutput(pugi::xml_node& node, AbstractState* state)
     node.print(stream);
     QString nodeStr = stream.str().c_str();
 
-    Parameter parameters;
+    Value parameters;
     if (!parameters.fromXml(nodeStr))
     {
         return false;
@@ -266,7 +266,7 @@ AbstractState* Importer::decodeInvoke(pugi::xml_node& node, StateMachineBuilder&
     endpoint.print(stream);
     QString endPointStr = stream.str().c_str();
 
-    Parameter endpointParameter;
+    Value endpointParameter;
     endpointParameter.fromXml(endPointStr);
 
     logger->info(QString("decode InvokeState: id=%1, type=%2, parent=%3").arg(id).arg(type).arg(parentState->getId()));

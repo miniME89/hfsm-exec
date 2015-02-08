@@ -21,7 +21,7 @@
 #define LOGGER_STATEMACHINE "statemachine"
 
 #include <logger.h>
-#include <parameter.h>
+#include <value.h>
 
 #include <QEvent>
 #include <QAbstractTransition>
@@ -91,8 +91,8 @@ namespace hfsmexec
 
             AbstractState* getSourceState();
             AbstractState* getTargetState();
-            Parameter& getFromParameter();
-            Parameter& getToParameter();
+            Value& getFromParameter();
+            Value& getToParameter();
 
             QString toString() const;
 
@@ -103,8 +103,8 @@ namespace hfsmexec
             QString to;
             AbstractState* sourceState;
             AbstractState* targetState;
-            Parameter fromParameter;
-            Parameter toParameter;
+            Value fromParameter;
+            Value toParameter;
     };
 
     class AbstractState : public QObject
@@ -123,10 +123,10 @@ namespace hfsmexec
             void setParentStateId(const QString& parentStateId);
             const StateMachine* getStateMachine() const;
 
-            Parameter& getInputParameters();
-            void setInputParameters(const Parameter& value);
-            Parameter& getOutputParameters();
-            void setOutputParameters(const Parameter& value);
+            Value& getInputParameters();
+            void setInputParameters(const Value& value);
+            Value& getOutputParameters();
+            void setOutputParameters(const Value& value);
 
             const QList<Dataflow*>& getDataflows() const;
 
@@ -149,8 +149,8 @@ namespace hfsmexec
             QString stateId;
             QString parentStateId;
             StateMachine* stateMachine;
-            Parameter inputParameters;
-            Parameter outputParameters;
+            Value inputParameters;
+            Value outputParameters;
             QList<Dataflow*> dataflows;
             QList<AbstractTransition*> transitions;
             QList<AbstractState*> childStates;
@@ -295,8 +295,8 @@ namespace hfsmexec
             InvokeState(const QString& stateId, const QString& type, const QString& parentStateId = "");
             virtual ~InvokeState();
 
-            Parameter& getEndpoint();
-            void setEndpoint(Parameter& value);
+            Value& getEndpoint();
+            void setEndpoint(Value& value);
 
             CommunicationPlugin* getCommunicationPlugin();
             void setCommunicationPlugin(CommunicationPlugin* value);
@@ -314,7 +314,7 @@ namespace hfsmexec
         private:
             QString type;
             CommunicationPlugin* communicationPlugin;
-            Parameter endpoint;
+            Value endpoint;
     };
 
     class StateMachine : public AbstractComplexState

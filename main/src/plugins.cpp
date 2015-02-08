@@ -18,7 +18,6 @@
 #include <plugins.h>
 
 #include <QDir>
-#include <QPluginLoader>
 
 using namespace hfsmexec;
 
@@ -102,32 +101,44 @@ PluginLoader::~PluginLoader()
 
 CommunicationPlugin* PluginLoader::getCommunicationPlugin(const QString& pluginId)
 {
-    return communicationPlugins.find(pluginId).value();
-}
+    QMap<QString, CommunicationPlugin*>::Iterator it = communicationPlugins.find(pluginId);
 
-const QMap<QString, CommunicationPlugin*>& PluginLoader::getCommunicationPlugins() const
-{
-    return communicationPlugins;
+    if (it == communicationPlugins.end())
+    {
+        logger->warning(QString("couldn't get communication plugin \"%1\"").arg(pluginId));
+
+        return NULL;
+    }
+
+    return it.value()->create();
 }
 
 ImporterPlugin* PluginLoader::getImporterPlugin(const QString& pluginId)
 {
-    return importerPlugins.find(pluginId).value();
-}
+    QMap<QString, ImporterPlugin*>::Iterator it = importerPlugins.find(pluginId);
 
-const QMap<QString, ImporterPlugin*>& PluginLoader::getImporterPlugins() const
-{
-    return importerPlugins;
+    if (it == importerPlugins.end())
+    {
+        logger->warning(QString("couldn't get importer plugin \"%1\"").arg(pluginId));
+
+        return NULL;
+    }
+
+    return it.value();
 }
 
 ExporterPlugin* PluginLoader::getExporterPlugin(const QString& pluginId)
 {
-    return exporterPlugins.find(pluginId).value();
-}
+    QMap<QString, ExporterPlugin*>::Iterator it = exporterPlugins.find(pluginId);
 
-const QMap<QString, ExporterPlugin*>& PluginLoader::getExporterPlugins() const
-{
-    return exporterPlugins;
+    if (it == exporterPlugins.end())
+    {
+        logger->warning(QString("couldn't get exporter plugin \"%1\"").arg(pluginId));
+
+        return NULL;
+    }
+
+    return it.value();
 }
 
 bool PluginLoader::load(const QString &path)
@@ -160,98 +171,47 @@ bool PluginLoader::load(const QString &path)
             continue;
         }
 
-        if (loadCommunicationPlugin(plugin))
+        //communication plugin
+        CommunicationPlugin* instanceCommunicationPlugin = qobject_cast<CommunicationPlugin*>(plugin);
+        if (instanceCommunicationPlugin)
         {
+            QString pluginId = instanceCommunicationPlugin->getPluginId();
 
+            communicationPlugins[pluginId] = instanceCommunicationPlugin;
+
+            logger->info(QString("successfully loaded communication plugin \"%1\"").arg(pluginId));
+
+            continue;
         }
-        else if (loadImporterPlugin(plugin))
+
+        //importer plugin
+        ImporterPlugin* instanceImporterPlugin = qobject_cast<ImporterPlugin*>(plugin);
+        if (instanceImporterPlugin)
         {
+            QString pluginId = instanceImporterPlugin->getPluginId();
 
+            importerPlugins[pluginId] = instanceImporterPlugin;
+
+            logger->info(QString("successfully loaded importer plugin \"%1\"").arg(pluginId));
+
+            continue;
         }
-        else if (loadExporterPlugin(plugin))
+
+        //exporter plugin
+        ExporterPlugin* instanceExporterPlugin = qobject_cast<ExporterPlugin*>(plugin);
+        if (instanceExporterPlugin)
         {
+            QString pluginId = instanceExporterPlugin->getPluginId();
 
+            exporterPlugins[pluginId] = instanceExporterPlugin;
+
+            logger->info(QString("successfully loaded exporter plugin \"%1\"").arg(pluginId));
+
+            continue;
         }
-        else
-        {
-            logger->warning("couldn't load plugin: unknown plugin instance");
-        }
+
+        logger->warning("couldn't load plugin: unknown plugin instance");
     }
-
-    return true;
-}
-
-bool PluginLoader::loadCommunicationPlugin(QObject* plugin)
-{
-    //cast plugin
-    CommunicationPlugin* instance = qobject_cast<CommunicationPlugin*>(plugin);
-    if (!instance)
-    {
-        return false;
-    }
-
-    //verify unique plugin id
-    QString pluginId = instance->getPluginId();
-    if (communicationPlugins.contains(pluginId))
-    {
-        logger->warning(QString("unload already loaded communication plugin \"%1\"").arg(pluginId));
-
-        delete communicationPlugins[pluginId];
-    }
-
-    communicationPlugins[pluginId] = instance;
-
-    logger->info(QString("successfully loaded communication plugin \"%1\"").arg(pluginId));
-
-    return true;
-}
-
-bool PluginLoader::loadImporterPlugin(QObject* plugin)
-{
-    //cast plugin
-    ImporterPlugin* instance = qobject_cast<ImporterPlugin*>(plugin);
-    if (!instance)
-    {
-        return false;
-    }
-
-    //verify unique plugin id
-    QString pluginId = instance->getPluginId();
-    if (importerPlugins.contains(pluginId))
-    {
-        logger->warning(QString("unload already loaded importer plugin \"%1\"").arg(pluginId));
-
-        delete importerPlugins[pluginId];
-    }
-
-    importerPlugins[pluginId] = instance;
-
-    logger->info(QString("successfully loaded importer plugin \"%1\"").arg(pluginId));
-
-    return true;
-}
-
-bool PluginLoader::loadExporterPlugin(QObject* plugin)
-{
-    //cast plugin
-    ExporterPlugin* instance = qobject_cast<ExporterPlugin*>(plugin);
-    if (!instance)
-    {
-        return false;
-    }
-
-    //verify unique plugin id
-    QString pluginId = instance->getPluginId();
-    if (exporterPlugins.contains(pluginId))
-    {
-        logger->warning(QString("unload already loaded exporter plugin \"%1\"").arg(pluginId));
-
-        delete exporterPlugins[pluginId];
-    }
-
-    exporterPlugins[pluginId] = instance;
-
-    logger->info(QString("successfully loaded exporter plugin \"%1\"").arg(pluginId));
 
     return true;
 }

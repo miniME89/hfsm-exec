@@ -23,8 +23,6 @@
 #include <logger.h>
 #include <httpserver.h>
 
-#include <jsoncpp/json/json.h>
-
 #include <QRegExp>
 
 namespace hfsmexec

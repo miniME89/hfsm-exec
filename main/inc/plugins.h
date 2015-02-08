@@ -24,6 +24,7 @@
 #include <statemachine.h>
 
 #include <QtPlugin>
+#include <QPluginLoader>
 
 namespace hfsmexec
 {
@@ -35,7 +36,8 @@ namespace hfsmexec
 
             const QString& getPluginId() const;
 
-            virtual bool invoke(Parameter& endpoint, Parameter& inputParameters, Parameter& outputParameters) = 0;
+            virtual CommunicationPlugin* create() = 0;
+            virtual bool invoke(Value& endpoint, Value& inputParameters, Value& outputParameters) = 0;
             virtual bool cancel() = 0;
 
         protected:
@@ -80,13 +82,8 @@ namespace hfsmexec
             ~PluginLoader();
 
             CommunicationPlugin* getCommunicationPlugin(const QString& pluginId);
-            const QMap<QString, CommunicationPlugin*>& getCommunicationPlugins() const;
-
             ImporterPlugin* getImporterPlugin(const QString& pluginId);
-            const QMap<QString, ImporterPlugin*>& getImporterPlugins() const;
-
             ExporterPlugin* getExporterPlugin(const QString& pluginId);
-            const QMap<QString, ExporterPlugin*>& getExporterPlugins() const;
 
             bool load(const QString& path);
 
@@ -95,10 +92,6 @@ namespace hfsmexec
             QMap<QString, CommunicationPlugin*> communicationPlugins;
             QMap<QString, ImporterPlugin*> importerPlugins;
             QMap<QString, ExporterPlugin*> exporterPlugins;
-
-            bool loadCommunicationPlugin(QObject* plugin);
-            bool loadImporterPlugin(QObject* plugin);
-            bool loadExporterPlugin(QObject* plugin);
     };
 }
 
