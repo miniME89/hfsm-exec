@@ -18,6 +18,7 @@
 #include <api.h>
 #include <application.h>
 #include <statemachine.h>
+#include <value.h>
 
 using namespace hfsmexec;
 
@@ -64,7 +65,16 @@ void Api::quit()
 
 void Api::logListener(const QString& name, Logger::Level level, const QString& message)
 {
-    logPushNotification.write(message.toStdString());
+    Value value;
+    value["scope"] = name;
+    value["level"] = level;
+    value["message"] = message;
+
+    QString data;
+    if (value.toJson(data))
+    {
+        logPushNotification.write(data.toStdString());
+    }
 }
 
 void Api::log(HttpRequest* request, HttpResponse* response)

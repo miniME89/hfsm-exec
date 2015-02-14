@@ -28,11 +28,11 @@ namespace hfsmexec
         public:
             typedef enum Level
             {
-                INFO,
-                WARNING,
-                ERROR,
-                FATAL,
-                DEBUG
+                INFO = 0,
+                WARNING = 1,
+                ERROR = 2,
+                FATAL = 3,
+                DEBUG = 4
             } Level;
             typedef void LogCallback(const QString& name, Level level, const QString& message);
 

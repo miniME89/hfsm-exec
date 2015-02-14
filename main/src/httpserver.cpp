@@ -24,7 +24,7 @@ using namespace hfsmexec;
  */
 PushNotification::PushNotification(int maxSize) :
     pos(0),
-    maxSize(5)
+    maxSize(maxSize)
 {
 
 }
