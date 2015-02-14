@@ -318,10 +318,9 @@ int HttpServer::requestHandler(void* cls, struct MHD_Connection* connection, con
     }
 
     //create response
-    response->data.seekp(0, std::ios::end);
-    int size = response->data.tellp();
-    const char* data = response->data.str().c_str();
-    struct MHD_Response* responseMHD = MHD_create_response_from_buffer(size, (void*)data, MHD_RESPMEM_MUST_COPY);
+    std::string dataStr = response->data.str();
+    const char* data = dataStr.c_str();
+    struct MHD_Response* responseMHD = MHD_create_response_from_buffer(dataStr.size(), (void*)data, MHD_RESPMEM_MUST_COPY);
 
     //set response headers
     std::map<std::string, std::string> responseHeaders = response->getHeaders();
