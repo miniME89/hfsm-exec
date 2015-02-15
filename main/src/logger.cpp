@@ -29,8 +29,6 @@ _INITIALIZE_EASYLOGGINGPP
  */
 QMap<QString, Logger*> Logger::loggers;
 
-QMap<QString, std::function<Logger::LogCallback>> Logger::listeners;
-
 Logger::Logger(const QString& name) :
     name(name)
 {
@@ -59,41 +57,31 @@ Logger::~Logger()
 void Logger::info(const QString& message) const
 {
     CLOG(INFO, name.toStdString().c_str()) <<message;
-    notifyListeners(name, INFO, message);
+    Application::getInstance()->getApi().pushlog(name, INFO, message);
 }
 
 void Logger::warning(const QString& message) const
 {
     CLOG(WARNING, name.toStdString().c_str()) <<message;
-    notifyListeners(name, WARNING, message);
+    Application::getInstance()->getApi().pushlog(name, WARNING, message);
 }
 
 void Logger::error(const QString& message) const
 {
     CLOG(ERROR, name.toStdString().c_str()) <<message;
-    notifyListeners(name, ERROR, message);
+    Application::getInstance()->getApi().pushlog(name, ERROR, message);
 }
 
 void Logger::fatal(const QString& message) const
 {
     CLOG(FATAL, name.toStdString().c_str()) <<message;
-    notifyListeners(name, FATAL, message);
+    Application::getInstance()->getApi().pushlog(name, FATAL, message);
 }
 
 void Logger::debug(const QString& message) const
 {
     CLOG(DEBUG, name.toStdString().c_str()) <<message;
-    notifyListeners(name, DEBUG, message);
-}
-
-void Logger::registerListener(const QString& id, const std::function<LogCallback>& listener)
-{
-    listeners[id] = listener;
-}
-
-void Logger::unregisterListener(const QString& id)
-{
-    listeners.remove(id);
+    Application::getInstance()->getApi().pushlog(name, DEBUG, message);
 }
 
 void Logger::setLoggerEnabled(bool enabled)
@@ -129,13 +117,4 @@ void Logger::setConsoleOut(bool enabled)
     el::Configurations config;
     config.set(el::Level::Global, el::ConfigurationType::ToStandardOutput, (enabled) ? "true" : "false");
     el::Loggers::reconfigureAllLoggers(config);
-}
-
-void Logger::notifyListeners(const QString& name, Level level, const QString& message) const
-{
-    QMap<QString, std::function<LogCallback>>::iterator i;
-    for (i = listeners.begin(); i != listeners.end(); i++)
-    {
-        i.value()(name, level, message);
-    }
 }

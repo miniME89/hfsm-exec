@@ -118,7 +118,7 @@ namespace hfsmexec
 
             void remove(const QString& key);
 
-            bool has(const QString& key);
+            bool contains(const QString& key);
 
             void undefined();
             void null();

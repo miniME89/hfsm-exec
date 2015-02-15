@@ -36,6 +36,10 @@ namespace hfsmexec
             void exec(int port = 8080);
             void quit();
 
+            void pushlog(const QString& name, Logger::Level level, const QString& message);
+            void pushStateChange(const QString& stateId, const QString& change);
+            void pushStateTransition(const QString& fromStateId, const QString& toStateId, const QString& event);
+
         private:
             typedef struct Service
             {
@@ -50,10 +54,10 @@ namespace hfsmexec
             QList<Service> services;
 
             PushNotification logPushNotification;
-
-            void logListener(const QString& name, Logger::Level level, const QString& message);
+            PushNotification statePushNotification;
 
             void log(HttpRequest* request, HttpResponse* response);
+            void statemachineState(HttpRequest* request, HttpResponse* response);
             void statemachineLoad(HttpRequest* request, HttpResponse* response);
             void statemachineUnload(HttpRequest* request, HttpResponse* response);
             void statemachineStart(HttpRequest* request, HttpResponse* response);

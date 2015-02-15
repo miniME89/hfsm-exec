@@ -289,7 +289,7 @@ void Value::remove(const QString& key)
     }
 }
 
-bool Value::has(const QString& key)
+bool Value::contains(const QString& key)
 {
     if (value->getType() == TYPE_OBJECT)
     {

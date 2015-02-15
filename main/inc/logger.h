@@ -46,9 +46,6 @@ namespace hfsmexec
             void fatal(const QString& message) const;
             void debug(const QString& message) const;
 
-            static void registerListener(const QString& id, const std::function<LogCallback>& listener);
-            static void unregisterListener(const QString& id);
-
             static void setLoggerEnabled(bool enabled);
             static void setLoggerEnabled(const QString& name, bool enabled);
 
@@ -59,12 +56,9 @@ namespace hfsmexec
 
         private:
             static QMap<QString, Logger*> loggers;
-            static QMap<QString, std::function<LogCallback>> listeners;
             const QString name;
 
             Logger(const QString& name);
-
-            void notifyListeners(const QString& name, Level level, const QString& message) const;
     };
 }
 

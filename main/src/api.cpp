@@ -32,13 +32,12 @@ Api::Api()
     server.setHandler(std::bind(&Api::httpHandler, this, std::placeholders::_1, std::placeholders::_2));
 
     assign("/log", "GET", std::bind(&Api::log, this, std::placeholders::_1, std::placeholders::_2));
+    assign("/statemachine/state", "GET", std::bind(&Api::statemachineState, this, std::placeholders::_1, std::placeholders::_2));
     assign("/statemachine/load", "POST", std::bind(&Api::statemachineLoad, this, std::placeholders::_1, std::placeholders::_2));
     assign("/statemachine/unload", "POST", std::bind(&Api::statemachineUnload, this, std::placeholders::_1, std::placeholders::_2));
     assign("/statemachine/start", "POST", std::bind(&Api::statemachineStart, this, std::placeholders::_1, std::placeholders::_2));
     assign("/statemachine/stop", "POST", std::bind(&Api::statemachineStop, this, std::placeholders::_1, std::placeholders::_2));
     assign("/statemachine/event", "POST", std::bind(&Api::statemachineEvent, this, std::placeholders::_1, std::placeholders::_2));
-
-    Logger::registerListener("api", std::bind(&Api::logListener, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 Api::~Api()
@@ -63,7 +62,7 @@ void Api::quit()
     server.stop();
 }
 
-void Api::logListener(const QString& name, Logger::Level level, const QString& message)
+void Api::pushlog(const QString& name, Logger::Level level, const QString& message)
 {
     Value value;
     value["scope"] = name;
@@ -77,11 +76,40 @@ void Api::logListener(const QString& name, Logger::Level level, const QString& m
     }
 }
 
+void Api::pushStateChange(const QString& stateId, const QString& change)
+{
+    Value value;
+    value["type"] = "state";
+    value["id"] = stateId;
+    value["change"] = change;
+
+    QString data;
+    if (value.toJson(data))
+    {
+        statePushNotification.write(data.toStdString());
+    }
+}
+
+void Api::pushStateTransition(const QString& fromStateId, const QString& toStateId, const QString& event)
+{
+    Value value;
+    value["type"] = "transition";
+    value["from"] = fromStateId;
+    value["to"] = toStateId;
+    value["event"] = event;
+
+    QString data;
+    if (value.toJson(data))
+    {
+        statePushNotification.write(data.toStdString());
+    }
+}
+
 void Api::log(HttpRequest* request, HttpResponse* response)
 {
     int index = std::strtol(request->getHeader("Push-Notification-Index").c_str(), NULL, 10);
     std::string data;
-    if (logPushNotification.read(index, data))
+    if (logPushNotification.read(index, data, 30))
     {
         response->setStatusCode(200);
         response->setHeader("Push-Notification-Index", std::to_string(index + 1));
@@ -94,30 +122,112 @@ void Api::log(HttpRequest* request, HttpResponse* response)
     }
 }
 
+void Api::statemachineState(HttpRequest* request, HttpResponse* response)
+{
+    int index = std::strtol(request->getHeader("Push-Notification-Index").c_str(), NULL, 10);
+    std::string data;
+    if (statePushNotification.read(index, data, 30))
+    {
+        response->setStatusCode(HttpResponse::STATUS_OK);
+        response->setHeader("Push-Notification-Index", std::to_string(index + 1));
+        response->write(data);
+    }
+    else
+    {
+        response->setStatusCode(HttpResponse::STATUS_NOT_MODIFIED);
+        response->setHeader("Push-Notification-Index", std::to_string(index));
+    }
+}
+
 void Api::statemachineLoad(HttpRequest* request, HttpResponse* response)
 {
-    response->setStatusCode(200);
+    Value value;
+    if (!value.fromJson(request->getBody().c_str()))
+    {
+        response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
+
+        return;
+    }
+
+    if (!value.contains("encoding") || !value.contains("data"))
+    {
+        response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
+
+        return;
+    }
+
+    if (!Application::getInstance()->loadStateMachine(value["encoding"].getString(), value["data"].getString()))
+    {
+        response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
+
+        return;
+    }
+
+    response->setStatusCode(HttpResponse::STATUS_OK);
 }
 
 void Api::statemachineUnload(HttpRequest* request, HttpResponse* response)
 {
-    response->setStatusCode(200);
+    if (!Application::getInstance()->unloadStateMachine())
+    {
+        response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
+
+        return;
+    }
+
+    response->setStatusCode(HttpResponse::STATUS_OK);
 }
 
 void Api::statemachineStart(HttpRequest* request, HttpResponse* response)
 {
-    Application::getInstance()->startStateMachine();
-    response->setStatusCode(200);
+    if (!Application::getInstance()->startStateMachine())
+    {
+        response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
+
+        return;
+    }
+
+    response->setStatusCode(HttpResponse::STATUS_OK);
 }
 
 void Api::statemachineStop(HttpRequest* request, HttpResponse* response)
 {
-    response->setStatusCode(200);
+    if (!Application::getInstance()->stopStateMachine())
+    {
+        response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
+
+        return;
+    }
+
+    response->setStatusCode(HttpResponse::STATUS_OK);
 }
 
 void Api::statemachineEvent(HttpRequest* request, HttpResponse* response)
 {
+    Value value;
+    if (!value.fromJson(request->getBody().c_str()))
+    {
+        response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
 
+        return;
+    }
+
+    if (!value.contains("event"))
+    {
+        response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
+
+        return;
+    }
+
+    NamedEvent* event = new NamedEvent(value["event"].getString());
+    if (!Application::getInstance()->postEvent(event))
+    {
+        response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
+
+        return;
+    }
+
+    response->setStatusCode(HttpResponse::STATUS_OK);
 }
 
 void Api::assign(QString pattern, QString method, std::function<void(HttpRequest*, HttpResponse*)> handler)

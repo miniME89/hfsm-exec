@@ -69,7 +69,7 @@ namespace hfsmexec
 
             bool postEvent(AbstractEvent* event);
 
-            bool loadStateMachine(StateMachine* stateMachine);
+            bool loadStateMachine(const QString& encoding, const QString& data);
             bool unloadStateMachine();
 
             bool startStateMachine();

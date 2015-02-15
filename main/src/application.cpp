@@ -187,8 +187,7 @@ int Application::exec()
             QString data = stream.readAll();
             file.close();
 
-            StateMachine* stateMachine = pluginLoader.getImporterPlugin("SMDL/XML")->importStateMachine(data);
-            loadStateMachine(stateMachine);
+            loadStateMachine("SMDL/XML", data);
         }
     }
 
@@ -253,16 +252,26 @@ bool Application::postEvent(AbstractEvent* event)
     return false;
 }
 
-bool Application::loadStateMachine(StateMachine* stateMachine)
+bool Application::loadStateMachine(const QString& encoding, const QString& data)
 {
-    logger->info("load state machine");
-
     if (!unloadStateMachine())
     {
         logger->warning("couldn't load state machine: unloading of existing state machine failed");
 
         return false;
     }
+
+    logger->info(QString("load state machine with \"%1\" encoding").arg(encoding));
+
+    ImporterPlugin* importerPlugin = pluginLoader.getImporterPlugin(encoding);
+    if (importerPlugin == NULL)
+    {
+        logger->warning(QString("couldn't load state machine: no suitable importer plugin loaded for \"%1\" encoding").arg(encoding));
+
+        return false;
+    }
+
+    StateMachine* stateMachine = importerPlugin->importStateMachine(data);
 
     this->stateMachine = stateMachine;
 
@@ -271,8 +280,6 @@ bool Application::loadStateMachine(StateMachine* stateMachine)
 
 bool Application::unloadStateMachine()
 {
-    logger->info("unload the currently loaded state machine");
-
     if (stateMachine == NULL)
     {
         return true;
@@ -283,6 +290,8 @@ bool Application::unloadStateMachine()
         return false;
     }
 
+    logger->info("unload the currently loaded state machine");
+
     delete stateMachine;
     stateMachine = NULL;
 
@@ -291,14 +300,14 @@ bool Application::unloadStateMachine()
 
 bool Application::startStateMachine()
 {
-    logger->info("start the loaded state machine");
-
     if (stateMachine == NULL)
     {
         logger->warning("couldn't start the loaded state machine: no state machine was loaded");
 
         return false;
     }
+
+    logger->info("start the loaded state machine");
 
     stateMachine->start();
 
@@ -307,14 +316,12 @@ bool Application::startStateMachine()
 
 bool Application::stopStateMachine()
 {
-    logger->info("stop the executing state machine");
-
     if (stateMachine == NULL)
     {
-        logger->warning("couldn't stop the loaded state machine: no state machine was loaded");
-
-        return false;
+        return true;
     }
+
+    logger->info("stop the executing state machine");
 
     stateMachine->stop();
 

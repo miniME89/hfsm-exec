@@ -326,11 +326,15 @@ QState* AbstractComplexState::getDelegate() const
 void AbstractComplexState::eventEntered()
 {
     logger->info(QString("%1 --> entered").arg(toString()));
+
+    Application::getInstance()->getApi().pushStateChange(stateId, "enter");
 }
 
 void AbstractComplexState::eventExited()
 {
     logger->info(QString("%1 --> exited").arg(toString()));
+
+    Application::getInstance()->getApi().pushStateChange(stateId, "exit");
 }
 
 void AbstractComplexState::eventFinished()
@@ -339,6 +343,8 @@ void AbstractComplexState::eventFinished()
 
     NamedEvent* event = new NamedEvent("done." + stateId);
     stateMachine->postEvent(event);
+
+    Application::getInstance()->getApi().pushStateChange(stateId, "finish");
 }
 
 /*
@@ -427,6 +433,8 @@ void NamedTransition::onTransition(QEvent* e)
     NamedEvent* namedEvent = static_cast<NamedEvent*>(e);
 
     logger->info(QString("%1 triggered transition on event %2").arg(toString()).arg(namedEvent->toString()));
+
+    Application::getInstance()->getApi().pushStateTransition(sourceStateId, targetStateId, eventName);
 }
 
 /*
