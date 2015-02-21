@@ -42,6 +42,14 @@ const QString& CommunicationPlugin::getPluginId() const
     return pluginId;
 }
 
+void CommunicationPlugin::finish()
+{
+    if (finishCallback)
+    {
+        finishCallback();
+    }
+}
+
 /*
  * ImporterPlugin
  */

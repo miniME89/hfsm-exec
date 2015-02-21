@@ -33,7 +33,7 @@ class RosCommunicationPlugin : public QObject, public hfsmexec::CommunicationPlu
         virtual ~RosCommunicationPlugin();
 
         virtual CommunicationPlugin* create();
-        virtual bool invoke(hfsmexec::Value& endpoint, hfsmexec::Value& inputParameters, hfsmexec::Value& outputParameters);
+        virtual bool invoke(hfsmexec::Value& endpoint, hfsmexec::Value& input, hfsmexec::Value& output);
         virtual bool cancel();
 
     public slots:
@@ -46,14 +46,14 @@ class RosCommunicationPlugin : public QObject, public hfsmexec::CommunicationPlu
     private:
         QList<std::function<bool(hfsmexec::Value)> > listeners;
         hfsmexec::Value endpoint;
-        hfsmexec::Value inputParameters;
-        hfsmexec::Value outputParameters;
+        hfsmexec::Value input;
+        hfsmexec::Value output;
         QTcpSocket socket;
 
-        bool publishMessage();
-        bool subscribeMessage();
-        bool sendServiceRequest();
-        bool sendActionGoal();
+        void publishMessage();
+        void subscribeMessage();
+        void sendServiceRequest();
+        void sendActionGoal();
 };
 
 #endif

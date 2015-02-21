@@ -39,11 +39,11 @@ CommunicationPlugin* RosCommunicationPlugin::create()
     return new RosCommunicationPlugin();
 }
 
-bool RosCommunicationPlugin::invoke(Value& endpoint, Value& inputParameters, Value& outputParameters)
+bool RosCommunicationPlugin::invoke(Value& endpoint, Value& input, Value& output)
 {
     this->endpoint = &endpoint;
-    this->inputParameters = &inputParameters;
-    this->outputParameters = &outputParameters;
+    this->input = &input;
+    this->output = &output;
 
     socket.connectToHost("localhost", 9090);
 
@@ -52,14 +52,14 @@ bool RosCommunicationPlugin::invoke(Value& endpoint, Value& inputParameters, Val
 
 bool RosCommunicationPlugin::cancel()
 {
+    socket.close();
+    listeners.clear(); //TODO mutex?
 
     return true;
 }
 
 void RosCommunicationPlugin::connected()
 {
-    logger->warning("connected");
-
     QString type = endpoint["type"].getString();
     if (type == "publish")
     {
@@ -77,11 +77,17 @@ void RosCommunicationPlugin::connected()
     {
         sendActionGoal();
     }
+    else
+    {
+        logger->warning(QString("unknown ROS communication type \"%1\"").arg(type));
+
+        finish();
+    }
 }
 
 void RosCommunicationPlugin::disconnected()
 {
-    logger->warning("disconnected");
+
 }
 
 void RosCommunicationPlugin::read()
@@ -142,7 +148,7 @@ bool RosCommunicationPlugin::write(const Value& value, std::function<bool(Value)
     listeners.append(listener);
 }
 
-bool RosCommunicationPlugin::publishMessage()
+void RosCommunicationPlugin::publishMessage()
 {
     logger->info("ROS communication: publish message");
 
@@ -150,12 +156,14 @@ bool RosCommunicationPlugin::publishMessage()
     value = Value();
     value["op"] = "publish";
     value["topic"] = endpoint["topic"].getString();
-    value["msg"] = inputParameters;
+    value["msg"] = input;
 
-    return write(value);
+    write(value);
+
+    finish();
 }
 
-bool RosCommunicationPlugin::subscribeMessage()
+void RosCommunicationPlugin::subscribeMessage()
 {
     logger->info("ROS communication: subscribe message");
 
@@ -186,22 +194,24 @@ bool RosCommunicationPlugin::subscribeMessage()
 
         write(value);
 
-        outputParameters = message["msg"];
+        output = message["msg"];
+
+        finish();
 
         return false;
     };
 
-    return write(subscribe, listener);
+    write(subscribe, listener);
 }
 
-bool RosCommunicationPlugin::sendServiceRequest()
+void RosCommunicationPlugin::sendServiceRequest()
 {
     logger->info("ROS communication: service");
 
     Value request;
     request["op"] = "call_service";
     request["service"] = endpoint["topic"].getString();
-    request["args"] = inputParameters;
+    request["args"] = input;
 
     //message listener
     auto listener = [=](Value message) {
@@ -217,13 +227,17 @@ bool RosCommunicationPlugin::sendServiceRequest()
 
         logger->info("received service response");
 
-        outputParameters = message["values"];
+        output = message["values"];
+
+        finish();
+
+        return false;
     };
 
-    return write(request, listener);
+    write(request, listener);
 }
 
-bool RosCommunicationPlugin::sendActionGoal()
+void RosCommunicationPlugin::sendActionGoal()
 {
     logger->info("ROS communication: action");
 
@@ -235,7 +249,7 @@ bool RosCommunicationPlugin::sendActionGoal()
 
     if (!write(subscribe))
     {
-        return false;
+        return;
     }
 
     //send action goal
@@ -243,7 +257,7 @@ bool RosCommunicationPlugin::sendActionGoal()
     publish["op"] = "publish";
     publish["topic"] = endpoint["topic"].getString() + "/goal";
     publish["msg"]["goal_id"]["id"] = QUuid::createUuid().toString();
-    publish["msg"]["goal"] = inputParameters;
+    publish["msg"]["goal"] = input;
 
     //message listener
     auto listener = [=](Value message) {
@@ -272,10 +286,12 @@ bool RosCommunicationPlugin::sendActionGoal()
 
         write(value);
 
-        outputParameters = message["msg"];
+        output = message["msg"];
+
+        finish();
 
         return false;
     };
 
-    return write(publish, listener);
+    write(publish, listener);
 }

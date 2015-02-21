@@ -300,6 +300,12 @@ AbstractState* AbstractState::findState(const QString& stateId)
     return NULL;
 }
 
+void AbstractState::finish()
+{
+    NamedEvent* event = new NamedEvent("done." + stateId);
+    stateMachine->postEvent(event);
+}
+
 /*
  * AbstractComplexState
  */
@@ -341,8 +347,7 @@ void AbstractComplexState::eventFinished()
 {
     logger->info(QString("%1 --> finished").arg(toString()));
 
-    NamedEvent* event = new NamedEvent("done." + stateId);
-    stateMachine->postEvent(event);
+    finish();
 
     Application::getInstance()->getApi().pushStateChange(stateId, "finish");
 }
@@ -579,11 +584,15 @@ QString ParallelState::toString() const
 /*
  * InvokeState
  */
-InvokeState::InvokeState(const QString& stateId, const QString& type, const QString& parentStateId) :
+InvokeState::InvokeState(const QString& stateId, const QString& binding, const QString& parentStateId) :
     AbstractComplexState(stateId, parentStateId),
-    type(type),
-    communicationPlugin(Application::getInstance()->getCommunicationPluginLoader().getCommunicationPlugin(type))
+    binding(binding),
+    communicationPlugin(Application::getInstance()->getCommunicationPluginLoader().getCommunicationPlugin(binding))
 {
+    if (communicationPlugin != NULL) {
+        communicationPlugin->finishCallback = std::bind(&InvokeState::finish, this);
+    }
+
     QState* stateInvoke = new QState(delegate);
     QFinalState* stateFinal = new QFinalState(delegate);
     InternalTransition* transitionFinal = new InternalTransition("done." + stateId);
@@ -623,12 +632,6 @@ void InvokeState::setCommunicationPlugin(CommunicationPlugin* value)
     communicationPlugin = value;
 }
 
-void InvokeState::done()
-{
-    InternalEvent* event = new InternalEvent("done." + stateId);
-    stateMachine->postEvent(event);
-}
-
 bool InvokeState::initialize()
 {
     logger->info(QString("%1 initialize").arg(toString()));
@@ -648,14 +651,15 @@ void InvokeState::eventEntered()
     }
 
     communicationPlugin->invoke(endpoint, inputParameters, outputParameters);
-
-    if (type != "ROS")
-        done(); //TODO temporary
 }
 
 void InvokeState::eventExited()
 {
     AbstractComplexState::eventExited();
+
+    if (communicationPlugin != NULL) {
+        communicationPlugin->cancel();
+    }
 }
 
 void InvokeState::eventFinished()

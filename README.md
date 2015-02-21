@@ -50,8 +50,8 @@ A RESTful API provides an easy interface for interacting with the executor.
 
 | Status  | Method | Location              | Description                                 |
 |---------|--------|-----------------------|---------------------------------------------|
-| WORK    | GET    | /log                  | Get log messages. (Server push)             |
-| WORK    | GET    | /statemachine         | Get state machine status                    |
+| WORK    | GET    | /log                  | Get log messages (server push)              |
+| WORK    | GET    | /statemachine/state   | Get state/transition changes (server push)  |
 | WORK    | PUT    | /statemachine/load    | Load state machine                          |
 | WORK    | PUT    | /statemachine/unload  | Unload state machine                        |
 | WORK    | PUT    | /statemachine/start   | Start loaded state machine                  |

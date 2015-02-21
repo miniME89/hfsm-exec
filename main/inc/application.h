@@ -51,8 +51,10 @@ namespace hfsmexec
             void load();
     };
 
-    class Application
+    class Application : public QObject
     {
+        Q_OBJECT
+
         public:
             static Application* getInstance();
 
@@ -67,6 +69,7 @@ namespace hfsmexec
             PluginLoader& getCommunicationPluginLoader();
             Api& getApi();
 
+        public slots:
             bool postEvent(AbstractEvent* event);
 
             bool loadStateMachine(const QString& encoding, const QString& data);

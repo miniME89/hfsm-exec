@@ -272,6 +272,14 @@ bool Application::loadStateMachine(const QString& encoding, const QString& data)
     }
 
     StateMachine* stateMachine = importerPlugin->importStateMachine(data);
+    if (stateMachine == NULL)
+    {
+        logger->warning(QString("couldn't load state machine: importing of state machine failed").arg(encoding));
+
+        return false;
+    }
+
+    logger->info("loaded state machine");
 
     this->stateMachine = stateMachine;
 

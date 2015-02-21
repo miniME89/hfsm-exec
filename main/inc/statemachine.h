@@ -154,6 +154,8 @@ namespace hfsmexec
             QList<Dataflow*> dataflows;
             QList<AbstractTransition*> transitions;
             QList<AbstractState*> childStates;
+
+            void finish();
     };
 
     class AbstractComplexState : public AbstractState
@@ -292,7 +294,7 @@ namespace hfsmexec
         Q_OBJECT
 
         public:
-            InvokeState(const QString& stateId, const QString& type, const QString& parentStateId = "");
+            InvokeState(const QString& stateId, const QString& binding, const QString& parentStateId = "");
             virtual ~InvokeState();
 
             Value& getEndpoint();
@@ -300,8 +302,6 @@ namespace hfsmexec
 
             CommunicationPlugin* getCommunicationPlugin();
             void setCommunicationPlugin(CommunicationPlugin* value);
-
-            void done();
 
             virtual bool initialize();
             virtual QString toString() const;
@@ -312,7 +312,7 @@ namespace hfsmexec
             virtual void eventFinished();
 
         private:
-            QString type;
+            QString binding;
             CommunicationPlugin* communicationPlugin;
             Value endpoint;
     };

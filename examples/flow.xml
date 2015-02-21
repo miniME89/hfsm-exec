@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<stateMachine id="stateMachine" initial="p1">
+<statemachine id="stateMachine" initial="p1">
     <input/>
     <output/>
     <transitions/>
@@ -9,47 +9,57 @@
                 <transition event="done.p1" target="i3" />
             </transitions>
             <childs>
-                <invoke id="i1" type="HTTP">
-                    <endpoint>
-                        <parameter name="url" type="String"></parameter>
-                        <parameter name="port" type="Integer"></parameter>
-                        <parameter name="method" type="String"></parameter>
+                <invoke id="i1">
+                    <endpoint binding="HTTP">
+                        <value name="url" type="String"></value>
+                        <value name="port" type="Integer"></value>
+                        <value name="method" type="String"></value>
                     </endpoint>
                     <input/>
                     <output>
-                        <parameter name="velocity" type="Float"></parameter>
-                        <parameter name="acceleration" type="Float">1234</parameter>
+                        <value name="velocity" type="Float"></value>
+                        <value name="acceleration" type="Float">1234</value>
                     </output>
                     <transitions/>
                     <childs/>
                 </invoke>
-                <invoke id="i2" type="HTTP">
-                    <endpoint>
-                        <parameter name="url" type="String"></parameter>
-                        <parameter name="port" type="Integer"></parameter>
-                        <parameter name="method" type="String"></parameter>
+                <invoke id="i2">
+                    <endpoint binding="HTTP">
+                        <value name="url" type="String"></value>
+                        <value name="port" type="Integer"></value>
+                        <value name="method" type="String"></value>
                     </endpoint>
                     <input/>
                     <output>
-                        <parameter name="frame" type="String">testframe</parameter>
-                        <parameter name="pose" type="Array"></parameter>
+                        <value name="frame" type="String">testframe</value>
+                        <value name="pose" type="Array"></value>
                     </output>
                     <transitions/>
                     <childs/>
                 </invoke>
             </childs>
         </parallel>
-        <invoke id="i3" type="HTTP">
-            <endpoint>
-                <parameter name="url" type="String"></parameter>
-                <parameter name="port" type="Integer"></parameter>
-                <parameter name="method" type="String"></parameter>
+        <invoke id="i3">
+            <endpoint binding="ROS">
+                <value name="topic" type="String">/robot_move_dummy/cartesian_position</value>
+                <value name="type" type="String">action</value>
             </endpoint>
             <input>
-                <parameter name="frame" type="String"></parameter>
-                <parameter name="velocity" type="Float"></parameter>
-                <parameter name="acceleration" type="Float"></parameter>
-                <parameter name="pose" type="Array"></parameter>
+                <value name="points" type="Array">
+                    <value type="Object">
+                        <value name="frame_id" type="String"></value>
+                        <value name="linVel" type="Float"></value>
+                        <value name="linAcc" type="Float"></value>
+                        <value name="pose" type="Array">
+                            <value type="Float">1</value>
+                            <value type="Float">2</value>
+                            <value type="Float">3</value>
+                            <value type="Float">4</value>
+                            <value type="Float">5</value>
+                            <value type="Float">6</value>
+                        </value>
+                    </value>
+                </value>
             </input>
             <output/>
             <dataflows>
@@ -64,4 +74,4 @@
         </invoke>
         <final id="f1" />
     </childs>
-</stateMachine>
+</statemachine>

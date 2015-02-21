@@ -48,9 +48,9 @@ StateMachine* Importer::importStateMachine(const QString& data)
 
     //get root element
     pugi::xml_node root = doc.first_child();
-    if (std::string(root.name()) != "stateMachine")
+    if (std::string(root.name()) != "statemachine")
     {
-        logger->warning("invalid XML encoding: root element needs to be a \"stateMachine\" element");
+        logger->warning("invalid XML encoding: root element needs to be a \"statemachine\" element");
 
         return NULL;
     }
@@ -75,7 +75,7 @@ bool Importer::decodeChilds(pugi::xml_node& node, StateMachineBuilder& builder, 
     {
         AbstractState* state = NULL;
         QString tagName = child.name();
-        if (tagName == "stateMachine")
+        if (tagName == "statemachine")
         {
             state = decodeStateMachine(child, builder, parentState);
         }
@@ -259,8 +259,8 @@ AbstractState* Importer::decodeParallel(pugi::xml_node& node, StateMachineBuilde
 AbstractState* Importer::decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
 {
     QString id = node.attribute("id").value();
-    QString type = node.attribute("type").value();
     pugi::xml_node endpoint = node.child("endpoint");
+    QString binding = endpoint.attribute("binding").value();
 
     std::ostringstream stream;
     endpoint.print(stream);
@@ -269,9 +269,13 @@ AbstractState* Importer::decodeInvoke(pugi::xml_node& node, StateMachineBuilder&
     Value endpointParameter;
     endpointParameter.fromXml(endPointStr);
 
-    logger->info(QString("decode InvokeState: id=%1, type=%2, parent=%3").arg(id).arg(type).arg(parentState->getId()));
+    QString s;
+    endpointParameter.toJson(s);
+    logger->info(s);
 
-    InvokeState* state = new InvokeState(id, type, parentState->getId());
+    logger->info(QString("decode InvokeState: id=%1, binding=%2, parent=%3").arg(id).arg(binding).arg(parentState->getId()));
+
+    InvokeState* state = new InvokeState(id, binding, parentState->getId());
     state->setEndpoint(endpointParameter["endpoint"]);
     builder <<state;
 

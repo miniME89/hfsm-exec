@@ -30,19 +30,24 @@ namespace hfsmexec
 {
     class CommunicationPlugin
     {
+        friend class InvokeState;
+
         public:
             CommunicationPlugin(const QString& pluginId);
             virtual ~CommunicationPlugin();
 
             const QString& getPluginId() const;
 
+            void finish();
+
             virtual CommunicationPlugin* create() = 0;
-            virtual bool invoke(Value& endpoint, Value& inputParameters, Value& outputParameters) = 0;
+            virtual bool invoke(Value& endpoint, Value& input, Value& output) = 0;
             virtual bool cancel() = 0;
 
         protected:
             static const Logger* logger;
             const QString pluginId;
+            std::function<void()> finishCallback;
     };
 
     class ImporterPlugin

@@ -109,7 +109,7 @@ void Api::log(HttpRequest* request, HttpResponse* response)
 {
     int index = std::strtol(request->getHeader("Push-Notification-Index").c_str(), NULL, 10);
     std::string data;
-    if (logPushNotification.read(index, data, 30))
+    if (logPushNotification.read(index, data, 5))
     {
         response->setStatusCode(200);
         response->setHeader("Push-Notification-Index", std::to_string(index + 1));
@@ -126,7 +126,7 @@ void Api::statemachineState(HttpRequest* request, HttpResponse* response)
 {
     int index = std::strtol(request->getHeader("Push-Notification-Index").c_str(), NULL, 10);
     std::string data;
-    if (statePushNotification.read(index, data, 30))
+    if (statePushNotification.read(index, data, 5))
     {
         response->setStatusCode(HttpResponse::STATUS_OK);
         response->setHeader("Push-Notification-Index", std::to_string(index + 1));
@@ -156,7 +156,9 @@ void Api::statemachineLoad(HttpRequest* request, HttpResponse* response)
         return;
     }
 
-    if (!Application::getInstance()->loadStateMachine(value["encoding"].getString(), value["data"].getString()))
+    bool ret;
+    QMetaObject::invokeMethod(Application::getInstance(), "loadStateMachine", Qt::BlockingQueuedConnection, Q_RETURN_ARG(bool, ret), Q_ARG(QString, value["encoding"].getString()), Q_ARG(QString, value["data"].getString()));
+    if (!ret)
     {
         response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
 
