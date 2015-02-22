@@ -116,14 +116,22 @@ namespace hfsmexec
             void set(const Array& value);
             void set(const Object& value);
 
-            void remove(const QString& key);
+            Value& getValue(const QString& path);
+            const Value& getValue(const QString& path) const;
+            Value& getValue(int i);
+            const Value& getValue(int i) const;
 
+            int size();
+            void remove(const QString& key);
+            void remove(int i);
             bool contains(const QString& key);
 
             void undefined();
             void null();
 
             const ValueType& getType() const;
+
+            String toString();
 
             bool toXml(QString& xml) const;
             bool toJson(QString& json) const;

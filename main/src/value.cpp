@@ -280,12 +280,128 @@ void Value::set(const Object& value)
     setValue<Object>(value);
 }
 
+Value& Value::getValue(const QString& path)
+{
+    QStringList splitPath = path.trimmed().split("/", QString::SkipEmptyParts);
+
+    Value* value = this;
+    for (int i = 0; i < splitPath.size(); i++)
+    {
+        QString name = splitPath[i];
+
+        if (value->getType() != TYPE_OBJECT)
+        {
+            value->set(Object());
+        }
+
+        Object& object = value->value->get<Object>();
+        Object::iterator it = object.find(name.toStdString().c_str());
+        //value does not exist
+        if (it == object.end())
+        {
+            value = &object.insert(name.toStdString().c_str(), Value()).value();
+            value->null();
+        }
+        //value already exist
+        else
+        {
+            value = &it.value();
+        }
+    }
+
+    return *value;
+}
+
+const Value& Value::getValue(const QString& path) const
+{
+    QStringList splitPath = path.trimmed().split("/", QString::SkipEmptyParts);
+
+    const Value* value = this;
+    for (int i = 0; i < splitPath.size(); i++)
+    {
+        QString name = splitPath[i];
+
+        if (value->getType() != TYPE_OBJECT)
+        {
+            throw ValueException("value ist not of type object");
+        }
+
+        const Object& object = value->value->get<Object>();
+        Object::const_iterator it = object.find(name.toStdString().c_str());
+        //value does not exist
+        if (it == object.end())
+        {
+            throw ValueException("member " + name + " not found");
+        }
+        //value already exist
+        else
+        {
+            value = &it.value();
+        }
+    }
+
+    return *value;
+}
+
+Value& Value::getValue(int i)
+{
+    if (getType() != TYPE_ARRAY)
+    {
+        set(Array());
+    }
+
+    Array& array = value->get<Array>();
+    for (int j = array.size() - i - 1; j < 0; j++)
+    {
+        array.append(Value());
+    }
+
+    return array[i];
+}
+
+const Value& Value::getValue(int i) const
+{
+    if (getType() != TYPE_ARRAY)
+    {
+        throw ValueException("value ist not of type array");
+    }
+
+    const Array& array = value->get<Array>();
+    if (i >= array.size())
+    {
+        throw ValueException("index out of bound");
+    }
+
+    return array[i];
+}
+
+int Value::size()
+{
+    if (value->getType() == TYPE_ARRAY)
+    {
+        Array& array = value->get<Array>();
+
+        return array.size();
+    }
+
+    return -1;
+}
+
 void Value::remove(const QString& key)
 {
     if (value->getType() == TYPE_OBJECT)
     {
         Object& object = value->get<Object>();
         object.remove(key);
+    }
+}
+
+void Value::remove(int i)
+{
+    if (value->getType() == TYPE_ARRAY)
+    {
+        Array& array = value->get<Array>();
+        array.removeAt(i);
     }
 }
 
@@ -315,6 +431,50 @@ void Value::null()
 const Value::ValueType& Value::getType() const
 {
     return value->getType();
+}
+
+Value::String Value::toString()
+{
+    if (value->getType() == TYPE_UNDEFINED)
+    {
+        return "undefined";
+    }
+    else if (value->getType() == TYPE_NULL)
+    {
+        return "null";
+    }
+    else if (value->getType() == TYPE_BOOLEAN)
+    {
+        Boolean& v = value->get<Boolean>();
+
+        return (v) ? "true" : "false";
+    }
+    else if (value->getType() == TYPE_INTEGER)
+    {
+        Integer& v = value->get<Integer>();
+
+        return QString::number(v);
+    }
+    else if (value->getType() == TYPE_FLOAT)
+    {
+        Float& v = value->get<Float>();
+
+        return QString::number(v);
+    }
+    else if (value->getType() == TYPE_STRING)
+    {
+        String& v = value->get<String>();
+
+        return String(v);
+    }
+    else if (value->getType() == TYPE_ARRAY)
+    {
+        return "[Array]";
+    }
+    else if (value->getType() == TYPE_OBJECT)
+    {
+        return "[Object]";
+    }
 }
 
 bool Value::toXml(QString& xml) const
@@ -512,98 +672,23 @@ bool Value::operator!=(const Value& other) const
 
 Value& Value::operator[](const QString& path)
 {
-    QStringList splitPath = path.trimmed().split("/", QString::SkipEmptyParts);
-
-    Value* value = this;
-    for (int i = 0; i < splitPath.size(); i++)
-    {
-        QString name = splitPath[i];
-
-        if (value->getType() != TYPE_OBJECT)
-        {
-            value->set(Object());
-        }
-
-        Object& object = value->value->get<Object>();
-        Object::iterator it = object.find(name.toStdString().c_str());
-        //value does not exist
-        if (it == object.end())
-        {
-            value = &object.insert(name.toStdString().c_str(), Value()).value();
-            value->null();
-        }
-        //value already exist
-        else
-        {
-            value = &it.value();
-        }
-    }
-
-    return *value;
+    return getValue(path);
 }
 
 const Value& Value::operator[](const QString& path) const
 {
-    QStringList splitPath = path.trimmed().split("/", QString::SkipEmptyParts);
-
-    const Value* value = this;
-    for (int i = 0; i < splitPath.size(); i++)
-    {
-        QString name = splitPath[i];
-
-        if (value->getType() != TYPE_OBJECT)
-        {
-            throw ValueException("value ist not of type object");
-        }
-
-        const Object& object = value->value->get<Object>();
-        Object::const_iterator it = object.find(name.toStdString().c_str());
-        //value does not exist
-        if (it == object.end())
-        {
-            throw ValueException("member " + name + " not found");
-        }
-        //value already exist
-        else
-        {
-            value = &it.value();
-        }
-    }
-
-    return *value;
+    return getValue(path);
 }
 
 
 Value& Value::operator[](int i)
 {
-    if (getType() != TYPE_ARRAY)
-    {
-        set(Array());
-    }
-
-    Array& array = value->get<Array>();
-    for (int j = array.size() - i - 1; j < 0; j++)
-    {
-        array.append(Value());
-    }
-
-    return array[i];
+    return getValue(i);
 }
 
 const Value& Value::operator[](int i) const
 {
-    if (getType() != TYPE_ARRAY)
-    {
-        throw ValueException("value ist not of type array");
-    }
-
-    const Array& array = value->get<Array>();
-    if (i >= array.size())
-    {
-        throw ValueException("index out of bound");
-    }
-
-    return array[i];
+    return getValue(i);
 }
 
 template<typename T>
@@ -848,11 +933,11 @@ bool Value::buildFromXml(Value* value, void* data)
     }
     else if (type == "Integer")
     {
-        value->set(textContent.as_int());
+        value->set(QString(textContent.get()).toInt());
     }
     else if (type == "Float")
     {
-        value->set(textContent.as_double());
+        value->set(QString(textContent.get()).toDouble());
     }
     else if (type == "String")
     {
