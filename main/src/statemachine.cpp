@@ -333,23 +333,39 @@ void AbstractComplexState::eventEntered()
 {
     logger->info(QString("%1 --> entered").arg(toString()));
 
-    Application::getInstance()->getApi().pushStateChange(stateId, "enter");
+    Value value;
+    value["action"] = "state";
+    value["id"] = stateId;
+    value["change"] = "enter";
+
+    Application::getInstance()->getApi().pushState(value);
 }
 
 void AbstractComplexState::eventExited()
 {
     logger->info(QString("%1 --> exited").arg(toString()));
 
-    Application::getInstance()->getApi().pushStateChange(stateId, "exit");
+    Value value;
+    value["action"] = "state";
+    value["id"] = stateId;
+    value["change"] = "exit";
+
+    Application::getInstance()->getApi().pushState(value);
 }
 
 void AbstractComplexState::eventFinished()
 {
     logger->info(QString("%1 --> finished").arg(toString()));
 
-    finish();
+    NamedEvent* event = new NamedEvent("finish." + stateId);
+    stateMachine->postEvent(event);
 
-    Application::getInstance()->getApi().pushStateChange(stateId, "finish");
+    Value value;
+    value["action"] = "state";
+    value["id"] = stateId;
+    value["change"] = "finish";
+
+    Application::getInstance()->getApi().pushState(value);
 }
 
 /*
@@ -378,6 +394,7 @@ void NamedEvent::setEventName(const QString& name)
 {
     this->eventName = name;
 }
+
 const QString& NamedEvent::getOrigin() const
 {
     return origin;
@@ -387,6 +404,7 @@ void NamedEvent::setOrigin(const QString& origin)
 {
     this->origin = origin;
 }
+
 const QString& NamedEvent::getMessage() const
 {
     return message;
@@ -437,9 +455,15 @@ void NamedTransition::onTransition(QEvent* e)
 
     NamedEvent* namedEvent = static_cast<NamedEvent*>(e);
 
-    logger->info(QString("%1 triggered transition on event %2").arg(toString()).arg(namedEvent->toString()));
+    logger->info(QString("%1 transition on event %2 from %3 to %4").arg(toString()).arg(namedEvent->toString()).arg(sourceStateId).arg(targetStateId));
 
-    Application::getInstance()->getApi().pushStateTransition(sourceStateId, targetStateId, eventName);
+    Value value;
+    value["action"] = "transition";
+    value["from"] = sourceStateId;
+    value["to"] = targetStateId;
+    value["event"] = namedEvent->getEventName();
+
+    Application::getInstance()->getApi().pushState(value);
 }
 
 /*
@@ -782,9 +806,42 @@ QString StateMachine::toString() const
 void StateMachine::eventStarted()
 {
     logger->info(QString("%1 --> started state machine").arg(toString()));
+
+    Value value;
+    value["action"] = "statemachine";
+    value["id"] = stateId;
+    value["change"] = "start";
+
+    Application::getInstance()->getApi().pushState(value);
 }
 
 void StateMachine::eventStopped()
 {
     logger->info(QString("%1 --> stopped state machine").arg(toString()));
+
+    Value value;
+    value["action"] = "statemachine";
+    value["id"] = stateId;
+    value["change"] = "stop";
+
+    Application::getInstance()->getApi().pushState(value);
+}
+
+void StateMachine::eventFinished()
+{
+    if (isRoot())
+    {
+        logger->info(QString("%1 --> finished").arg(toString()));
+
+        Value value;
+        value["action"] = "statemachine";
+        value["id"] = stateId;
+        value["change"] = "finish";
+
+        Application::getInstance()->getApi().pushState(value);
+    }
+    else
+    {
+        AbstractComplexState::eventFinished();
+    }
 }

@@ -22,6 +22,7 @@
 
 #include <logger.h>
 #include <httpserver.h>
+#include <value.h>
 
 #include <QRegExp>
 
@@ -36,9 +37,8 @@ namespace hfsmexec
             void exec(int port = 8080);
             void quit();
 
-            void pushlog(const QString& name, Logger::Level level, const QString& message);
-            void pushStateChange(const QString& stateId, const QString& change);
-            void pushStateTransition(const QString& fromStateId, const QString& toStateId, const QString& event);
+            void pushlog(const Value& value);
+            void pushState(const Value& value);
 
         private:
             typedef struct Service

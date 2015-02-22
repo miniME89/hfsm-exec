@@ -154,8 +154,6 @@ namespace hfsmexec
             QList<Dataflow*> dataflows;
             QList<AbstractTransition*> transitions;
             QList<AbstractState*> childStates;
-
-            void finish();
     };
 
     class AbstractComplexState : public AbstractState
@@ -327,6 +325,8 @@ namespace hfsmexec
             StateMachine(const QString& stateId, const QString& initialId, const QString& parentStateId = "");
             ~StateMachine();
 
+            bool isRoot();
+
             void start() const;
             void stop() const;
 
@@ -340,6 +340,7 @@ namespace hfsmexec
         protected slots:
             virtual void eventStarted();
             virtual void eventStopped();
+            virtual void eventFinished();
 
         protected:
             QStateMachine* delegate;

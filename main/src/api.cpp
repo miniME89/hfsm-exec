@@ -18,7 +18,6 @@
 #include <api.h>
 #include <application.h>
 #include <statemachine.h>
-#include <value.h>
 
 using namespace hfsmexec;
 
@@ -59,16 +58,14 @@ void Api::quit()
 {
     logger->info("stop HTTP server");
 
+    logPushNotification.unlock();
+    statePushNotification.unlock();
+
     server.stop();
 }
 
-void Api::pushlog(const QString& name, Logger::Level level, const QString& message)
+void Api::pushlog(const Value& value)
 {
-    Value value;
-    value["scope"] = name;
-    value["level"] = level;
-    value["message"] = message;
-
     QString data;
     if (value.toJson(data))
     {
@@ -76,28 +73,8 @@ void Api::pushlog(const QString& name, Logger::Level level, const QString& messa
     }
 }
 
-void Api::pushStateChange(const QString& stateId, const QString& change)
+void Api::pushState(const Value& value)
 {
-    Value value;
-    value["type"] = "state";
-    value["id"] = stateId;
-    value["change"] = change;
-
-    QString data;
-    if (value.toJson(data))
-    {
-        statePushNotification.write(data.toStdString());
-    }
-}
-
-void Api::pushStateTransition(const QString& fromStateId, const QString& toStateId, const QString& event)
-{
-    Value value;
-    value["type"] = "transition";
-    value["from"] = fromStateId;
-    value["to"] = toStateId;
-    value["event"] = event;
-
     QString data;
     if (value.toJson(data))
     {
@@ -109,7 +86,7 @@ void Api::log(HttpRequest* request, HttpResponse* response)
 {
     int index = std::strtol(request->getHeader("Push-Notification-Index").c_str(), NULL, 10);
     std::string data;
-    if (logPushNotification.read(index, data, 5))
+    if (logPushNotification.read(index, data, 30))
     {
         response->setStatusCode(200);
         response->setHeader("Push-Notification-Index", std::to_string(index + 1));
@@ -126,7 +103,7 @@ void Api::statemachineState(HttpRequest* request, HttpResponse* response)
 {
     int index = std::strtol(request->getHeader("Push-Notification-Index").c_str(), NULL, 10);
     std::string data;
-    if (statePushNotification.read(index, data, 5))
+    if (statePushNotification.read(index, data, 30))
     {
         response->setStatusCode(HttpResponse::STATUS_OK);
         response->setHeader("Push-Notification-Index", std::to_string(index + 1));
