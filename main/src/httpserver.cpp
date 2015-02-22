@@ -22,9 +22,10 @@ using namespace hfsmexec;
 /*
  * PushNotification
  */
-PushNotification::PushNotification(int maxSize) :
+PushNotification::PushNotification(int maxQueueSize, int maxReadSize) :
     pos(0),
-    maxSize(maxSize)
+    maxQueueSize(maxQueueSize),
+    maxReadSize(maxReadSize)
 {
 
 }
@@ -46,9 +47,9 @@ void PushNotification::write(const std::string& data)
 
         pos++;
         buffer[pos] = data;
-        if (pos > maxSize)
+        if (pos > maxQueueSize)
         {
-            buffer.erase(buffer.find(pos - maxSize));
+            buffer.erase(buffer.find(pos - maxQueueSize));
         }
     }
 
@@ -64,8 +65,8 @@ bool PushNotification::read(int& pos, std::string& data, int timeout)
     }
 
     //wait till message at buffer pos is available
-    std::unique_lock<std::mutex> scopedLock(lock);
-    if (!condition.wait_for(scopedLock, std::chrono::seconds(timeout), [&] {return pos <= this->pos || this->pos == -1;}))
+    std::unique_lock<std::mutex> conditionLock(lock);
+    if (!condition.wait_for(conditionLock, std::chrono::seconds(timeout), [&] {return pos <= this->pos || this->pos == -1;}))
     {
         return false;
     }
@@ -73,23 +74,34 @@ bool PushNotification::read(int& pos, std::string& data, int timeout)
     //verify that buffer is still valid
     if (this->pos == -1)
     {
-        scopedLock.unlock();
+        conditionLock.unlock();
         condition.notify_all();
 
         return false;
     }
 
     //make sure that a valid buffer pos is selected
-    int bufferStart = this->pos - maxSize + 1;
+    int bufferStart = this->pos - maxQueueSize + 1;
     if (pos < bufferStart)
     {
         pos = bufferStart;
     }
 
-    //read buffer
-    data = buffer[pos];
+    //read all available buffer from pos (max
+    data.append("[");
+    int bufferEnd = this->pos;
+    for (int i = 0; pos <= bufferEnd && i < maxReadSize; i++, pos++)
+    {
+        if (i > 0)
+        {
+            data.append(", ");
+        }
 
-    scopedLock.unlock();
+        data.append(buffer[pos]);
+    }
+    data.append("]");
+
+    conditionLock.unlock();
     condition.notify_all();
 
     return true;

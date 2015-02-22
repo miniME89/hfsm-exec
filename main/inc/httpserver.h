@@ -29,7 +29,7 @@ namespace hfsmexec
     class PushNotification
     {
         public:
-            PushNotification(int maxSize = 100);
+            PushNotification(int maxQueueSize = 100, int maxReadSize = 50);
             ~PushNotification();
 
             void write(const std::string& data);
@@ -40,7 +40,8 @@ namespace hfsmexec
         private:
             std::map<int, std::string> buffer;
             int pos;
-            int maxSize;
+            int maxQueueSize;
+            int maxReadSize;
             std::mutex lock;
             std::condition_variable condition;
     };
