@@ -38,6 +38,12 @@ void PushNotification::write(const std::string& data)
 {
     {
         std::lock_guard<std::mutex> scopedLock(lock);
+
+        if (this->pos == -1)
+        {
+            return;
+        }
+
         pos++;
         buffer[pos] = data;
         if (pos > maxSize)
@@ -51,29 +57,48 @@ void PushNotification::write(const std::string& data)
 
 bool PushNotification::read(int& pos, std::string& data, int timeout)
 {
-    std::unique_lock<std::mutex> scopedLock(lock);
-    if (condition.wait_for(scopedLock, std::chrono::seconds(timeout), [&] {return pos <= this->pos && this->pos > 0;}))
+    //set pos to buffer end, if pos <= 0
+    if (pos <= 0)
     {
-        int bufferStart = this->pos - maxSize + 1;
-        int bufferEnd = this->pos;
-        if (pos <= 0)
-        {
-            pos = bufferEnd;
-        }
-        else if (pos < bufferStart)
-        {
-            pos = bufferStart;
-        }
+        pos = this->pos + 1;
+    }
 
-        data = buffer[pos];
+    //wait till message at buffer pos is available
+    std::unique_lock<std::mutex> scopedLock(lock);
+    if (!condition.wait_for(scopedLock, std::chrono::seconds(timeout), [&] {return pos <= this->pos || this->pos == -1;}))
+    {
+        return false;
+    }
 
+    //verify that buffer is still valid
+    if (this->pos == -1)
+    {
         scopedLock.unlock();
         condition.notify_all();
 
-        return true;
+        return false;
     }
 
-    return false;
+    //make sure that a valid buffer pos is selected
+    int bufferStart = this->pos - maxSize + 1;
+    if (pos < bufferStart)
+    {
+        pos = bufferStart;
+    }
+
+    //read buffer
+    data = buffer[pos];
+
+    scopedLock.unlock();
+    condition.notify_all();
+
+    return true;
+}
+
+void PushNotification::unlock()
+{
+    this->pos = -1;
+    condition.notify_all();
 }
 
 /*

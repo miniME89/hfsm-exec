@@ -35,6 +35,8 @@ namespace hfsmexec
             void write(const std::string& data);
             bool read(int& pos, std::string& data, int timeout = 5);
 
+            void unlock();
+
         private:
             std::map<int, std::string> buffer;
             int pos;
