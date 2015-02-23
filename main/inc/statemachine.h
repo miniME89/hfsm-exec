@@ -29,6 +29,8 @@
 #include <QState>
 #include <QStateMachine>
 
+class QScriptEngine;
+
 namespace hfsmexec
 {
     class AbstractState;
@@ -164,17 +166,22 @@ namespace hfsmexec
             AbstractComplexState(const QString& stateId, const QString& parentStateId = "");
             virtual ~AbstractComplexState();
 
+            bool isActive();
+
             virtual QState* getDelegate() const;
-            virtual bool initialize() = 0;
+            virtual bool initialize();
             virtual QString toString() const = 0;
 
         protected slots:
-            virtual void eventEntered();
-            virtual void eventExited();
-            virtual void eventFinished();
+            virtual void eventStart();
+            virtual void eventStop();
+            virtual void eventEnter();
+            virtual void eventExit();
+            virtual void eventFinish();
 
         protected:
             QState* delegate;
+            bool active;
     };
 
     class NamedEvent : public AbstractEvent
@@ -202,10 +209,10 @@ namespace hfsmexec
             QString message;
     };
 
-    class NamedTransition : public AbstractTransition
+    class ConditionalTransition : public AbstractTransition
     {
         public:
-            NamedTransition(const QString& transitionId, const QString& sourceStateId, const QString& targetStateId, const QString& eventName);
+            ConditionalTransition(const QString& transitionId, const QString& sourceStateId, const QString& targetStateId, const QString& eventName, QString condition = "");
 
             virtual QString toString() const;
 
@@ -215,6 +222,7 @@ namespace hfsmexec
 
         private:
             QString eventName;
+            QString condition;
     };
 
     class InternalEvent : public QEvent
@@ -305,14 +313,17 @@ namespace hfsmexec
             virtual QString toString() const;
 
         protected slots:
-            virtual void eventEntered();
-            virtual void eventExited();
-            virtual void eventFinished();
+            virtual void eventEnter();
+            virtual void eventExit();
+            virtual void eventFinish();
 
         private:
             QString binding;
             CommunicationPlugin* communicationPlugin;
             Value endpoint;
+
+            void success();
+            void error(QString message = "");
     };
 
     class StateMachine : public AbstractComplexState
@@ -333,17 +344,20 @@ namespace hfsmexec
             int postDelayedEvent(QEvent* event, int delay);
             void postEvent(QEvent* event, QStateMachine::EventPriority priority = QStateMachine::NormalPriority);
 
+            QScriptEngine* getScriptEngine();
+
             virtual QStateMachine* getDelegate() const;
             virtual bool initialize();
             virtual QString toString() const;
 
         protected slots:
-            virtual void eventStarted();
-            virtual void eventStopped();
-            virtual void eventFinished();
+            virtual void eventStart();
+            virtual void eventStop();
+            virtual void eventFinish();
 
         protected:
             QStateMachine* delegate;
+            QScriptEngine* scriptEngine;
 
         private:
             QString initialId;

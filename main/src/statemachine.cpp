@@ -18,6 +18,8 @@
 #include <statemachine.h>
 #include <application.h>
 
+#include <QScriptEngine>
+
 using namespace hfsmexec;
 
 /*
@@ -300,23 +302,18 @@ AbstractState* AbstractState::findState(const QString& stateId)
     return NULL;
 }
 
-void AbstractState::finish()
-{
-    NamedEvent* event = new NamedEvent("done." + stateId);
-    stateMachine->postEvent(event);
-}
-
 /*
  * AbstractComplexState
  */
 AbstractComplexState::AbstractComplexState(const QString &stateId, const QString& parentStateId) :
     AbstractState(stateId, parentStateId),
-    delegate(new QState())
+    delegate(new QState()),
+    active(false)
 {
     //connect signals
-    connect(delegate, SIGNAL(entered()), this, SLOT(eventEntered()));
-    connect(delegate, SIGNAL(exited()), this, SLOT(eventExited()));
-    connect(delegate, SIGNAL(finished()), this, SLOT(eventFinished()));
+    connect(delegate, SIGNAL(entered()), this, SLOT(eventEnter()));
+    connect(delegate, SIGNAL(exited()), this, SLOT(eventExit()));
+    connect(delegate, SIGNAL(finished()), this, SLOT(eventFinish()));
 }
 
 AbstractComplexState::~AbstractComplexState()
@@ -324,14 +321,39 @@ AbstractComplexState::~AbstractComplexState()
 
 }
 
+bool AbstractComplexState::isActive()
+{
+    return active;
+}
+
 QState* AbstractComplexState::getDelegate() const
 {
     return delegate;
 }
 
-void AbstractComplexState::eventEntered()
+bool AbstractComplexState::initialize()
+{
+    logger->info(QString("%1 initialize").arg(toString()));
+
+    QObject::connect(stateMachine->getDelegate(), SIGNAL(started()), this, SLOT(eventStart()));
+    QObject::connect(stateMachine->getDelegate(), SIGNAL(stopped()), this, SLOT(eventStop()));
+}
+
+void AbstractComplexState::eventStart()
+{
+
+}
+
+void AbstractComplexState::eventStop()
+{
+    active = false;
+}
+
+void AbstractComplexState::eventEnter()
 {
     logger->info(QString("%1 --> entered").arg(toString()));
+
+    active = true;
 
     Value value;
     value["action"] = "state";
@@ -341,9 +363,11 @@ void AbstractComplexState::eventEntered()
     Application::getInstance()->getApi().pushState(value);
 }
 
-void AbstractComplexState::eventExited()
+void AbstractComplexState::eventExit()
 {
     logger->info(QString("%1 --> exited").arg(toString()));
+
+    active = false;
 
     Value value;
     value["action"] = "state";
@@ -353,9 +377,11 @@ void AbstractComplexState::eventExited()
     Application::getInstance()->getApi().pushState(value);
 }
 
-void AbstractComplexState::eventFinished()
+void AbstractComplexState::eventFinish()
 {
     logger->info(QString("%1 --> finished").arg(toString()));
+
+    active = false;
 
     NamedEvent* event = new NamedEvent("finish." + stateId);
     stateMachine->postEvent(event);
@@ -421,20 +447,22 @@ QString NamedEvent::toString() const
 }
 
 /*
- * NamedTransition
+ * ConditionalTransition
  */
-NamedTransition::NamedTransition(const QString& transitionId, const QString& sourceStateId, const QString& targetStateId, const QString& eventName) :
-    AbstractTransition(transitionId, sourceStateId, targetStateId)
+ConditionalTransition::ConditionalTransition(const QString& transitionId, const QString& sourceStateId, const QString& targetStateId, const QString& eventName, QString condition) :
+    AbstractTransition(transitionId, sourceStateId, targetStateId),
+    eventName(eventName),
+    condition(condition)
 {
-    this->eventName = eventName;
+
 }
 
-QString NamedTransition::toString() const
+QString ConditionalTransition::toString() const
 {
-    return "[StringTransition: " + transitionId + "]";
+    return "[ConditionalTransition: " + transitionId + "]";
 }
 
-bool NamedTransition::eventTest(QEvent* e)
+bool ConditionalTransition::eventTest(QEvent* e)
 {
     if (e->type() != NamedEvent::type)
     {
@@ -443,10 +471,27 @@ bool NamedTransition::eventTest(QEvent* e)
 
     NamedEvent* namedEvent = static_cast<NamedEvent*>(e);
 
-    return namedEvent->getEventName() == eventName;
+    if (namedEvent->getEventName() != eventName)
+    {
+        return false;
+    }
+
+    if (!condition.isEmpty())
+    {
+        logger->warning("evaluate: " + condition);
+
+        QScriptEngine* scriptEngine = stateMachine->getScriptEngine();
+        Value parameters;
+        parameters["input"] = &sourceState->getInputParameters();
+        parameters["output"] = &sourceState->getOutputParameters();
+
+        scriptEngine->evaluate(condition); //TODO
+    }
+
+    return true;
 }
 
-void NamedTransition::onTransition(QEvent* e)
+void ConditionalTransition::onTransition(QEvent* e)
 {
     if (e->type() != NamedEvent::type)
     {
@@ -556,21 +601,18 @@ CompositeState::~CompositeState()
 
 bool CompositeState::initialize()
 {
-    logger->info(QString("%1 initialize").arg(toString()));
+    AbstractComplexState::initialize();
 
-    if (!initialStateId.isEmpty()) //TODO remove
+    //set initial state
+    const AbstractState* initialState = findState(initialStateId);
+    if (initialState == NULL)
     {
-        //set initial state
-        const AbstractState* initialState = findState(initialStateId);
-        if (initialState == NULL)
-        {
-            logger->warning(QString("%1 initialization failed: couldn't find initial state \"%2\"").arg(toString()).arg(initialStateId));
+        logger->warning(QString("%1 initialization failed: couldn't find initial state \"%2\"").arg(toString()).arg(initialStateId));
 
-            return false;
-        }
-
-        delegate->setInitialState(initialState->getDelegate());
+        return false;
     }
+
+    delegate->setInitialState(initialState->getDelegate());
 
     return true;
 }
@@ -595,7 +637,7 @@ ParallelState::~ParallelState()
 
 bool ParallelState::initialize()
 {
-    logger->info(QString("%1 initialize").arg(toString()));
+    AbstractComplexState::initialize();
 
     return true;
 }
@@ -614,7 +656,8 @@ InvokeState::InvokeState(const QString& stateId, const QString& binding, const Q
     communicationPlugin(Application::getInstance()->getCommunicationPluginLoader().getCommunicationPlugin(binding))
 {
     if (communicationPlugin != NULL) {
-        communicationPlugin->finishCallback = std::bind(&InvokeState::finish, this);
+        communicationPlugin->successCallback = std::bind(&InvokeState::success, this);
+        communicationPlugin->errorCallback = std::bind(&InvokeState::error, this, std::placeholders::_1);
     }
 
     QState* stateInvoke = new QState(delegate);
@@ -658,14 +701,14 @@ void InvokeState::setCommunicationPlugin(CommunicationPlugin* value)
 
 bool InvokeState::initialize()
 {
-    logger->info(QString("%1 initialize").arg(toString()));
+    AbstractComplexState::initialize();
 
     return true;
 }
 
-void InvokeState::eventEntered()
+void InvokeState::eventEnter()
 {
-    AbstractComplexState::eventEntered();
+    AbstractComplexState::eventEnter();
 
     if (communicationPlugin == NULL)
     {
@@ -677,18 +720,50 @@ void InvokeState::eventEntered()
     communicationPlugin->invoke(endpoint, inputParameters, outputParameters);
 }
 
-void InvokeState::eventExited()
+void InvokeState::eventExit()
 {
-    AbstractComplexState::eventExited();
+    AbstractComplexState::eventExit();
 
     if (communicationPlugin != NULL) {
         communicationPlugin->cancel();
     }
 }
 
-void InvokeState::eventFinished()
+void InvokeState::eventFinish()
 {
-    AbstractComplexState::eventFinished();
+    AbstractComplexState::eventFinish();
+}
+
+void InvokeState::success()
+{
+    if (!active)
+    {
+        return;
+    }
+
+    logger->info(QString("%1 invocation finished successfully").arg(toString()));
+
+    NamedEvent* event = new NamedEvent("invoke.success." + stateId);
+    stateMachine->postEvent(event);
+
+    InternalEvent* internalEvent = new InternalEvent("done." + stateId);
+    stateMachine->postEvent(internalEvent);
+}
+
+void InvokeState::error(QString message)
+{
+    if (!active)
+    {
+        return;
+    }
+
+    logger->warning(QString("%1 invocation finished with an error: %2").arg(toString()).arg(message));
+
+    NamedEvent* event = new NamedEvent("invoke.error." + stateId);
+    stateMachine->postEvent(event);
+
+    InternalEvent* internalEvent = new InternalEvent("done." + stateId);
+    stateMachine->postEvent(internalEvent);
 }
 
 QString InvokeState::toString() const
@@ -702,21 +777,34 @@ QString InvokeState::toString() const
 StateMachine::StateMachine(const QString& stateId, const QString &initialId, const QString& parentStateId) :
     AbstractComplexState(stateId, parentStateId),
     delegate(new QStateMachine()),
+    scriptEngine(new QScriptEngine()),
     initialId(initialId)
 {
     delete AbstractComplexState::delegate;
 
     //connect signals
-    connect(delegate, SIGNAL(entered()), this, SLOT(eventEntered()));
-    connect(delegate, SIGNAL(exited()), this, SLOT(eventExited()));
-    connect(delegate, SIGNAL(finished()), this, SLOT(eventFinished()));
+    connect(delegate, SIGNAL(entered()), this, SLOT(eventEnter()));
+    connect(delegate, SIGNAL(exited()), this, SLOT(eventExit()));
+    connect(delegate, SIGNAL(finished()), this, SLOT(eventFinish()));
 
-    connect(delegate, SIGNAL(started()), this, SLOT(eventStarted()));
-    connect(delegate, SIGNAL(stopped()), this, SLOT(eventStopped()));
+    connect(delegate, SIGNAL(started()), this, SLOT(eventStart()));
+    connect(delegate, SIGNAL(stopped()), this, SLOT(eventStop()));
 }
 
 StateMachine::~StateMachine()
 {
+    delete delegate;
+    delete scriptEngine;
+}
+
+bool StateMachine::isRoot()
+{
+    if (getParentState() == NULL)
+    {
+        return true;
+    }
+
+    return false;
 }
 
 void StateMachine::start() const
@@ -775,6 +863,11 @@ void StateMachine::postEvent(QEvent* event, QStateMachine::EventPriority priorit
     delegate->postEvent(event, priority);
 }
 
+QScriptEngine* StateMachine::getScriptEngine()
+{
+    return scriptEngine;
+}
+
 QStateMachine* StateMachine::getDelegate() const
 {
     return delegate;
@@ -782,7 +875,7 @@ QStateMachine* StateMachine::getDelegate() const
 
 bool StateMachine::initialize()
 {
-    logger->info(QString("%1 initialize").arg(toString()));
+    AbstractComplexState::initialize();
 
     //set initial state
     const AbstractState* initialState = findState(initialId);
@@ -803,7 +896,7 @@ QString StateMachine::toString() const
     return "[StateMachine: " + stateId + "]";
 }
 
-void StateMachine::eventStarted()
+void StateMachine::eventStart()
 {
     logger->info(QString("%1 --> started state machine").arg(toString()));
 
@@ -815,7 +908,7 @@ void StateMachine::eventStarted()
     Application::getInstance()->getApi().pushState(value);
 }
 
-void StateMachine::eventStopped()
+void StateMachine::eventStop()
 {
     logger->info(QString("%1 --> stopped state machine").arg(toString()));
 
@@ -827,7 +920,7 @@ void StateMachine::eventStopped()
     Application::getInstance()->getApi().pushState(value);
 }
 
-void StateMachine::eventFinished()
+void StateMachine::eventFinish()
 {
     if (isRoot())
     {
@@ -842,6 +935,6 @@ void StateMachine::eventFinished()
     }
     else
     {
-        AbstractComplexState::eventFinished();
+        AbstractComplexState::eventFinish();
     }
 }

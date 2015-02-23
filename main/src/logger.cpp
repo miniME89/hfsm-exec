@@ -57,31 +57,56 @@ Logger::~Logger()
 void Logger::info(const QString& message) const
 {
     CLOG(INFO, name.toStdString().c_str()) <<message;
-    Application::getInstance()->getApi().pushlog(name, INFO, message);
+
+    Value value;
+    value["scope"] = name;
+    value["level"] = INFO;
+    value["message"] = message;
+    Application::getInstance()->getApi().pushlog(value);
 }
 
 void Logger::warning(const QString& message) const
 {
     CLOG(WARNING, name.toStdString().c_str()) <<message;
-    Application::getInstance()->getApi().pushlog(name, WARNING, message);
+
+    Value value;
+    value["scope"] = name;
+    value["level"] = WARNING;
+    value["message"] = message;
+    Application::getInstance()->getApi().pushlog(value);
 }
 
 void Logger::error(const QString& message) const
 {
     CLOG(ERROR, name.toStdString().c_str()) <<message;
-    Application::getInstance()->getApi().pushlog(name, ERROR, message);
+
+    Value value;
+    value["scope"] = name;
+    value["level"] = ERROR;
+    value["message"] = message;
+    Application::getInstance()->getApi().pushlog(value);
 }
 
 void Logger::fatal(const QString& message) const
 {
     CLOG(FATAL, name.toStdString().c_str()) <<message;
-    Application::getInstance()->getApi().pushlog(name, FATAL, message);
+
+    Value value;
+    value["scope"] = name;
+    value["level"] = FATAL;
+    value["message"] = message;
+    Application::getInstance()->getApi().pushlog(value);
 }
 
 void Logger::debug(const QString& message) const
 {
     CLOG(DEBUG, name.toStdString().c_str()) <<message;
-    Application::getInstance()->getApi().pushlog(name, DEBUG, message);
+
+    Value value;
+    value["scope"] = name;
+    value["level"] = DEBUG;
+    value["message"] = message;
+    Application::getInstance()->getApi().pushlog(value);
 }
 
 void Logger::setLoggerEnabled(bool enabled)

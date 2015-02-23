@@ -16,6 +16,7 @@
  */
 
 #include <plugin_smdl.h>
+#include <QUuid>
 #include <sstream>
 
 using namespace hfsmexec;
@@ -145,10 +146,16 @@ bool Importer::decodeTransitions(pugi::xml_node& node, StateMachineBuilder& buil
         QString id = transitionElement.attribute("id").value();
         QString target = transitionElement.attribute("target").value();
         QString event = transitionElement.attribute("event").value();
+        QString condition = transitionElement.attribute("condition").value();
 
-        logger->info(QString("decode NamedTransition: id=%1, source=%2, target=%3, event=%4").arg(id).arg(state->getId()).arg(target).arg(event));
+        if (event == "finish" || event == "state.success" || event == "state.error")
+        {
+            event = event + "." + state->getId();
+        }
 
-        NamedTransition* transition = new NamedTransition(id, state->getId(), target, event);
+        logger->info(QString("decode ConditionalTransition: id=%1, source=%2, target=%3, event=%4, condition=%5").arg(id).arg(state->getId()).arg(target).arg(event).arg(condition));
+
+        ConditionalTransition* transition = new ConditionalTransition(id, state->getId(), target, event, condition);
         builder <<transition;
     }
 
@@ -217,6 +224,11 @@ AbstractState* Importer::decodeStateMachine(pugi::xml_node& node, StateMachineBu
     QString id = node.attribute("id").value();
     QString initial = node.attribute("initial").value();
 
+    if (parentState == NULL)
+    {
+        id = QUuid::createUuid().toString().remove(QChar('{')).remove(QChar('}'));
+    }
+
     QString parentStateId = "";
     if (parentState != NULL)
     {
@@ -268,10 +280,6 @@ AbstractState* Importer::decodeInvoke(pugi::xml_node& node, StateMachineBuilder&
 
     Value endpointParameter;
     endpointParameter.fromXml(endPointStr);
-
-    QString s;
-    endpointParameter.toJson(s);
-    logger->info(s);
 
     logger->info(QString("decode InvokeState: id=%1, binding=%2, parent=%3").arg(id).arg(binding).arg(parentState->getId()));
 

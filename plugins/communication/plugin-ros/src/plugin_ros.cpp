@@ -21,76 +21,36 @@
 
 using namespace hfsmexec;
 
-RosCommunicationPlugin::RosCommunicationPlugin() :
-    CommunicationPlugin("ROS")
+const hfsmexec::Logger* Rosbridge::logger = hfsmexec::Logger::getLogger(LOGGER_PLUGIN);
+
+/*
+ * Rosbridge
+ */
+Rosbridge::Rosbridge()
 {
-    connect(&socket, SIGNAL(connected()), this, SLOT(connected()));
-    connect(&socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
+    connect(&socket, SIGNAL(connected()), this, SLOT(socketConnected()));
+    connect(&socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
     connect(&socket, SIGNAL(readyRead()), this, SLOT(read()));
-}
-
-RosCommunicationPlugin::~RosCommunicationPlugin()
-{
-    socket.close();
-}
-
-CommunicationPlugin* RosCommunicationPlugin::create()
-{
-    return new RosCommunicationPlugin();
-}
-
-bool RosCommunicationPlugin::invoke(Value& endpoint, Value& input, Value& output)
-{
-    this->endpoint = &endpoint;
-    this->input = &input;
-    this->output = &output;
 
     socket.connectToHost("localhost", 9090);
-
-    return true;
 }
 
-bool RosCommunicationPlugin::cancel()
+Rosbridge::~Rosbridge()
 {
     socket.close();
-    listeners.clear(); //TODO mutex?
-
-    return true;
 }
 
-void RosCommunicationPlugin::connected()
+void Rosbridge::socketConnected()
 {
-    QString type = endpoint["type"].getString();
-    if (type == "publish")
-    {
-        publishMessage();
-    }
-    else if (type == "subscribe")
-    {
-        subscribeMessage();
-    }
-    else if (type == "service")
-    {
-        sendServiceRequest();
-    }
-    else if (type == "action")
-    {
-        sendActionGoal();
-    }
-    else
-    {
-        logger->warning(QString("unknown ROS communication type \"%1\"").arg(type));
-
-        finish();
-    }
+    logger->info("connected");
 }
 
-void RosCommunicationPlugin::disconnected()
+void Rosbridge::socketError(QAbstractSocket::SocketError socketError)
 {
-
+    logger->warning(socket.errorString());
 }
 
-void RosCommunicationPlugin::read()
+void Rosbridge::read()
 {
     QByteArray data = socket.readLine();
     QString message(data);
@@ -105,6 +65,7 @@ void RosCommunicationPlugin::read()
         return;
     }
 
+    listenersMutex.lock();
     for (int i = listeners.size() - 1; i >= 0; i--)
     {
         if (!listeners[i](value))
@@ -112,9 +73,10 @@ void RosCommunicationPlugin::read()
             listeners.removeAt(i);
         }
     }
+    listenersMutex.unlock();
 }
 
-bool RosCommunicationPlugin::write(const hfsmexec::Value& value)
+bool Rosbridge::write(const hfsmexec::Value& value)
 {
     QString data;
     if (!value.toJson(data))
@@ -138,14 +100,75 @@ bool RosCommunicationPlugin::write(const hfsmexec::Value& value)
     return true;
 }
 
-bool RosCommunicationPlugin::write(const Value& value, std::function<bool(Value)> listener)
+bool Rosbridge::write(const Value& value, std::function<bool(Value)> listener)
 {
     if (!write(value))
     {
         return false;
     }
 
+    listenersMutex.lock();
     listeners.append(listener);
+    listenersMutex.unlock();
+
+    return true;
+}
+
+/*
+ * RosCommunicationPlugin
+ */
+Rosbridge RosCommunicationPlugin::rosbridge;
+
+RosCommunicationPlugin::RosCommunicationPlugin() :
+    CommunicationPlugin("ROS")
+{
+
+}
+
+RosCommunicationPlugin::~RosCommunicationPlugin()
+{
+
+}
+
+CommunicationPlugin* RosCommunicationPlugin::create()
+{
+    return new RosCommunicationPlugin();
+}
+
+bool RosCommunicationPlugin::invoke(Value& endpoint, Value& input, Value& output)
+{
+    this->endpoint = &endpoint;
+    this->input = &input;
+    this->output = &output;
+
+    QString type = endpoint["type"].getString();
+    if (type == "publish")
+    {
+        publishMessage();
+    }
+    else if (type == "subscribe")
+    {
+        subscribeMessage();
+    }
+    else if (type == "service")
+    {
+        sendServiceRequest();
+    }
+    else if (type == "action")
+    {
+        sendActionGoal();
+    }
+    else
+    {
+        error(QString("unknown ROS communication type \"%1\"").arg(type));
+    }
+
+    return true;
+}
+
+bool RosCommunicationPlugin::cancel()
+{
+    return true;
 }
 
 void RosCommunicationPlugin::publishMessage()
@@ -158,9 +181,14 @@ void RosCommunicationPlugin::publishMessage()
     value["topic"] = endpoint["topic"].getString();
     value["msg"] = input;
 
-    write(value);
-
-    finish();
+    if (rosbridge.write(value))
+    {
+        success();
+    }
+    else
+    {
+        error();
+    }
 }
 
 void RosCommunicationPlugin::subscribeMessage()
@@ -192,16 +220,19 @@ void RosCommunicationPlugin::subscribeMessage()
         value["topic"] = subscribe["topic"];
         value["id"] = subscribe["id"];
 
-        write(value);
+        rosbridge.write(value);
 
         output = message["msg"];
 
-        finish();
+        success();
 
         return false;
     };
 
-    write(subscribe, listener);
+    if (!rosbridge.write(subscribe, listener))
+    {
+        error();
+    }
 }
 
 void RosCommunicationPlugin::sendServiceRequest()
@@ -229,12 +260,15 @@ void RosCommunicationPlugin::sendServiceRequest()
 
         output = message["values"];
 
-        finish();
+        success();
 
         return false;
     };
 
-    write(request, listener);
+    if (!rosbridge.write(request, listener))
+    {
+        error();
+    }
 }
 
 void RosCommunicationPlugin::sendActionGoal()
@@ -247,17 +281,17 @@ void RosCommunicationPlugin::sendActionGoal()
     subscribe["topic"] = endpoint["topic"].getString() + "/result";
     subscribe["id"] = QUuid::createUuid().toString();
 
-    if (!write(subscribe))
+    if (!rosbridge.write(subscribe))
     {
-        return;
+        error();
     }
 
     //send action goal
     Value publish;
     publish["op"] = "publish";
     publish["topic"] = endpoint["topic"].getString() + "/goal";
+    publish["msg"]["goal"] = input["goal"];
     publish["msg"]["goal_id"]["id"] = QUuid::createUuid().toString();
-    publish["msg"]["goal"] = input;
 
     //message listener
     auto listener = [=](Value message) {
@@ -284,14 +318,17 @@ void RosCommunicationPlugin::sendActionGoal()
         value["topic"] = subscribe["topic"];
         value["id"] = subscribe["id"];
 
-        write(value);
+        rosbridge.write(value);
 
         output = message["msg"];
 
-        finish();
+        success();
 
         return false;
     };
 
-    write(publish, listener);
+    if (!rosbridge.write(publish, listener))
+    {
+        error();
+    }
 }

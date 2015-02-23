@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.8)
 
 project(hfsm-exec)
 
-find_package(Qt5 REQUIRED COMPONENTS Core Network)
+find_package(Qt5 REQUIRED COMPONENTS Core Network Script)
 
 #define version
 set(${PROJECT_NAME}_MAJOR_VERSION 0)
@@ -39,10 +39,12 @@ set(INCLUDE_DIRS inc
                  ext/easyloggingpp/inc
                  ${easyloggingpp_INCLUDE_DIR}
                  ${Qt5Core_INCLUDE_DIRS}
-                 ${Qt5Network_INCLUDE_DIRS})
+                 ${Qt5Network_INCLUDE_DIRS}
+                 ${Qt5Script_INCLUDE_DIRS})
 
 set(LIBRARIES ${Qt5Core_LIBRARIES}
               ${Qt5Network_LIBRARIES}
+              ${Qt5Script_LIBRARIES}
               pugixml
               jsoncpp
               yaml-cpp

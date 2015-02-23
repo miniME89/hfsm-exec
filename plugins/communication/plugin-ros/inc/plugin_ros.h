@@ -22,6 +22,28 @@
 
 #include <QTcpSocket>
 
+class Rosbridge : public QObject
+{
+    Q_OBJECT
+
+    public:
+        Rosbridge();
+        ~Rosbridge();
+
+    public slots:
+        void socketConnected();
+        void socketError(QAbstractSocket::SocketError socketError);
+        void read();
+        bool write(const hfsmexec::Value& value);
+        bool write(const hfsmexec::Value& value, std::function<bool(hfsmexec::Value)> listener);
+
+    private:
+        static const hfsmexec::Logger* logger;
+        QTcpSocket socket;
+        QList<std::function<bool(hfsmexec::Value)> > listeners;
+        QMutex listenersMutex;
+};
+
 class RosCommunicationPlugin : public QObject, public hfsmexec::CommunicationPlugin
 {
     Q_OBJECT
@@ -36,19 +58,12 @@ class RosCommunicationPlugin : public QObject, public hfsmexec::CommunicationPlu
         virtual bool invoke(hfsmexec::Value& endpoint, hfsmexec::Value& input, hfsmexec::Value& output);
         virtual bool cancel();
 
-    public slots:
-        void connected();
-        void disconnected();
-        void read();
-        bool write(const hfsmexec::Value& value);
-        bool write(const hfsmexec::Value& value, std::function<bool(hfsmexec::Value)> listener);
-
     private:
-        QList<std::function<bool(hfsmexec::Value)> > listeners;
+        static Rosbridge rosbridge;
+
         hfsmexec::Value endpoint;
         hfsmexec::Value input;
         hfsmexec::Value output;
-        QTcpSocket socket;
 
         void publishMessage();
         void subscribeMessage();

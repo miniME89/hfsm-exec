@@ -89,7 +89,7 @@ void Api::log(HttpRequest* request, HttpResponse* response)
     if (logPushNotification.read(index, data, 30))
     {
         response->setStatusCode(200);
-        response->setHeader("Push-Notification-Index", std::to_string(index + 1));
+        response->setHeader("Push-Notification-Index", std::to_string(index));
         response->write(data);
     }
     else
@@ -106,7 +106,7 @@ void Api::statemachineState(HttpRequest* request, HttpResponse* response)
     if (statePushNotification.read(index, data, 30))
     {
         response->setStatusCode(HttpResponse::STATUS_OK);
-        response->setHeader("Push-Notification-Index", std::to_string(index + 1));
+        response->setHeader("Push-Notification-Index", std::to_string(index));
         response->write(data);
     }
     else

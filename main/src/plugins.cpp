@@ -42,11 +42,19 @@ const QString& CommunicationPlugin::getPluginId() const
     return pluginId;
 }
 
-void CommunicationPlugin::finish()
+void CommunicationPlugin::success()
 {
-    if (finishCallback)
+    if (successCallback)
     {
-        finishCallback();
+        successCallback();
+    }
+}
+
+void CommunicationPlugin::error(QString message)
+{
+    if (errorCallback)
+    {
+        errorCallback(message);
     }
 }
 
