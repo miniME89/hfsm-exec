@@ -125,10 +125,10 @@ namespace hfsmexec
             void setParentStateId(const QString& parentStateId);
             const StateMachine* getStateMachine() const;
 
-            Value& getInputParameters();
-            void setInputParameters(const Value& value);
-            Value& getOutputParameters();
-            void setOutputParameters(const Value& value);
+            Value& getInput();
+            void setInput(const Value& value);
+            Value& getOutput();
+            void setOutput(const Value& value);
 
             const QList<Dataflow*>& getDataflows() const;
 
@@ -151,8 +151,8 @@ namespace hfsmexec
             QString stateId;
             QString parentStateId;
             StateMachine* stateMachine;
-            Value inputParameters;
-            Value outputParameters;
+            Value input;
+            Value output;
             QList<Dataflow*> dataflows;
             QList<AbstractTransition*> transitions;
             QList<AbstractState*> childStates;
@@ -303,16 +303,21 @@ namespace hfsmexec
             InvokeState(const QString& stateId, const QString& binding, const QString& parentStateId = "");
             virtual ~InvokeState();
 
-            Value& getEndpoint();
-            void setEndpoint(Value& value);
+            void invoke();
+            void cancel();
+
+            const QString& getBinding() const;
 
             CommunicationPlugin* getCommunicationPlugin();
-            void setCommunicationPlugin(CommunicationPlugin* value);
+
+            Value& getEndpoint();
+            void setEndpoint(Value& value);
 
             virtual bool initialize();
             virtual QString toString() const;
 
         protected slots:
+            virtual void eventStop();
             virtual void eventEnter();
             virtual void eventExit();
             virtual void eventFinish();
@@ -321,6 +326,7 @@ namespace hfsmexec
             QString binding;
             CommunicationPlugin* communicationPlugin;
             Value endpoint;
+            bool invocationActive;
 
             void success();
             void error(QString message = "");

@@ -176,7 +176,7 @@ bool Importer::decodeInput(pugi::xml_node& node, AbstractState* state)
         return false;
     }
 
-    state->setInputParameters(parameters["input"]);
+    state->setInput(parameters["input"]);
 
     return true;
 }
@@ -195,7 +195,7 @@ bool Importer::decodeOutput(pugi::xml_node& node, AbstractState* state)
         return false;
     }
 
-    state->setOutputParameters(parameters["output"]);
+    state->setOutput(parameters["output"]);
 
     return true;
 }

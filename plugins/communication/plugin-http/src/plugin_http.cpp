@@ -35,15 +35,13 @@ CommunicationPlugin* HTTPCommunicationPlugin::create()
 	return new HTTPCommunicationPlugin();
 }
 
-bool HTTPCommunicationPlugin::invoke(Value& endpoint, Value& inputParameters, Value& outputParameters)
+void HTTPCommunicationPlugin::invoke()
 {
-    outputParameters["/some/test/value"].set(5);
+    output["/some/test/value"].set(5);
     logger->info("test");
-
-    return true;
 }
 
-bool HTTPCommunicationPlugin::cancel()
+void HTTPCommunicationPlugin::cancel()
 {
-    return true;
+
 }

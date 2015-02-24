@@ -33,15 +33,19 @@ class Rosbridge : public QObject
     public slots:
         void socketConnected();
         void socketError(QAbstractSocket::SocketError socketError);
+
         void read();
         bool write(const hfsmexec::Value& value);
-        bool write(const hfsmexec::Value& value, std::function<bool(hfsmexec::Value)> listener);
+
+        int registerListener(std::function<bool(hfsmexec::Value)> listener);
+        void unregisterListener(int handle);
 
     private:
         static const hfsmexec::Logger* logger;
         QTcpSocket socket;
-        QList<std::function<bool(hfsmexec::Value)> > listeners;
+        QMap<int, std::function<bool(hfsmexec::Value)>> listeners;
         QMutex listenersMutex;
+        int id;
 };
 
 class RosCommunicationPlugin : public QObject, public hfsmexec::CommunicationPlugin
@@ -55,15 +59,13 @@ class RosCommunicationPlugin : public QObject, public hfsmexec::CommunicationPlu
         virtual ~RosCommunicationPlugin();
 
         virtual CommunicationPlugin* create();
-        virtual bool invoke(hfsmexec::Value& endpoint, hfsmexec::Value& input, hfsmexec::Value& output);
-        virtual bool cancel();
+        virtual void invoke();
+        virtual void cancel();
 
     private:
         static Rosbridge rosbridge;
 
-        hfsmexec::Value endpoint;
-        hfsmexec::Value input;
-        hfsmexec::Value output;
+        std::function<void()> cancelCallback;
 
         void publishMessage();
         void subscribeMessage();

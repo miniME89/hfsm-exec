@@ -112,12 +112,12 @@ StateMachine* StateMachineBuilder::build()
         }
 
         Value sourceParameters;
-        sourceParameters["input"] = &sourceState->getInputParameters();
-        sourceParameters["output"] = &sourceState->getOutputParameters();
+        sourceParameters["input"] = &sourceState->getInput();
+        sourceParameters["output"] = &sourceState->getOutput();
 
         Value targetParameters;
-        targetParameters["input"] = &targetState->getInputParameters();
-        targetParameters["output"] = &targetState->getOutputParameters();
+        targetParameters["input"] = &targetState->getInput();
+        targetParameters["output"] = &targetState->getOutput();
 
         targetParameters[dataflow->getTo()] = &sourceParameters[dataflow->getFrom()];
 

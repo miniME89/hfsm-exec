@@ -15,6 +15,7 @@
 #define EASYLOGGINGPP_H
 #define _ELPP_QT_LOGGING
 #define _ELPP_NO_DEFAULT_LOG_FILE
+#define _ELPP_STACKTRACE_ON_CRASH
 // Compilers and C++0x/C++11 Evaluation
 #if defined(__GNUC__)
 #   define _ELPP_COMPILER_GCC 1

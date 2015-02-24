@@ -182,8 +182,8 @@ AbstractState::AbstractState(const QString& stateId, const QString& parentStateI
 {
     setObjectName("AbstractState");
 
-    inputParameters = Value::Object();
-    outputParameters = Value::Object();
+    input = Value::Object();
+    output = Value::Object();
 }
 
 AbstractState::~AbstractState()
@@ -216,24 +216,24 @@ const StateMachine* AbstractState::getStateMachine() const
     return stateMachine;
 }
 
-Value& AbstractState::getInputParameters()
+Value& AbstractState::getInput()
 {
-    return inputParameters;
+    return input;
 }
 
-void AbstractState::setInputParameters(const Value& value)
+void AbstractState::setInput(const Value& value)
 {
-    inputParameters = value;
+    input = value;
 }
 
-Value& AbstractState::getOutputParameters()
+Value& AbstractState::getOutput()
 {
-    return outputParameters;
+    return output;
 }
 
-void AbstractState::setOutputParameters(const Value& value)
+void AbstractState::setOutput(const Value& value)
 {
-    outputParameters = value;
+    output = value;
 }
 
 const QList<Dataflow*> &AbstractState::getDataflows() const
@@ -482,8 +482,8 @@ bool ConditionalTransition::eventTest(QEvent* e)
 
         QScriptEngine* scriptEngine = stateMachine->getScriptEngine();
         Value parameters;
-        parameters["input"] = &sourceState->getInputParameters();
-        parameters["output"] = &sourceState->getOutputParameters();
+        parameters["input"] = &sourceState->getInput();
+        parameters["output"] = &sourceState->getOutput();
 
         scriptEngine->evaluate(condition); //TODO
     }
@@ -653,7 +653,8 @@ QString ParallelState::toString() const
 InvokeState::InvokeState(const QString& stateId, const QString& binding, const QString& parentStateId) :
     AbstractComplexState(stateId, parentStateId),
     binding(binding),
-    communicationPlugin(Application::getInstance()->getCommunicationPluginLoader().getCommunicationPlugin(binding))
+    communicationPlugin(Application::getInstance()->getCommunicationPluginLoader().getCommunicationPlugin(binding)),
+    invocationActive(false)
 {
     if (communicationPlugin != NULL) {
         communicationPlugin->successCallback = std::bind(&InvokeState::success, this);
@@ -679,6 +680,51 @@ InvokeState::~InvokeState()
     }
 }
 
+void InvokeState::invoke()
+{
+    if (communicationPlugin == NULL)
+    {
+        logger->warning(QString("%1 can't invoke application: invalid communication plugin").arg(toString()));
+
+        return;
+    }
+
+    invocationActive = true;
+
+    communicationPlugin->endpoint = &endpoint;
+    communicationPlugin->input = &input;
+    communicationPlugin->output = &output;
+
+    communicationPlugin->invoke();
+}
+
+void InvokeState::cancel()
+{
+    if (!invocationActive)
+    {
+        return;
+    }
+
+    if (communicationPlugin == NULL)
+    {
+        logger->warning(QString("%1 can't cancel invocation: invalid communication plugin").arg(toString()));
+
+        return;
+    }
+
+    communicationPlugin->cancel();
+}
+
+const QString& InvokeState::getBinding() const
+{
+    return binding;
+}
+
+CommunicationPlugin* InvokeState::getCommunicationPlugin()
+{
+    return communicationPlugin;
+}
+
 Value& InvokeState::getEndpoint()
 {
     return endpoint;
@@ -689,16 +735,6 @@ void InvokeState::setEndpoint(Value& value)
     endpoint = value;
 }
 
-CommunicationPlugin* InvokeState::getCommunicationPlugin()
-{
-    return communicationPlugin;
-}
-
-void InvokeState::setCommunicationPlugin(CommunicationPlugin* value)
-{
-    communicationPlugin = value;
-}
-
 bool InvokeState::initialize()
 {
     AbstractComplexState::initialize();
@@ -706,27 +742,25 @@ bool InvokeState::initialize()
     return true;
 }
 
+void InvokeState::eventStop()
+{
+    AbstractComplexState::eventStop();
+
+    cancel();
+}
+
 void InvokeState::eventEnter()
 {
     AbstractComplexState::eventEnter();
 
-    if (communicationPlugin == NULL)
-    {
-        logger->warning(QString("%1 can't invoke application: invalid communication plugin").arg(toString()));
-
-        return;
-    }
-
-    communicationPlugin->invoke(endpoint, inputParameters, outputParameters);
+    invoke();
 }
 
 void InvokeState::eventExit()
 {
     AbstractComplexState::eventExit();
 
-    if (communicationPlugin != NULL) {
-        communicationPlugin->cancel();
-    }
+    cancel();
 }
 
 void InvokeState::eventFinish()
@@ -740,6 +774,13 @@ void InvokeState::success()
     {
         return;
     }
+
+    if (!invocationActive)
+    {
+        return;
+    }
+
+    invocationActive = false;
 
     logger->info(QString("%1 invocation finished successfully").arg(toString()));
 
@@ -756,6 +797,13 @@ void InvokeState::error(QString message)
     {
         return;
     }
+
+    if (!invocationActive)
+    {
+        return;
+    }
+
+    invocationActive = false;
 
     logger->warning(QString("%1 invocation finished with an error: %2").arg(toString()).arg(message));
 
@@ -786,9 +834,6 @@ StateMachine::StateMachine(const QString& stateId, const QString &initialId, con
     connect(delegate, SIGNAL(entered()), this, SLOT(eventEnter()));
     connect(delegate, SIGNAL(exited()), this, SLOT(eventExit()));
     connect(delegate, SIGNAL(finished()), this, SLOT(eventFinish()));
-
-    connect(delegate, SIGNAL(started()), this, SLOT(eventStart()));
-    connect(delegate, SIGNAL(stopped()), this, SLOT(eventStop()));
 }
 
 StateMachine::~StateMachine()

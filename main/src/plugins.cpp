@@ -42,6 +42,21 @@ const QString& CommunicationPlugin::getPluginId() const
     return pluginId;
 }
 
+Value& CommunicationPlugin::getEndpoint()
+{
+    return endpoint;
+}
+
+Value& CommunicationPlugin::getInput()
+{
+    return input;
+}
+
+Value& CommunicationPlugin::getOutput()
+{
+    return output;
+}
+
 void CommunicationPlugin::success()
 {
     if (successCallback)
