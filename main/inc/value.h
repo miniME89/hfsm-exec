@@ -135,8 +135,6 @@ namespace hfsmexec
 
             Value& getValue(const QString& path);
             const Value& getValue(const QString& path) const;
-            Value& getValue(int i);
-            const Value& getValue(int i) const;
 
             int size();
             void remove(const QString& key);
@@ -171,8 +169,8 @@ namespace hfsmexec
             bool operator==(const Value& other) const;
             bool operator!=(const Value& other) const;
 
-            Value& operator[](const QString& path);
-            const Value& operator[](const QString& path) const;
+            Value& operator[](const QString& name);
+            const Value& operator[](const QString& name) const;
             Value& operator[](int i);
             const Value& operator[](int i) const;
 

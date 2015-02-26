@@ -119,7 +119,7 @@ StateMachine* StateMachineBuilder::build()
         targetParameters["input"] = &targetState->getInput();
         targetParameters["output"] = &targetState->getOutput();
 
-        targetParameters[dataflow->getTo()] = &sourceParameters[dataflow->getFrom()];
+        targetParameters.getValue(dataflow->getTo()) = &sourceParameters.getValue(dataflow->getFrom());
 
         sourceState->dataflows.append(dataflow);
     }

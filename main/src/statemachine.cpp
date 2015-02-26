@@ -167,7 +167,7 @@ Value& Dataflow::getToParameter()
 
 QString Dataflow::toString() const
 {
-    return QString("[Dataflow: sourceStateId=%1, targetStateId=%1, from=%3, to%4]").arg(sourceStateId).arg(targetStateId).arg(from).arg(to);
+    return QString("[Dataflow: sourceId=%1, targetId=%1, from=%3, to%4]").arg(sourceStateId).arg(targetStateId).arg(from).arg(to);
 }
 
 /*
@@ -443,7 +443,7 @@ void NamedEvent::setMessage(const QString& message)
 
 QString NamedEvent::toString() const
 {
-    return "[NamedEvent: " + eventName + "]";
+    return QString("[NamedEvent: eventName=%1]").arg(eventName);
 }
 
 /*
@@ -459,7 +459,7 @@ ConditionalTransition::ConditionalTransition(const QString& transitionId, const 
 
 QString ConditionalTransition::toString() const
 {
-    return "[ConditionalTransition: " + transitionId + "]";
+    return QString("[ConditionalTransition: id=%1, eventName=%2]").arg(transitionId).arg(eventName);
 }
 
 bool ConditionalTransition::eventTest(QEvent* e)
@@ -585,7 +585,7 @@ bool FinalState::initialize()
 
 QString FinalState::toString() const
 {
-    return "[Final: " + stateId + "]";
+    return QString("[Final: id=%1]").arg(stateId);
 }
 
 /*
@@ -622,7 +622,7 @@ bool CompositeState::initialize()
 
 QString CompositeState::toString() const
 {
-    return "[CompositeState: " + stateId + "]";
+    return QString("[CompositeState: id=%1]").arg(stateId);
 }
 
 /*
@@ -647,7 +647,7 @@ bool ParallelState::initialize()
 
 QString ParallelState::toString() const
 {
-    return "[Parallel: " + stateId + "]";
+    return QString("[Parallel: id=%1]").arg(stateId);
 }
 
 /*
@@ -819,7 +819,7 @@ void InvokeState::error(QString message)
 
 QString InvokeState::toString() const
 {
-    return "[Invoke: " + stateId + "]";
+    return QString("[Invoke: id=%1]").arg(stateId);
 }
 
 /*
@@ -941,7 +941,7 @@ bool StateMachine::initialize()
 
 QString StateMachine::toString() const
 {
-    return "[StateMachine: " + stateId + "]";
+    return QString("[StateMachine: id=%1]").arg(stateId);
 }
 
 void StateMachine::eventStart()
