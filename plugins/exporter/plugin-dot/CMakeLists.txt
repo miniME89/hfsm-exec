@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.8)
 
 project(plugin-dot)
 
-find_package(Qt5 REQUIRED COMPONENTS Core)
+find_package(Qt5 REQUIRED COMPONENTS Core Script)
 find_package(hfsm-exec REQUIRED)
 
 ####################
@@ -14,7 +14,8 @@ set(HEADERS inc/plugin_dot.h)
 
 set(INCLUDE_DIRS inc
                  ${hfsm-exec_INCLUDE_DIR}
-                 ${Qt5Core_INCLUDE_DIRS})
+                 ${Qt5Core_INCLUDE_DIRS}
+                 ${Qt5Script_INCLUDE_DIRS})
 
 set(LIBRARIES ${Qt5Core_LIBRARIES})
 

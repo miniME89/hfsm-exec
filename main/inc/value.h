@@ -22,13 +22,28 @@
 
 #include <logger.h>
 
+#include <QObject>
 #include <QString>
-#include <QList>
-#include <QMap>
+#include <QMutex>
+#include <QScriptEngine>
+#include <QScriptClass>
 
 #include <exception>
 
-#include <QMutex>
+namespace pugi
+{
+    class xml_node;
+}
+
+namespace Json
+{
+    class Value;
+}
+
+namespace YAML
+{
+    class Node;
+}
 
 namespace hfsmexec
 {
@@ -47,8 +62,10 @@ namespace hfsmexec
             QString message;
     };
 
-    class Value
+    class Value : public QObject
     {
+        Q_OBJECT
+
         public:
             typedef enum
             {
@@ -169,13 +186,13 @@ namespace hfsmexec
             template <typename T>
             void setValue(const T& value);
 
-            bool buildToXml(const Value* value, void* data) const;
-            bool buildToJson(const Value* value, void* data) const;
-            bool buildToYaml(const Value* value, void* data) const;
+            bool buildToXml(const Value* value, pugi::xml_node* xmlValue) const;
+            bool buildToJson(const Value* value, Json::Value* jsonValue) const;
+            bool buildToYaml(const Value* value, YAML::Node* yamlValue) const;
 
-            bool buildFromXml(Value* value, void* data);
-            bool buildFromJson(Value* value, void* data);
-            bool buildFromYaml(Value* value, void* data);
+            bool buildFromXml(Value* value, pugi::xml_node* xmlValue);
+            bool buildFromJson(Value* value, Json::Value* jsonValue);
+            bool buildFromYaml(Value* value, YAML::Node* yamlValue);
     };
 
     class ArbitraryValue
@@ -230,6 +247,25 @@ namespace hfsmexec
 
             void destroy();
     };
+
+    class ValueScriptBinding : public QScriptClass
+    {
+        public:
+            virtual QScriptValue property(const QScriptValue& object, const QScriptString& name, uint id);
+            virtual void setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& newValue);
+            virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& name, QueryFlags flags, uint* id);
+
+            static QScriptValue create(QScriptEngine* engine, Value* value);
+
+        private:
+            ValueScriptBinding(QScriptEngine* engine);
+            ~ValueScriptBinding();
+
+            void setPropertyFromArray(const QVariantList& list, Value* value);
+            void setPropertyFromObject(const QVariantMap& map, Value* value);
+    };
 }
+
+Q_DECLARE_METATYPE(hfsmexec::Value*)
 
 #endif

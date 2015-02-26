@@ -17,9 +17,6 @@
 
 #include <value.h>
 
-#include <QTextStream>
-#include <QStringList>
-
 #include <pugixml.hpp>
 #include <json/json.h>
 #include <yaml-cpp/yaml.h>
@@ -548,6 +545,10 @@ bool Value::fromXml(const QString& xml)
         return false;
     }
 
+    QString s;
+    toJson(s);
+    logger->warning(s);
+
     return true;
 }
 
@@ -715,10 +716,8 @@ void Value::setValue(const T& value)
     this->value->set<T>(value);
 }
 
-bool Value::buildToXml(const Value* value, void* data) const
+bool Value::buildToXml(const Value* value, pugi::xml_node* xmlValue) const
 {
-    pugi::xml_node* xmlValue = static_cast<pugi::xml_node*>(data);
-
     if (value->isUndefined())
     {
         return false;
@@ -781,10 +780,8 @@ bool Value::buildToXml(const Value* value, void* data) const
     return true;
 }
 
-bool Value::buildToJson(const Value* value, void* data) const
+bool Value::buildToJson(const Value* value, Json::Value* jsonValue) const
 {
-    Json::Value* jsonValue = static_cast<Json::Value*>(data);
-
     if (value->isUndefined())
     {
         return false;
@@ -851,10 +848,8 @@ bool Value::buildToJson(const Value* value, void* data) const
     return true;
 }
 
-bool Value::buildToYaml(const Value* value, void* data) const
+bool Value::buildToYaml(const Value* value, YAML::Node* yamlValue) const
 {
-    YAML::Node* yamlValue = static_cast<YAML::Node*>(data);
-
     if (value->isUndefined())
     {
         return false;
@@ -919,9 +914,8 @@ bool Value::buildToYaml(const Value* value, void* data) const
     return true;
 }
 
-bool Value::buildFromXml(Value* value, void* data)
+bool Value::buildFromXml(Value* value, pugi::xml_node* xmlValue)
 {
-    pugi::xml_node* xmlValue = static_cast<pugi::xml_node*>(data);
     pugi::xml_attribute typeAttribute = xmlValue->attribute("type");
     pugi::xml_text textContent = xmlValue->text();
 
@@ -949,7 +943,7 @@ bool Value::buildFromXml(Value* value, void* data)
         for (pugi::xml_node_iterator i = xmlValue->begin(); i != xmlValue->end(); i++)
         {
             Value v;
-            if (!buildFromXml(&v, &i))
+            if (!buildFromXml(&v, (pugi::xml_node*)&i))
             {
                 return false;
             }
@@ -963,7 +957,7 @@ bool Value::buildFromXml(Value* value, void* data)
         for (pugi::xml_node_iterator i = xmlValue->begin(); i != xmlValue->end(); i++)
         {
             Value v;
-            if (!buildFromXml(&v, &i))
+            if (!buildFromXml(&v, (pugi::xml_node*)&i))
             {
                 return false;
             }
@@ -984,10 +978,8 @@ bool Value::buildFromXml(Value* value, void* data)
     return true;
 }
 
-bool Value::buildFromJson(Value* value, void* data)
+bool Value::buildFromJson(Value* value, Json::Value* jsonValue)
 {
-    Json::Value* jsonValue = static_cast<Json::Value*>(data);
-
     if (jsonValue->isNull())
     {
         value->null();
@@ -1040,10 +1032,8 @@ bool Value::buildFromJson(Value* value, void* data)
     return true;
 }
 
-bool Value::buildFromYaml(Value* value, void* data)
+bool Value::buildFromYaml(Value* value, YAML::Node* yamlValue)
 {
-    YAML::Node* yamlValue = static_cast<YAML::Node*>(data);
-
     if (yamlValue->IsNull())
     {
         value->null();
@@ -1404,4 +1394,212 @@ void ArbitraryValue::destroy()
     }
 
     memset(&data, 0, sizeof(data));
+}
+
+/*
+ * ValueScriptBinding
+ */
+ValueScriptBinding::ValueScriptBinding(QScriptEngine* engine) :
+    QScriptClass(engine)
+{
+
+}
+
+ValueScriptBinding::~ValueScriptBinding()
+{
+
+}
+
+QScriptValue ValueScriptBinding::property(const QScriptValue& object, const QScriptString& name, uint id)
+{
+    Value* value = qscriptvalue_cast<Value*>(object.data());
+    if (!value)
+    {
+        return QScriptValue();
+    }
+
+    //get value from array or object
+    if (value->isArray() && name.toArrayIndex() < value->size())
+    {
+        value = &((*value)[name.toArrayIndex()]);
+    }
+    else if (value->isObject() && value->contains(name.toString()))
+    {
+        value = &((*value)[name.toString()]);
+    }
+    else
+    {
+        return QScriptValue();
+    }
+
+    //create QScriptValue
+    if (value->isBoolean())
+    {
+        return QScriptValue(value->getBoolean());
+    }
+    else if (value->isInteger())
+    {
+        return QScriptValue(value->getInteger());
+    }
+    else if (value->isFloat())
+    {
+        return QScriptValue(value->getFloat());
+    }
+    else if (value->isString())
+    {
+        return QScriptValue(value->getString());
+    }
+    else if (value->isArray())
+    {
+        QScriptValue scriptValue = engine()->newVariant(QVariant::fromValue(value));
+        QScriptValue wrappedValue = engine()->newObject(this, scriptValue);
+
+        return wrappedValue;
+    }
+    else if (value->isObject())
+    {
+        QScriptValue scriptValue = engine()->newVariant(QVariant::fromValue(value));
+        QScriptValue wrappedValue = engine()->newObject(this, scriptValue);
+
+        return wrappedValue;
+    }
+
+    return QScriptValue();
+}
+
+void ValueScriptBinding::setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& newValue)
+{
+    Value* value = qscriptvalue_cast<Value*>(object.data());
+    if (!value)
+    {
+        return;
+    }
+
+    //get value from array or object
+    if (value->isArray() && name.toArrayIndex() < value->size())
+    {
+        value = &((*value)[name.toArrayIndex()]);
+    }
+    else if (value->isObject() && value->contains(name.toString()))
+    {
+        value = &((*value)[name.toString()]);
+    }
+    else
+    {
+        return;
+    }
+
+    //set value from QScriptValue
+    if (newValue.isBool())
+    {
+        *value = newValue.toBool();
+    }
+    else if (newValue.isNumber())
+    {
+        *value = newValue.toNumber();
+    }
+    else if (newValue.isString())
+    {
+        *value = newValue.toString();
+    }
+    else if (newValue.isArray())
+    {
+        *value = Value::Array();
+        QVariantList list = qscriptvalue_cast<QVariantList>(newValue);
+        setPropertyFromArray(list, value);
+    }
+    else if (newValue.isObject())
+    {
+        *value = Value::Object();
+        QVariantMap map = qscriptvalue_cast<QVariantMap>(newValue);
+        setPropertyFromObject(map, value);
+    }
+}
+
+QScriptClass::QueryFlags ValueScriptBinding::queryProperty(const QScriptValue& object, const QScriptString& name, QScriptClass::QueryFlags flags, uint* id)
+{
+    if (name.toString() != "toString" && name.toString() != "valueOf")
+    {
+        return QScriptClass::HandlesReadAccess | QScriptClass::HandlesWriteAccess;
+    }
+
+    return 0;
+}
+
+QScriptValue ValueScriptBinding::create(QScriptEngine* engine, Value* value)
+{
+    ValueScriptBinding* valueScriptBinding = new ValueScriptBinding(engine); //TODO will cause memory leak
+    QScriptValue scriptValue = engine->newVariant(QVariant::fromValue(value));
+    QScriptValue wrappedValue = engine->newObject(valueScriptBinding, scriptValue);
+
+    return wrappedValue;
+}
+
+void ValueScriptBinding::setPropertyFromArray(const QVariantList& list, Value* value)
+{
+    for (int i = 0; i < list.size(); i++)
+    {
+        const QVariant& v = list.at(i);
+        if (v.type() == QVariant::Bool)
+        {
+            (*value)[i] = v.toBool();
+        }
+        else if (v.type() == QVariant::Int)
+        {
+            (*value)[i] = v.toInt();
+        }
+        else if (v.type() == QVariant::Double)
+        {
+            (*value)[i] = v.toDouble();
+        }
+        else if (v.type() == QVariant::String)
+        {
+            (*value)[i] = v.toString();
+        }
+        else if (v.type() == QVariant::List)
+        {
+            QVariantList list = v.toList();
+            setPropertyFromArray(list, &(*value)[i]);
+        }
+        else if (v.type() == QVariant::Map)
+        {
+            QVariantMap map = v.toMap();
+            setPropertyFromObject(map, &(*value)[i]);
+        }
+    }
+}
+
+void ValueScriptBinding::setPropertyFromObject(const QVariantMap& map, Value* value)
+{
+    QMapIterator<QString, QVariant> it(map);
+    while (it.hasNext())
+    {
+        it.next();
+        if (it.value().type() == QVariant::Bool)
+        {
+            (*value)[it.key()] = it.value().toBool();
+        }
+        else if (it.value().type() == QVariant::Int)
+        {
+            (*value)[it.key()] = it.value().toInt();
+        }
+        else if (it.value().type() == QVariant::Double)
+        {
+            (*value)[it.key()] = it.value().toDouble();
+        }
+        else if (it.value().type() == QVariant::String)
+        {
+            (*value)[it.key()] = it.value().toString();
+        }
+        else if (it.value().type() == QVariant::List)
+        {
+            QVariantList list = it.value().toList();
+            setPropertyFromArray(list, &(*value)[it.key()]);
+        }
+        else if (it.value().type() == QVariant::Map)
+        {
+            QVariantMap map = it.value().toMap();
+            setPropertyFromObject(map, &(*value)[it.key()]);
+        }
+    }
 }

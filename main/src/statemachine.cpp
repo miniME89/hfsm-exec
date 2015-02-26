@@ -478,14 +478,17 @@ bool ConditionalTransition::eventTest(QEvent* e)
 
     if (!condition.isEmpty())
     {
-        logger->warning("evaluate: " + condition);
-
         QScriptEngine* scriptEngine = stateMachine->getScriptEngine();
-        Value parameters;
-        parameters["input"] = &sourceState->getInput();
-        parameters["output"] = &sourceState->getOutput();
+        QScriptContext* context = scriptEngine->pushContext();
 
-        scriptEngine->evaluate(condition); //TODO
+        context->activationObject().setProperty("input", ValueScriptBinding::create(scriptEngine, &sourceState->getInput())); //TODO performance?
+        context->activationObject().setProperty("output", ValueScriptBinding::create(scriptEngine, &sourceState->getOutput())); //TODO performance?
+
+        bool result = scriptEngine->evaluate(condition).toBool();
+
+        scriptEngine->popContext();
+
+        return result;
     }
 
     return true;
