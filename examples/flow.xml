@@ -63,10 +63,14 @@
             </input>
             <output/>
             <dataflows>
-                <dataflow source="i1" from="output/velocity" to="input/velocity"/>
-                <dataflow source="i1" from="output/acceleration" to="input/acceleration"/>
-                <dataflow source="i2" from="output/frame" to="input/frame"/>
-                <dataflow source="i2" from="output/pose" to="input/pose"/>
+                <dataflow source="i1">
+                    <assign from="output.velocity" to="input.velocity"/>
+                    <assign from="output.acceleration" to="input.acceleration"/>
+                </dataflow>
+                <dataflow source="i2">
+                    <assign from="output.frame" to="input.frame"/>
+                    <assign from="output.pose" to="input.pose"/>
+                </dataflow>
             </dataflows>
             <transitions>
                 <transition event="done.i3" target="f1" />

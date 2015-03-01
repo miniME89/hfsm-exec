@@ -218,9 +218,7 @@ void RosCommunicationPlugin::subscribeMessage()
     auto receivedMessage = [=](Value& message) {
         logger->info("received message");
 
-        output = message["msg"];
-
-        success();
+        success(message["msg"]);
     };
 
     //register rosbridge callback
@@ -261,9 +259,7 @@ void RosCommunicationPlugin::sendServiceRequest()
     auto receivedResponse = [=](Value& message) {
         logger->info("received service response");
 
-        output = message["values"];
-
-        success();
+        success(message["values"]);
     };
 
     //register rosbridge callback
@@ -332,9 +328,7 @@ void RosCommunicationPlugin::sendActionGoal()
     auto receivedResult = [=](Value& message) {
         logger->info("received action result");
 
-        output = message["msg"];
-
-        success();
+        success(message["msg"]);
     };
 
     //register rosbridge callback

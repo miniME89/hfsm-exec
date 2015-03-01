@@ -119,9 +119,17 @@ StateMachine* StateMachineBuilder::build()
         targetParameters["input"] = &targetState->getInput();
         targetParameters["output"] = &targetState->getOutput();
 
-        targetParameters.getValue(dataflow->getTo()) = &sourceParameters.getValue(dataflow->getFrom());
+        const QList<Assign*>& assigns = dataflow->getAssigns();
+        for (int j = 0; j < assigns.size(); j++)
+        {
+            targetParameters.getValue(assigns[j]->getTo()) = &sourceParameters.getValue(assigns[j]->getFrom());
+        }
 
-        sourceState->dataflows.append(dataflow);
+        dataflow->stateMachine = stateMachine;
+        dataflow->sourceState = sourceState;
+        dataflow->targetState = targetState;
+
+        targetState->dataflows.append(dataflow);
     }
 
     //initialize state machine

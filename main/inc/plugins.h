@@ -38,11 +38,7 @@ namespace hfsmexec
 
             const QString& getPluginId() const;
 
-            Value& getEndpoint();
-            Value& getInput();
-            Value& getOutput();
-
-            void success();
+            void success(const Value& output = NullValue::ref());
             void error(QString message = "");
 
             virtual CommunicationPlugin* create() = 0;
@@ -50,7 +46,7 @@ namespace hfsmexec
             virtual void cancel() = 0;
 
         private:
-            std::function<void()> successCallback;
+            std::function<void(const Value& output)> successCallback;
             std::function<void(QString)> errorCallback;
 
         protected:
@@ -59,7 +55,6 @@ namespace hfsmexec
 
             Value endpoint;
             Value input;
-            Value output;
     };
 
     class ImporterPlugin

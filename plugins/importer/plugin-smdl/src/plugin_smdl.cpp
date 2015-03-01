@@ -148,11 +148,6 @@ bool Importer::decodeTransitions(pugi::xml_node& node, StateMachineBuilder& buil
         QString event = transitionElement.attribute("event").value();
         QString condition = transitionElement.attribute("condition").value();
 
-        if (event == "finish" || event == "state.success" || event == "state.error")
-        {
-            event = event + "." + state->getId();
-        }
-
         logger->info(QString("decode ConditionalTransition: id=%1, source=%2, target=%3, event=%4, condition=%5").arg(id).arg(state->getId()).arg(target).arg(event).arg(condition));
 
         ConditionalTransition* transition = new ConditionalTransition(id, state->getId(), target, event, condition);
@@ -204,16 +199,27 @@ bool Importer::decodeDataflows(pugi::xml_node& node, StateMachineBuilder& builde
 {
     logger->info("decode dataflows");
 
-    for (pugi::xml_node dataflowElement = node.child("dataflow"); dataflowElement; dataflowElement = dataflowElement.next_sibling())
+    for (pugi::xml_node dataflowElement = node.child("dataflow"); dataflowElement; dataflowElement = dataflowElement.next_sibling("dataflow"))
     {
         QString source = dataflowElement.attribute("source").value();
         QString from = dataflowElement.attribute("from").value();
         QString to = dataflowElement.attribute("to").value();
 
-        logger->info(QString("decode dataflow: sourceStateId=%1, targetStateId=%2, from=%3, to=%4").arg(source).arg(state->getId()).arg(from).arg(to));
+        logger->info(QString("decode dataflow: sourceStateId=%1, targetStateId=%2").arg(source).arg(state->getId()));
 
-        Dataflow* dataflow = new Dataflow(source, state->getId(), from, to);
+        Dataflow* dataflow = new Dataflow(source, state->getId());
         builder <<dataflow;
+
+        for (pugi::xml_node assignElement = dataflowElement.child("assign"); assignElement; assignElement = assignElement.next_sibling("assign"))
+        {
+            QString from = assignElement.attribute("from").value();
+            QString to = assignElement.attribute("to").value();
+
+            logger->info(QString("decode assign: from=%1, to=%2").arg(from).arg(to));
+
+            Assign* assign = new Assign(from, to);
+            dataflow->addAssign(assign);
+        }
     }
 
     return true;
@@ -223,11 +229,6 @@ AbstractState* Importer::decodeStateMachine(pugi::xml_node& node, StateMachineBu
 {
     QString id = node.attribute("id").value();
     QString initial = node.attribute("initial").value();
-
-    if (parentState == NULL)
-    {
-        id = QUuid::createUuid().toString().remove(QChar('{')).remove(QChar('}'));
-    }
 
     QString parentStateId = "";
     if (parentState != NULL)

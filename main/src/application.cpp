@@ -52,12 +52,13 @@ void Configuration::load()
 
     //add options
     QCommandLineOption commandLogger(QStringList() <<"l" <<"logger", "Enable only the specified loggers. Possible Loggers are: api, application, builder, parameter, plugin, statemachine. [Default: all]", "logger");
-    QCommandLineOption commandLoggerFile(QStringList() <<"o" <<"logger-file", "Set the filename (including the path) for the log file.", "filename");
+    QCommandLineOption commandLoggerFile(QStringList() <<"f" <<"logger-file", "Set the filename (including the path) for the log file.", "filename");
     QCommandLineOption commandPluginDir(QStringList() <<"d" <<"plugin-dir", "Set the path to the directories where the plugins will be loaded from. [Default: ./plugins/]", "directory");
     QCommandLineOption commandApi(QStringList() <<"a" <<"api", "Enable the REST API. This will startup the internal HTTP server.");
     QCommandLineOption commandApiPort(QStringList() <<"p" <<"api-port", "Set port of the HTTP server for the REST API. [Default: 8080]", "port");
-    QCommandLineOption commandImportStatemachine(QStringList() <<"i" <<"import", "Import a state machine at startup.", "filename");
-    QCommandLineOption commandExportStatemachine(QStringList() <<"e" <<"export", "Export the imported state machine at startup.", "filename");
+    QCommandLineOption commandImportStatemachine(QStringList() <<"i" <<"import", "Import a state machine.", "filename");
+    QCommandLineOption commandExportStatemachine(QStringList() <<"o" <<"export", "Export the imported state machine.", "filename");
+    QCommandLineOption commandEncoding(QStringList() <<"e" <<"encoding", "Encoding of the imported/exported state machine.", "encoding");
 
     commandLineParser.addHelpOption();
     commandLineParser.addVersionOption();
@@ -68,6 +69,7 @@ void Configuration::load()
     commandLineParser.addOption(commandApiPort);
     commandLineParser.addOption(commandImportStatemachine);
     commandLineParser.addOption(commandExportStatemachine);
+    commandLineParser.addOption(commandEncoding);
 
     //process command line
     commandLineParser.process(Application::getInstance()->getQtApplication());
@@ -113,6 +115,21 @@ void Configuration::load()
     {
         exportStateMachine = commandLineParser.value(commandExportStatemachine);
     }
+
+    //encoding
+    if (commandLineParser.isSet(commandEncoding))
+    {
+        QStringList encodings = commandLineParser.values(commandEncoding);
+        if (encodings.size() == 1)
+        {
+            importEncoding = encodings[0];
+        }
+        else if (encodings.size() == 2)
+        {
+            importEncoding = encodings[0];
+            exportEncoding = encodings[1];
+        }
+    }
 }
 
 /*
@@ -139,6 +156,8 @@ Application::Application(int argc, char** argv) :
     stateMachine(NULL)
 {
     instance = this;
+
+    setlocale(LC_NUMERIC, "C");
 
     configuration.load();
 }
@@ -187,7 +206,7 @@ int Application::exec()
             QString data = stream.readAll();
             file.close();
 
-            loadStateMachine("SMDL/XML", data);
+            loadStateMachine(configuration.importEncoding, data);
         }
     }
 
@@ -197,11 +216,14 @@ int Application::exec()
         QFile file(configuration.exportStateMachine);
         if (file.open(QIODevice::WriteOnly))
         {
-            QString data = pluginLoader.getExporterPlugin("DOT")->exportStateMachine(stateMachine);
-
-            QTextStream stream(&file);
-            stream <<data;
-            file.close();
+            ExporterPlugin* exporter = pluginLoader.getExporterPlugin(configuration.exportEncoding);
+            if (exporter != NULL)
+            {
+                QString data = exporter->exportStateMachine(stateMachine);
+                QTextStream stream(&file);
+                stream <<data;
+                file.close();
+            }
         }
     }
 

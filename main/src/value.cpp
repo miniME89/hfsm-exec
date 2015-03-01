@@ -24,31 +24,6 @@
 using namespace hfsmexec;
 
 /*
- * ValueException
- */
-ValueException::ValueException() :
-    message("ValueException")
-{
-
-}
-
-ValueException::ValueException(const QString& message):
-    message(message)
-{
-
-}
-
-ValueException::~ValueException() throw()
-{
-
-}
-
-const char* ValueException::what() const throw()
-{
-    return message.toStdString().c_str();
-}
-
-/*
  * Value
  */
 const Logger* Value::logger = Logger::getLogger(LOGGER_VALUE);
@@ -111,12 +86,6 @@ Value::Value(Value* const & value) :
     value(new ArbitraryValue())
 {
     *this = value;
-}
-
-template<typename T>
-Value::Value(const T& value)
-{
-    setValue<T>(value);
 }
 
 Value::~Value()
@@ -214,47 +183,83 @@ Value::Object Value::getObject(Object defaultValue) const
 
 bool Value::get(Boolean& value, Boolean defaultValue) const
 {
-    return getValue<Boolean>(value, defaultValue);
+    bool ok = get<Boolean>(value);
+    if (!ok)
+    {
+        value = defaultValue;
+    }
+
+    return ok;
 }
 
 bool Value::get(Integer& value, Integer defaultValue) const
 {
-    return getValue<Integer>(value, defaultValue);
+    bool ok = get<Integer>(value);
+    if (!ok)
+    {
+        value = defaultValue;
+    }
+
+    return ok;
 }
 
 bool Value::get(Float& value, Float defaultValue) const
 {
-    return getValue<Float>(value, defaultValue);
+    bool ok = get<Float>(value);
+    if (!ok)
+    {
+        value = defaultValue;
+    }
+
+    return ok;
 }
 
 bool Value::get(String& value, String defaultValue) const
 {
-    return getValue<String>(value, defaultValue);
+    bool ok = get<String>(value);
+    if (!ok)
+    {
+        value = defaultValue;
+    }
+
+    return ok;
 }
 
 bool Value::get(Array& value, Array defaultValue) const
 {
-    return getValue<Array>(value, defaultValue);
+    bool ok = get<Array>(value);
+    if (!ok)
+    {
+        value = defaultValue;
+    }
+
+    return ok;
 }
 
 bool Value::get(Object& value, Object defaultValue) const
 {
-    return getValue<Object>(value, defaultValue);
+    bool ok = get<Object>(value);
+    if (!ok)
+    {
+        value = defaultValue;
+    }
+
+    return ok;
 }
 
 void Value::set(const Boolean& value)
 {
-    setValue<Boolean>(value);
+    set<Boolean>(value);
 }
 
 void Value::set(const Integer& value)
 {
-    setValue<Integer>(value);
+    set<Integer>(value);
 }
 
 void Value::set(const Float& value)
 {
-    setValue<Float>(value);
+    set<Float>(value);
 }
 
 void Value::set(const char* value)
@@ -264,17 +269,17 @@ void Value::set(const char* value)
 
 void Value::set(const String& value)
 {
-    setValue<String>(value);
+    set<String>(value);
 }
 
 void Value::set(const Array& value)
 {
-    setValue<Array>(value);
+    set<Array>(value);
 }
 
 void Value::set(const Object& value)
 {
-    setValue<Object>(value);
+    set<Object>(value);
 }
 
 Value& Value::getValue(const QString& path)
@@ -319,6 +324,41 @@ const Value& Value::getValue(const QString& path) const
     }
 
     return *value;
+}
+
+void Value::unite(const Value& value)
+{
+    if (isArray() && value.isArray())
+    {
+        Array& a1 = this->value->get<Array>();
+        Array& a2 = value.value->get<Array>();
+        for (int i = 0; i < a2.size(); i++)
+        {
+            if (a1.size() - 1 < i)
+            {
+                a1.append(Value());
+                a1[i] = a2[i];
+            }
+            else
+            {
+                a1[i].unite(a2[i]);
+            }
+        }
+    }
+    else if (isObject() && value.isObject())
+    {
+        ObjectIterator o1 = *this;
+        ObjectIterator o2 = value;
+        for (; o2; o2++)
+        {
+            logger->warning(o2.key());
+            o1[o2.key()].unite(o2.value());
+        }
+    }
+    else
+    {
+        *this = value;
+    }
 }
 
 int Value::size()
@@ -372,6 +412,11 @@ void Value::undefined()
 void Value::null()
 {
     value->set<Null>(Null());
+}
+
+bool Value::isValid() const
+{
+    return this != &NullValue::ref();
 }
 
 const Value::ValueType& Value::getType() const
@@ -592,16 +637,22 @@ const Value& Value::operator=(const Object& value)
 
 const Value& Value::operator=(const Value& other)
 {
-    this->value->set(*other.value);
+    if (other.isValid())
+    {
+        this->value->set(*other.value);
+    }
 
     return *this;
 }
 
 const Value& Value::operator=(const Value* other)
 {
-    value->decReference();
-    value = other->value;
-    value->incReference();
+    if (other->isValid())
+    {
+        value->decReference();
+        value = other->value;
+        value->incReference();
+    }
 
     return *this;
 }
@@ -644,7 +695,7 @@ const Value& Value::operator[](const QString& name) const
 {
     if (getType() != TYPE_OBJECT)
     {
-        throw ValueException("value ist not of type object");
+        return NullValue::ref();
     }
 
     const Object& object = value->get<Object>();
@@ -652,7 +703,7 @@ const Value& Value::operator[](const QString& name) const
     //value does not exist
     if (it == object.end())
     {
-        throw ValueException("member " + name + " not found");
+        return NullValue::ref();
     }
     //value exist
     else
@@ -681,20 +732,20 @@ const Value& Value::operator[](int i) const
 {
     if (getType() != TYPE_ARRAY)
     {
-        throw ValueException("value ist not of type array");
+        return NullValue::ref();
     }
 
     const Array& array = value->get<Array>();
     if (i >= array.size())
     {
-        throw ValueException("index out of bound");
+        return NullValue::ref();
     }
 
     return array[i];
 }
 
 template<typename T>
-bool Value::getValue(T& value, T defaultValue) const
+bool Value::get(T& value) const
 {
     try
     {
@@ -702,17 +753,15 @@ bool Value::getValue(T& value, T defaultValue) const
 
         return true;
     }
-    catch (ValueException e)
+    catch (ArbitraryValueException e)
     {
     }
-
-    value = defaultValue;
 
     return false;
 }
 
 template<typename T>
-void Value::setValue(const T& value)
+void Value::set(const T& value)
 {
     this->value->set<T>(value);
 }
@@ -989,7 +1038,7 @@ bool Value::buildFromJson(Value* value, Json::Value* jsonValue)
     {
         value->set(jsonValue->asBool());
     }
-    else if (jsonValue->isInt() || jsonValue->isUInt())
+    else if (jsonValue->isInt())
     {
         value->set(jsonValue->asInt());
     }
@@ -1099,6 +1148,63 @@ bool Value::buildFromYaml(Value* value, YAML::Node* yamlValue)
 }
 
 /*
+ *
+ */
+NullValue NullValue::instance;
+
+NullValue::NullValue()
+{
+
+}
+
+NullValue& NullValue::ref()
+{
+    return instance;
+}
+
+const Value&NullValue::operator[](int i) const
+{
+    return *this;
+}
+
+const Value& NullValue::operator[](const QString& name) const
+{
+    return *this;
+}
+
+template <typename T>
+bool NullValue::get(T& value) const
+{
+    return false;
+}
+
+
+/*
+ * ArbitraryValueException
+ */
+ArbitraryValueException::ArbitraryValueException() :
+    message("ArbitraryValueException")
+{
+
+}
+
+ArbitraryValueException::ArbitraryValueException(const QString& message):
+    message(message)
+{
+
+}
+
+ArbitraryValueException::~ArbitraryValueException() throw()
+{
+
+}
+
+const char* ArbitraryValueException::what() const throw()
+{
+    return message.toStdString().c_str();
+}
+
+/*
  * ArbitraryValueTypeContainer
  */
 template<typename T>
@@ -1201,14 +1307,14 @@ T& ArbitraryValue::get()
     Value::ValueType expected = ArbitraryValueTypeContainer<T>::type;
     if(expected != type)
     {
-        throw ValueException("invalid type");
+        throw ArbitraryValueException("invalid type");
     }
 
     switch(type)
     {
         case Value::TYPE_UNDEFINED:
         case Value::TYPE_NULL:
-            throw ValueException("non-fetchable type");
+            throw ArbitraryValueException("non-fetchable type");
         default:
             return *static_cast<T*>(ptr());
     }
@@ -1220,14 +1326,14 @@ T const& ArbitraryValue::get() const
     Value::ValueType expected = ArbitraryValueTypeContainer<T>::type;
     if(expected != type)
     {
-        throw ValueException("invalid type");
+        throw ArbitraryValueException("invalid type");
     }
 
     switch(type)
     {
         case Value::TYPE_UNDEFINED:
         case Value::TYPE_NULL:
-            throw ValueException("non-fetchable type");
+            throw ArbitraryValueException("non-fetchable type");
         default:
             return *static_cast<T const*>(ptr());
     }
@@ -1603,4 +1709,55 @@ void ValueScriptBinding::setPropertyFromObject(const QVariantMap& map, Value* va
             setPropertyFromObject(map, &(*value)[it.key()]);
         }
     }
+}
+
+/*
+ * ArrayIterator
+ */
+Value::ArrayIterator::ArrayIterator(const Value& value) :
+    array(NULL)
+{
+    if (value.isArray())
+    {
+        array = &value.value->get<Array>();
+        it = array->begin();
+    }
+}
+
+Value& Value::ArrayIterator::operator[](int i)
+{
+    if (array == NULL)
+    {
+        return NullValue::ref();
+    }
+
+    for (int j = array->size() - i - 1; j < 0; j++)
+    {
+        array->append(Value());
+    }
+
+    return (*array)[i];
+}
+
+/*
+ * ObjectIterator
+ */
+Value::ObjectIterator::ObjectIterator(const Value& value) :
+    object(NULL)
+{
+    if (value.isObject())
+    {
+        object = &value.value->get<Object>();
+        it = object->begin();
+    }
+}
+
+Value& Value::ObjectIterator::operator[](const Value::String key)
+{
+    if (object == NULL)
+    {
+        return NullValue::ref();
+    }
+
+    return (*object)[key];
 }

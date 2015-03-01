@@ -18,6 +18,7 @@
 #include <statemachine.h>
 #include <application.h>
 
+#include <QUuid>
 #include <QScriptEngine>
 
 using namespace hfsmexec;
@@ -110,19 +111,53 @@ bool AbstractTransition::initialize()
 }
 
 /*
+ * Assign
+ */
+Assign::Assign(const QString& from, const QString& to) :
+    from(from),
+    to(to)
+{
+
+}
+
+const QString& Assign::getFrom() const
+{
+    return from;
+}
+
+const QString& Assign::getTo() const
+{
+    return to;
+}
+
+QString Assign::toString() const
+{
+    return QString("[Assign: from=%1, toId=%2]").arg(from).arg(to);
+}
+
+/*
  * Dataflow
  */
-Dataflow::Dataflow(const QString& sourceStateId, const QString& targetStateId, const QString& from, const QString& to)
+Dataflow::Dataflow(const QString& sourceStateId, const QString& targetStateId) :
+    sourceStateId(sourceStateId),
+    targetStateId(targetStateId)
 {
-    this->sourceStateId = sourceStateId;
-    this->targetStateId = targetStateId;
-    this->from = from;
-    this->to = to;
+
 }
 
 Dataflow::~Dataflow()
 {
 
+}
+
+void Dataflow::addAssign(Assign* assign)
+{
+    assigns.append(assign);
+}
+
+const QList<Assign*> Dataflow::getAssigns() const
+{
+    return assigns;
 }
 
 const QString& Dataflow::getSourceStateId() const
@@ -135,16 +170,6 @@ const QString& Dataflow::getTargetStateId() const
     return targetStateId;
 }
 
-const QString& Dataflow::getFrom() const
-{
-    return from;
-}
-
-const QString& Dataflow::getTo() const
-{
-    return to;
-}
-
 AbstractState* Dataflow::getSourceState()
 {
     return sourceState;
@@ -155,19 +180,14 @@ AbstractState* Dataflow::getTargetState()
     return targetState;
 }
 
-Value& Dataflow::getFromParameter()
+StateMachine* Dataflow::getStateMachine()
 {
-    return fromParameter;
-}
-
-Value& Dataflow::getToParameter()
-{
-    return toParameter;
+    return stateMachine;
 }
 
 QString Dataflow::toString() const
 {
-    return QString("[Dataflow: sourceId=%1, targetId=%1, from=%3, to%4]").arg(sourceStateId).arg(targetStateId).arg(from).arg(to);
+    return QString("[Dataflow: sourceId=%1, targetId=%2]").arg(sourceStateId).arg(targetStateId);
 }
 
 /*
@@ -176,6 +196,7 @@ QString Dataflow::toString() const
 const Logger* AbstractState::logger = Logger::getLogger(LOGGER_STATEMACHINE);
 
 AbstractState::AbstractState(const QString& stateId, const QString& parentStateId) :
+    uuid(QUuid::createUuid().toString()),
     stateId(stateId),
     parentStateId(parentStateId),
     stateMachine(NULL)
@@ -188,6 +209,11 @@ AbstractState::AbstractState(const QString& stateId, const QString& parentStateI
 
 AbstractState::~AbstractState()
 {
+}
+
+const QString& AbstractState::getUuid() const
+{
+    return uuid;
 }
 
 
@@ -211,7 +237,7 @@ void AbstractState::setParentStateId(const QString& parentStateId)
     this->parentStateId = parentStateId;
 }
 
-const StateMachine* AbstractState::getStateMachine() const
+StateMachine* AbstractState::getStateMachine()
 {
     return stateMachine;
 }
@@ -383,7 +409,7 @@ void AbstractComplexState::eventFinish()
 
     active = false;
 
-    NamedEvent* event = new NamedEvent("finish." + stateId);
+    NamedEvent* event = new NamedEvent("finish." + uuid);
     stateMachine->postEvent(event);
 
     Value value;
@@ -457,6 +483,21 @@ ConditionalTransition::ConditionalTransition(const QString& transitionId, const 
 
 }
 
+bool ConditionalTransition::initialize()
+{
+    if (!AbstractTransition::initialize())
+    {
+        return false;
+    }
+
+    if (eventName == "finish" || eventName == "state.success" || eventName == "state.error")
+    {
+        eventName = eventName + "." + sourceState->getUuid();
+    }
+
+    return true;
+}
+
 QString ConditionalTransition::toString() const
 {
     return QString("[ConditionalTransition: id=%1, eventName=%2]").arg(transitionId).arg(eventName);
@@ -503,7 +544,7 @@ void ConditionalTransition::onTransition(QEvent* e)
 
     NamedEvent* namedEvent = static_cast<NamedEvent*>(e);
 
-    logger->info(QString("%1 transition on event %2 from %3 to %4").arg(toString()).arg(namedEvent->toString()).arg(sourceStateId).arg(targetStateId));
+    logger->info(QString("%1 transition on event %2 from state %3 to state %4").arg(toString()).arg(namedEvent->toString()).arg(sourceStateId).arg(targetStateId));
 
     Value value;
     value["action"] = "transition";
@@ -520,8 +561,13 @@ void ConditionalTransition::onTransition(QEvent* e)
 const QEvent::Type InternalEvent::type = QEvent::Type(QEvent::User + 2);
 
 InternalEvent::InternalEvent(const QString& eventName) :
-    QEvent(type),
+    AbstractEvent(type),
     eventName(eventName)
+{
+
+}
+
+InternalEvent::~InternalEvent()
 {
 
 }
@@ -529,6 +575,11 @@ InternalEvent::InternalEvent(const QString& eventName) :
 const QString& InternalEvent::getEventName() const
 {
     return eventName;
+}
+
+QString InternalEvent::toString() const
+{
+    return QString("[InternalEvent: eventName=%1]").arg(eventName);
 }
 
 /*
@@ -660,13 +711,13 @@ InvokeState::InvokeState(const QString& stateId, const QString& binding, const Q
     invocationActive(false)
 {
     if (communicationPlugin != NULL) {
-        communicationPlugin->successCallback = std::bind(&InvokeState::success, this);
+        communicationPlugin->successCallback = std::bind(&InvokeState::success, this, std::placeholders::_1);
         communicationPlugin->errorCallback = std::bind(&InvokeState::error, this, std::placeholders::_1);
     }
 
     QState* stateInvoke = new QState(delegate);
     QFinalState* stateFinal = new QFinalState(delegate);
-    InternalTransition* transitionFinal = new InternalTransition("done." + stateId);
+    InternalTransition* transitionFinal = new InternalTransition("done." + uuid);
     transitionFinal->setTargetState(stateFinal);
     stateInvoke->addTransition(transitionFinal);
 
@@ -694,9 +745,8 @@ void InvokeState::invoke()
 
     invocationActive = true;
 
-    communicationPlugin->endpoint = &endpoint;
-    communicationPlugin->input = &input;
-    communicationPlugin->output = &output;
+    communicationPlugin->endpoint = endpoint;
+    communicationPlugin->input = input;
 
     communicationPlugin->invoke();
 }
@@ -771,7 +821,7 @@ void InvokeState::eventFinish()
     AbstractComplexState::eventFinish();
 }
 
-void InvokeState::success()
+void InvokeState::success(const Value& output)
 {
     if (!active)
     {
@@ -785,12 +835,25 @@ void InvokeState::success()
 
     invocationActive = false;
 
+    QString s;
+    output.toJson(s);
+    logger->warning(s);
+
+    if (output.isValid())
+    {
+        this->output.unite(output);
+    }
+
+    QString s2;
+    this->output.toJson(s2);
+    logger->warning(s2);
+
     logger->info(QString("%1 invocation finished successfully").arg(toString()));
 
-    NamedEvent* event = new NamedEvent("invoke.success." + stateId);
+    NamedEvent* event = new NamedEvent("invoke.success." + uuid);
     stateMachine->postEvent(event);
 
-    InternalEvent* internalEvent = new InternalEvent("done." + stateId);
+    InternalEvent* internalEvent = new InternalEvent("done." + uuid);
     stateMachine->postEvent(internalEvent);
 }
 
@@ -810,10 +873,10 @@ void InvokeState::error(QString message)
 
     logger->warning(QString("%1 invocation finished with an error: %2").arg(toString()).arg(message));
 
-    NamedEvent* event = new NamedEvent("invoke.error." + stateId);
+    NamedEvent* event = new NamedEvent("invoke.error." + uuid);
     stateMachine->postEvent(event);
 
-    InternalEvent* internalEvent = new InternalEvent("done." + stateId);
+    InternalEvent* internalEvent = new InternalEvent("done." + uuid);
     stateMachine->postEvent(internalEvent);
 }
 
@@ -841,7 +904,7 @@ StateMachine::StateMachine(const QString& stateId, const QString &initialId, con
 
 StateMachine::~StateMachine()
 {
-    delete delegate;
+    delete delegate; //TODO sometimes tries to delete null pointer
     delete scriptEngine;
 }
 
@@ -866,6 +929,13 @@ void StateMachine::start() const
 
     logger->info(QString("%1 start state machine").arg(toString()));
 
+    Value value;
+    value["action"] = "statemachine";
+    value["id"] = stateId;
+    value["change"] = "start";
+
+    Application::getInstance()->getApi().pushState(value);
+
     delegate->start();
 }
 
@@ -883,7 +953,7 @@ void StateMachine::stop() const
     delegate->stop();
 }
 
-int StateMachine::postDelayedEvent(QEvent* event, int delay)
+int StateMachine::postDelayedEvent(AbstractEvent* event, int delay)
 {
     if (!delegate->isRunning())
     {
@@ -892,12 +962,12 @@ int StateMachine::postDelayedEvent(QEvent* event, int delay)
         return -1;
     }
 
-    logger->info(QString("%1 post delayed event").arg(toString()));
+    logger->info(QString("%1 post delayed event %2").arg(toString()).arg(event->toString()));
 
     return delegate->postDelayedEvent(event, delay);
 }
 
-void StateMachine::postEvent(QEvent* event, QStateMachine::EventPriority priority)
+void StateMachine::postEvent(AbstractEvent* event, QStateMachine::EventPriority priority)
 {
     if (!delegate->isRunning())
     {
@@ -906,7 +976,7 @@ void StateMachine::postEvent(QEvent* event, QStateMachine::EventPriority priorit
         return;
     }
 
-    logger->info(QString("%1 post event").arg(toString()));
+    logger->info(QString("%1 post event %2").arg(toString()).arg(event->toString()));
 
     delegate->postEvent(event, priority);
 }
@@ -947,13 +1017,6 @@ QString StateMachine::toString() const
 void StateMachine::eventStart()
 {
     logger->info(QString("%1 --> started state machine").arg(toString()));
-
-    Value value;
-    value["action"] = "statemachine";
-    value["id"] = stateId;
-    value["change"] = "start";
-
-    Application::getInstance()->getApi().pushState(value);
 }
 
 void StateMachine::eventStop()

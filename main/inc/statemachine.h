@@ -61,7 +61,7 @@ namespace hfsmexec
             AbstractState* getTargetState();
             StateMachine* getStateMachine();
 
-            bool initialize();
+            virtual bool initialize();
 
             virtual QString toString() const = 0;
 
@@ -78,35 +78,50 @@ namespace hfsmexec
             virtual void onTransition(QEvent* e) = 0;
     };
 
+    class Assign
+    {
+        public:
+            Assign(const QString& from, const QString& to);
+            ~Assign();
+
+            const QString& getFrom() const;
+            const QString& getTo() const;
+
+            QString toString() const;
+
+        private:
+            QString from;
+            QString to;
+            StateMachine* stateMachine;
+    };
+
     class Dataflow
     {
         friend class StateMachineBuilder;
 
         public:
-            Dataflow(const QString& sourceStateId, const QString& targetStateId, const QString& from, const QString& to);
+            Dataflow(const QString& sourceStateId, const QString& targetStateId);
             ~Dataflow();
+
+            void addAssign(Assign* assign);
+            const QList<Assign*> getAssigns() const;
 
             const QString& getSourceStateId() const;
             const QString& getTargetStateId() const;
-            const QString& getFrom() const;
-            const QString& getTo() const;
 
             AbstractState* getSourceState();
             AbstractState* getTargetState();
-            Value& getFromParameter();
-            Value& getToParameter();
+            StateMachine* getStateMachine();
 
             QString toString() const;
 
         private:
             QString sourceStateId;
             QString targetStateId;
-            QString from;
-            QString to;
+            QList<Assign*> assigns;
             AbstractState* sourceState;
             AbstractState* targetState;
-            Value fromParameter;
-            Value toParameter;
+            StateMachine* stateMachine;
     };
 
     class AbstractState : public QObject
@@ -119,11 +134,12 @@ namespace hfsmexec
             AbstractState(const QString& stateId, const QString& parentStateId = "");
             virtual ~AbstractState();
 
+            const QString& getUuid() const;
             const QString& getId() const;
             void setId(const QString& stateId);
             const QString& getParentStateId() const;
             void setParentStateId(const QString& parentStateId);
-            const StateMachine* getStateMachine() const;
+            StateMachine* getStateMachine();
 
             Value& getInput();
             void setInput(const Value& value);
@@ -148,6 +164,7 @@ namespace hfsmexec
 
         protected:
             static const Logger* logger;
+            QString uuid;
             QString stateId;
             QString parentStateId;
             StateMachine* stateMachine;
@@ -214,6 +231,8 @@ namespace hfsmexec
         public:
             ConditionalTransition(const QString& transitionId, const QString& sourceStateId, const QString& targetStateId, const QString& eventName, QString condition = "");
 
+            virtual bool initialize();
+
             virtual QString toString() const;
 
         protected:
@@ -225,14 +244,17 @@ namespace hfsmexec
             QString condition;
     };
 
-    class InternalEvent : public QEvent
+    class InternalEvent : public AbstractEvent
     {
         public:
             static const QEvent::Type type;
 
             InternalEvent(const QString& eventName);
+            ~InternalEvent();
 
             const QString& getEventName() const;
+
+            virtual QString toString() const;
 
         private:
             QString eventName;
@@ -328,7 +350,7 @@ namespace hfsmexec
             Value endpoint;
             bool invocationActive;
 
-            void success();
+            void success(const Value& output);
             void error(QString message = "");
     };
 
@@ -347,8 +369,8 @@ namespace hfsmexec
             void start() const;
             void stop() const;
 
-            int postDelayedEvent(QEvent* event, int delay);
-            void postEvent(QEvent* event, QStateMachine::EventPriority priority = QStateMachine::NormalPriority);
+            int postDelayedEvent(AbstractEvent* event, int delay);
+            void postEvent(AbstractEvent* event, QStateMachine::EventPriority priority = QStateMachine::NormalPriority);
 
             QScriptEngine* getScriptEngine();
 

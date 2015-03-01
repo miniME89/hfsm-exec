@@ -47,6 +47,8 @@ namespace hfsmexec
             QStringList pluginDirs;
             QString importStateMachine;
             QString exportStateMachine;
+            QString importEncoding;
+            QString exportEncoding;
 
             void load();
     };

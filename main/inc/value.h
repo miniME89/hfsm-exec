@@ -48,23 +48,13 @@ namespace YAML
 namespace hfsmexec
 {
     class ArbitraryValue;
-
-    class ValueException : public std::exception
-    {
-        public:
-            ValueException();
-            ValueException(QString const& message);
-            virtual ~ValueException() throw();
-
-            virtual const char* what() const throw();
-
-        private:
-            QString message;
-    };
+    class NullValue;
 
     class Value : public QObject
     {
         Q_OBJECT
+
+        friend class Iterator;
 
         public:
             typedef enum
@@ -88,6 +78,59 @@ namespace hfsmexec
             typedef QList<Value> Array;
             typedef QMap<String, Value> Object;
 
+            class ArrayIterator
+            {
+                public:
+                    ArrayIterator(const Value& value);
+
+                    inline Value& value() const { return *it; }
+
+                    inline operator bool() const { return array != NULL && it != array->end(); }
+
+                    inline ArrayIterator& operator++() { ++it; return *this; }
+                    inline ArrayIterator operator++(int) { ArrayIterator r = *this; ++it; return r; }
+                    inline ArrayIterator& operator+=(int i) { it += i; return *this; }
+
+                    inline ArrayIterator& operator--() { --it; return *this; }
+                    inline ArrayIterator operator--(int) { ArrayIterator r = *this; --it; return r; }
+                    inline ArrayIterator& operator-=(int i) { it -= i; return *this; }
+
+                    inline Value& operator*() const { return *it; }
+                    inline Value* operator->() const { return &*it; }
+                    Value& operator[](int i);
+
+                private:
+                    Array* array;
+                    Array::iterator it;
+            };
+
+            class ObjectIterator
+            {
+                public:
+                    ObjectIterator(const Value& value);
+
+                    inline String key() const { return it.key(); }
+                    inline Value& value() const { return *it; }
+
+                    inline operator bool() const { return object != NULL && it != object->end(); }
+
+                    inline ObjectIterator& operator++() { ++it; return *this; }
+                    inline ObjectIterator operator++(int) { ObjectIterator r = *this; ++it; return r; }
+                    inline ObjectIterator& operator+=(int i) { it += i; return *this; }
+
+                    inline ObjectIterator& operator--() { --it; return *this; }
+                    inline ObjectIterator operator--(int) { ObjectIterator r = *this; --it; return r; }
+                    inline ObjectIterator& operator-=(int i) { it -= i; return *this; }
+
+                    inline Value& operator*() const { return *it; }
+                    inline Value* operator->() const { return &*it; }
+                    Value& operator[](const String key);
+
+                private:
+                    Object* object;
+                    Object::iterator it;
+            };
+
             Value();
             Value(const Boolean& value);
             Value(const Integer& value);
@@ -98,8 +141,6 @@ namespace hfsmexec
             Value(const Object& value);
             Value(const Value& value);
             Value(Value* const & value);
-            template<typename T>
-            Value(const T& value);
             ~Value();
 
             bool isUndefined() const;
@@ -136,6 +177,8 @@ namespace hfsmexec
             Value& getValue(const QString& path);
             const Value& getValue(const QString& path) const;
 
+            void unite(const Value& value);
+
             int size();
             void remove(const QString& key);
             void remove(int i);
@@ -143,6 +186,8 @@ namespace hfsmexec
 
             void undefined();
             void null();
+
+            bool isValid() const;
 
             const ValueType& getType() const;
 
@@ -179,10 +224,10 @@ namespace hfsmexec
             ArbitraryValue* value;
 
             template <typename T>
-            bool getValue(T& value, T defaultValue) const;
+            bool get(T& value) const;
 
             template <typename T>
-            void setValue(const T& value);
+            void set(const T& value);
 
             bool buildToXml(const Value* value, pugi::xml_node* xmlValue) const;
             bool buildToJson(const Value* value, Json::Value* jsonValue) const;
@@ -191,6 +236,36 @@ namespace hfsmexec
             bool buildFromXml(Value* value, pugi::xml_node* xmlValue);
             bool buildFromJson(Value* value, Json::Value* jsonValue);
             bool buildFromYaml(Value* value, YAML::Node* yamlValue);
+    };
+
+    class NullValue : public Value
+    {
+        public:
+            static NullValue& ref();
+
+            const Value& operator[](const QString& name) const;
+            const Value& operator[](int i) const;
+
+        private:
+            static NullValue instance;
+
+            NullValue();
+
+            template <typename T>
+            bool get(T& value) const;
+    };
+
+    class ArbitraryValueException : public std::exception
+    {
+        public:
+            ArbitraryValueException();
+            ArbitraryValueException(QString const& message);
+            virtual ~ArbitraryValueException() throw();
+
+            virtual const char* what() const throw();
+
+        private:
+            QString message;
     };
 
     class ArbitraryValue

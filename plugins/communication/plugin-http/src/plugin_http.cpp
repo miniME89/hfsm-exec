@@ -37,7 +37,6 @@ CommunicationPlugin* HTTPCommunicationPlugin::create()
 
 void HTTPCommunicationPlugin::invoke()
 {
-    output.getValue("/some/test/value").set(5);
     logger->info("test");
 }
 
