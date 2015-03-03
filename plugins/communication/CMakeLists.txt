@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.8.8)
 
-project(plugins)
-
-set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/plugins)
+project(communication)
 
 add_subdirectory(plugin-http)
 add_subdirectory(plugin-ros)

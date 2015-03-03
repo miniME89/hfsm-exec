@@ -14,6 +14,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#define ELPP_QT_LOGGING
+#define ELPP_NO_DEFAULT_LOG_FILE
+#define ELPP_STACKTRACE_ON_CRASH
 
 #include <logger.h>
 #include <application.h>
@@ -22,7 +25,7 @@
 
 using namespace hfsmexec;
 
-_INITIALIZE_EASYLOGGINGPP
+INITIALIZE_EASYLOGGINGPP
 
 /*
  * Logger

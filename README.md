@@ -1,49 +1,17 @@
 ### Concept Overview
 ![Design Overview](https://cdn.rawgit.com/miniME89/hfsm-exec/master/doc/design.png "Design Overview")
 
+### Description
+...
+
 ### Status
-- [90%] State machine execution
-    - DONE: Core state machine components are working
-    - DONE: Basic state machines can be build and executed
-    - DONE: Proper concept/implementation for transitions using events
-    - DONE: Plugin system for different communication middlewares
-    - DONE: Use parameter container for getting and setting parameters used by the states
-    - DONE: Control dataflow between different states (input and output parameters)
-
-- [10%] Plugins for communication middlewares
-    - WORK: Implement some basic plugins for different communication middlewares
-    - TODO: HTTP plugin
-    - TODO: Webservice plugin
-    - TODO: RPC plugin
-    - TODO: ROS plugin
-
-- [60%] State machine representation language (SMRL)
-    - DONE: Concept for easily implementing decoders for different state machine representations
-    - DONE: Basic structure and decoding of XML representation of a state machine
-    - TODO: Basic structure and decoding of JSON representation of a state machine
-    - TODO: Basic structure and decoding of YAML representation of a state machine
-    - TODO: Detailed concept and description of all representation languages
-
-- [90%] parameter container
-    - DONE: Get, set and delete arbitrary values
-    - DONE: Support basic types: bool, int, float, string, array, object
-    - DONE: Default values
-    - DONE: read/write parameters from/to XML, JSON and YAML
-
-- [50%] RESTful API
-    - DONE: Integration of framework for web support
-    - DONE: Realtime interface for monitoring and notification service (long polling)
-    - WORK: API for state machine loading, execution and control
-
-- General
-    - DONE: Integration of XML, JSON and YAML parsers
-    - DONE: Integration of logging library
+The software is considered feature complete. All primary features are implemented.
 
 ### Project Structure
 - doc/ - Documentation
 - examples/ - Examples
 - main/ - The source code of the main program
-- plugins/ - Implementations of communication and decoder plugins
+- plugins/ - Implementations of some core plugins
 
 ### API
 A RESTful API provides an easy interface for interacting with the executor.
@@ -52,29 +20,60 @@ A RESTful API provides an easy interface for interacting with the executor.
 |---------|--------|-----------------------|---------------------------------------------|
 | WORK    | GET    | /log                  | Get log messages (server push)              |
 | WORK    | GET    | /statemachine/state   | Get state/transition changes (server push)  |
-| WORK    | PUT    | /statemachine/load    | Load state machine                          |
-| WORK    | PUT    | /statemachine/unload  | Unload state machine                        |
-| WORK    | PUT    | /statemachine/start   | Start loaded state machine                  |
-| WORK    | PUT    | /statemachine/stop    | Stop loaded state machine                   |
-| WORK    | PUT    | /statemachine/event   | Post an event to the running state machine  |
+| WORK    | POST   | /statemachine/load    | Load state machine                          |
+| WORK    | POST   | /statemachine/unload  | Unload state machine                        |
+| WORK    | POST   | /statemachine/start   | Start loaded state machine                  |
+| WORK    | POST   | /statemachine/stop    | Stop loaded state machine                   |
+| WORK    | POST   | /statemachine/event   | Post an event to the running state machine  |
 
 ### Dependencies
-- Qt5
+- Qt5 (Modules: core, network, script)
 - microhttpd
 - pugixml
 - jsoncpp
 - yaml-cpp
 
+Note: All dependencies, except for QT5, can be installed during compilation using the *ext_install* target.
+
 ### Compiler
 Compiler needs to support C++11.
 
+Following compilers where tested:
+ - gcc 4.8.2 (Linux)
+
 ### Build
-Install the required dependencies on your system and execute the following commands in the root directory:
+Execute the following commands in the root directory:
 
     mkdir build
     cd build
     cmake ..
+    sudo make ext_install
     make
+
+This will firstly download, build and install the necessary project dependencies (except for QT5). The main program and all plugins will be build to the *bin/* directory.
+
+### Usage
+bin/hfsm-exec -h
+
+    Options:
+    -h, --help                    Displays this help.
+    -v, --version                 Displays version information.
+    -l, --logger <logger>         Enable only the specified loggers. Possible
+                                  Loggers are: api, application, builder,
+                                  value, plugin, statemachine. [Default: all]
+    -f, --logger-file <filename>  Set the filename (including the path) for the
+                                  log file.
+    -d, --plugin-dir <directory>  Set the path to the directories where the
+                                  plugins will be loaded from. [Default:
+                                  ./plugins/]
+    -a, --api                     Enable the REST API. This will startup the
+                                  internal HTTP server.
+    -p, --api-port <port>         Set port of the HTTP server for the REST API.
+                                  [Default: 8080]
+    -i, --import <filename>       Import a state machine.
+    -o, --export <filename>       Export the imported state machine.
+    -e, --encoding <encoding>     Encoding of the imported/exported state
+                                  machine.
 
 ### License
 GNU General Public License
