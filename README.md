@@ -47,10 +47,12 @@ Execute the following commands in the root directory:
     mkdir build
     cd build
     cmake ..
-    sudo make ext_install
-    make
+    make ext -j4   #download, build and install the necessary project dependencies (except for QT5)
+    make -j4       #build all
+    make test      #run tests
+    make install   #install on the system (optional)
 
-This will firstly download, build and install the necessary project dependencies (except for QT5). The main program and all plugins will be build to the *bin/* directory.
+The main program and all plugins will be build to the *bin/* directory.
 
 ### Usage
 bin/hfsm-exec -h

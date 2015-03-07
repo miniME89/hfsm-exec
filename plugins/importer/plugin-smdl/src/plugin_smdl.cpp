@@ -171,7 +171,7 @@ bool Importer::decodeInput(pugi::xml_node& node, AbstractState* state)
         return false;
     }
 
-    state->setInput(parameters["input"]);
+    state->setInput(parameters);
 
     return true;
 }
@@ -190,7 +190,7 @@ bool Importer::decodeOutput(pugi::xml_node& node, AbstractState* state)
         return false;
     }
 
-    state->setOutput(parameters["output"]);
+    state->setOutput(parameters);
 
     return true;
 }
@@ -285,7 +285,7 @@ AbstractState* Importer::decodeInvoke(pugi::xml_node& node, StateMachineBuilder&
     logger->info(QString("decode InvokeState: id=%1, binding=%2, parent=%3").arg(id).arg(binding).arg(parentState->getId()));
 
     InvokeState* state = new InvokeState(id, binding, parentState->getId());
-    state->setEndpoint(endpointParameter["endpoint"]);
+    state->setEndpoint(endpointParameter);
     builder <<state;
 
     return state;

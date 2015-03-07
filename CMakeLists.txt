@@ -4,3 +4,5 @@ project(root)
 
 add_subdirectory(main)
 add_subdirectory(plugins)
+
+enable_testing()

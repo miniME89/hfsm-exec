@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.8)
 
 project(plugin-ros)
 
-find_package(Qt5 REQUIRED COMPONENTS Core)
+find_package(Qt5 REQUIRED COMPONENTS Core Network)
 find_package(hfsm-exec REQUIRED)
 
 #define compiler flags
@@ -18,7 +18,8 @@ set(HEADERS inc/plugin_ros.h)
 set(INCLUDE_DIRS inc
                  ${hfsm-exec_INCLUDE_DIRS})
 
-set(LIBRARIES ${Qt5Core_LIBRARIES})
+set(LIBRARIES ${Qt5Core_LIBRARIES}
+			  ${Qt5Network_LIBRARIES})
 
 include_directories(${INCLUDE_DIRS})
 

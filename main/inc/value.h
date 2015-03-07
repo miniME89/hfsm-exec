@@ -29,6 +29,7 @@
 #include <QScriptClass>
 
 #include <exception>
+#include <memory>
 
 namespace pugi
 {
@@ -59,7 +60,7 @@ namespace hfsmexec
         public:
             typedef enum
             {
-                TYPE_UNDEFINED,
+                TYPE_UNDEFINED = 0,
                 TYPE_NULL,
                 TYPE_BOOLEAN,
                 TYPE_INTEGER,
@@ -67,14 +68,30 @@ namespace hfsmexec
                 TYPE_STRING,
                 TYPE_ARRAY,
                 TYPE_OBJECT
-            } ValueType;
+            } Type;
+
+            const char* typeNames[8] = {"Undefined",
+                                        "Null",
+                                        "Boolean",
+                                        "Integer",
+                                        "Float",
+                                        "String",
+                                        "Array",
+                                        "Object"};
 
             struct Undefined {};
             struct Null {};
             typedef bool Boolean;
-            typedef int Integer;
-            typedef double Float;
-            typedef QString String;
+            typedef int Integer32;
+            typedef long Integer64;
+            typedef Integer64 Integer;
+            typedef float Float32;
+            typedef double Float64;
+            typedef Float64 Float;
+            typedef const char* StringChar;
+            typedef std::string StringStd;
+            typedef QString StringQt;
+            typedef StringQt String;
             typedef QList<Value> Array;
             typedef QMap<String, Value> Object;
 
@@ -83,6 +100,7 @@ namespace hfsmexec
                 public:
                     ArrayIterator(const Value& value);
 
+                    inline int index() const { return it - array->begin(); }
                     inline Value& value() const { return *it; }
 
                     inline operator bool() const { return array != NULL && it != array->end(); }
@@ -133,9 +151,12 @@ namespace hfsmexec
 
             Value();
             Value(const Boolean& value);
-            Value(const Integer& value);
-            Value(const Float& value);
-            Value(const char* value);
+            Value(const Integer32& value);
+            Value(const Integer64& value);
+            Value(const Float32& value);
+            Value(const Float64& value);
+            Value(const StringChar& value);
+            Value(const StringStd& value);
             Value(const String& value);
             Value(const Array& value);
             Value(const Object& value);
@@ -167,12 +188,17 @@ namespace hfsmexec
             bool get(Object& value, Object defaultValue = Object()) const;
 
             void set(const Boolean& value);
-            void set(const Integer& value);
-            void set(const Float& value);
-            void set(const char* value);
+            void set(const Integer32& value);
+            void set(const Integer64& value);
+            void set(const Float32& value);
+            void set(const Float64& value);
+            void set(const StringChar& value);
+            void set(const StringStd& value);
             void set(const String& value);
             void set(const Array& value);
             void set(const Object& value);
+            void set(const Value& value);
+            void set(Value* const & value);
 
             Value& getValue(const QString& path);
             const Value& getValue(const QString& path) const;
@@ -189,12 +215,12 @@ namespace hfsmexec
 
             bool isValid() const;
 
-            const ValueType& getType() const;
+            const Type& getType() const;
 
             String toString();
 
-            bool toXml(QString& xml) const;
-            bool toJson(QString& json) const;
+            bool toXml(QString& xml, bool pretty = false) const;
+            bool toJson(QString& json, bool pretty = false) const;
             bool toYaml(QString& yaml) const;
 
             bool fromXml(const QString& xml);
@@ -202,9 +228,12 @@ namespace hfsmexec
             bool fromYaml(const QString& yaml);
 
             const Value& operator=(const Boolean& value);
-            const Value& operator=(const Integer& value);
-            const Value& operator=(const Float& value);
-            const Value& operator=(const char* value);
+            const Value& operator=(const Integer32& value);
+            const Value& operator=(const Integer64& value);
+            const Value& operator=(const Float32& value);
+            const Value& operator=(const Float64& value);
+            const Value& operator=(const StringChar& value);
+            const Value& operator=(const StringStd& value);
             const Value& operator=(const String& value);
             const Value& operator=(const Array& value);
             const Value& operator=(const Object& value);
@@ -221,7 +250,7 @@ namespace hfsmexec
 
         private:
             static const Logger* logger;
-            ArbitraryValue* value;
+            std::shared_ptr<ArbitraryValue> value;
 
             template <typename T>
             bool get(T& value) const;
@@ -273,11 +302,9 @@ namespace hfsmexec
         public:
             ArbitraryValue();
             ArbitraryValue(ArbitraryValue const &other);
-            template<typename T>
-            ArbitraryValue(T const &v);
             ~ArbitraryValue();
 
-            const Value::ValueType& getType() const;
+            const Value::Type& getType() const;
 
             void* ptr();
             void const* ptr() const;
@@ -293,16 +320,10 @@ namespace hfsmexec
 
             bool operator==(ArbitraryValue const& other) const;
 
-            void incReference();
-            void decReference();
-
         private:
-            int refCounter;
-            QMutex mutexRefCounter;
+            Value::Type type;
 
-            Value::ValueType type;
-
-            union DataUnion
+            union Data
             {
                 void* p;
                 bool b;
@@ -315,8 +336,8 @@ namespace hfsmexec
 
             template<typename T>
             void create(T const &v);
-            void create(Value::ValueType t);
-            void create(Value::ValueType t, DataUnion const& other);
+            void create(Value::Type t);
+            void create(Value::Type t, Data const& other);
 
             void destroy();
     };

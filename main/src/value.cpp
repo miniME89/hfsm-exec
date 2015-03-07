@@ -37,60 +37,78 @@ Value::Value() :
 Value::Value(const Boolean& value) :
     value(new ArbitraryValue())
 {
-    *this = value;
+    set(value);
 }
 
-Value::Value(const Integer& value) :
+Value::Value(const Integer32& value) :
     value(new ArbitraryValue())
 {
-    *this = value;
+    set(value);
 }
 
-Value::Value(const Float& value) :
+Value::Value(const Integer64& value) :
     value(new ArbitraryValue())
 {
-    *this = value;
+    set(value);
 }
 
-Value::Value(const char* value) :
+Value::Value(const Float32& value) :
     value(new ArbitraryValue())
 {
-    *this = value;
+    set(value);
+}
+
+Value::Value(const Float64& value) :
+    value(new ArbitraryValue())
+{
+    set(value);
+}
+
+Value::Value(const StringChar& value) :
+    value(new ArbitraryValue())
+{
+    set(value);
+}
+
+Value::Value(const StringStd& value) :
+    value(new ArbitraryValue())
+{
+    set(value);
 }
 
 Value::Value(const String& value) :
     value(new ArbitraryValue())
 {
-    *this = value;
+    set(value);
 }
 
 Value::Value(const Array& value) :
     value(new ArbitraryValue())
 {
-    *this = value;
+    set(value);
 }
 
 Value::Value(const Object& value) :
     value(new ArbitraryValue())
 {
-    *this = value;
+    set(value);
 }
 
 Value::Value(const Value& value) :
     value(new ArbitraryValue())
 {
-    *this = value;
+    set(value);
 }
 
 Value::Value(Value* const & value) :
     value(new ArbitraryValue())
 {
-    *this = value;
+    set(value);
 }
 
 Value::~Value()
 {
-    value->decReference();
+
 }
 
 bool Value::isUndefined() const
@@ -252,19 +270,34 @@ void Value::set(const Boolean& value)
     set<Boolean>(value);
 }
 
-void Value::set(const Integer& value)
+void Value::set(const Integer32& value)
 {
     set<Integer>(value);
 }
 
-void Value::set(const Float& value)
+void Value::set(const Integer64& value)
+{
+    set<Integer>(value);
+}
+
+void Value::set(const Float32& value)
 {
     set<Float>(value);
 }
 
-void Value::set(const char* value)
+void Value::set(const Float64& value)
 {
-    set(String(value));
+    set<Float>(value);
+}
+
+void Value::set(const StringChar& value)
+{
+    set<String>(String(value)); //TODO
+}
+
+void Value::set(const StringStd& value)
+{
+    set<String>(String(value.c_str())); //TODO
 }
 
 void Value::set(const String& value)
@@ -280,6 +313,22 @@ void Value::set(const Array& value)
 void Value::set(const Object& value)
 {
     set<Object>(value);
+}
+
+void Value::set(const Value& value)
+{
+    if (value.isValid())
+    {
+        this->value->set(*value.value.get());
+    }
+}
+
+void Value::set(Value* const& value)
+{
+    if (value->isValid())
+    {
+        this->value = value->value; //TODO ok?
+    }
 }
 
 Value& Value::getValue(const QString& path)
@@ -330,19 +379,11 @@ void Value::unite(const Value& value)
 {
     if (isArray() && value.isArray())
     {
-        Array& a1 = this->value->get<Array>();
-        Array& a2 = value.value->get<Array>();
-        for (int i = 0; i < a2.size(); i++)
+        ArrayIterator a1 = *this;
+        ArrayIterator a2 = value;
+        for (; a2; a2++)
         {
-            if (a1.size() - 1 < i)
-            {
-                a1.append(Value());
-                a1[i] = a2[i];
-            }
-            else
-            {
-                a1[i].unite(a2[i]);
-            }
+            a1[a2.index()].unite(*a2);
         }
     }
     else if (isObject() && value.isObject())
@@ -351,8 +392,7 @@ void Value::unite(const Value& value)
         ObjectIterator o2 = value;
         for (; o2; o2++)
         {
-            logger->warning(o2.key());
-            o1[o2.key()].unite(o2.value());
+            o1[o2.key()].unite(*o2);
         }
     }
     else
@@ -419,7 +459,7 @@ bool Value::isValid() const
     return this != &NullValue::ref();
 }
 
-const Value::ValueType& Value::getType() const
+const Value::Type& Value::getType() const
 {
     return value->getType();
 }
@@ -468,10 +508,19 @@ Value::String Value::toString()
     }
 }
 
-bool Value::toXml(QString& xml) const
+bool Value::toXml(QString& xml, bool pretty) const
 {
     pugi::xml_document doc;
-    if (!buildToXml(this, &doc))
+    pugi::xml_node root = doc;
+
+    if (isArray() || isObject())
+    {
+        root = doc.append_child("value");
+        pugi::xml_attribute typeAttribute = root.append_attribute("type");
+        typeAttribute.set_value(typeNames[getType()]);
+    }
+
+    if (!buildToXml(this, &root))
     {
         logger->warning("couldn't build xml from value container");
 
@@ -480,14 +529,21 @@ bool Value::toXml(QString& xml) const
 
     std::stringstream stream;
     pugi::xml_writer_stream writer(stream);
-    doc.save(writer);
+    if (pretty)
+    {
+        doc.save(writer);
+    }
+    else
+    {
+        doc.save(writer, "\t", pugi::format_raw);
+    }
 
     xml = stream.str().c_str();
 
     return true;
 }
 
-bool Value::toJson(QString& json) const
+bool Value::toJson(QString& json, bool pretty) const
 {
     Json::Value root;
     if (!buildToJson(this, &root))
@@ -497,8 +553,19 @@ bool Value::toJson(QString& json) const
         return false;
     }
 
-    Json::StyledWriter writer;
-    json = writer.write(root).c_str();
+    Json::Writer* writer;
+    if (pretty)
+    {
+        writer = new Json::StyledWriter();
+    }
+    else
+    {
+        writer = new Json::FastWriter();
+    }
+
+    json = writer->write(root).c_str();
+
+    delete writer;
 
     return true;
 }
@@ -526,12 +593,12 @@ bool Value::fromXml(const QString& xml)
     pugi::xml_parse_result result = doc.load_buffer(xml.toStdString().c_str(), xml.size());
     if (result.status != pugi::status_ok)
     {
-        logger->warning("couldn't set value container from xml");
+        logger->warning(QString("couldn't set value container from xml: %1").arg(result.description()));
 
         return false;
     }
 
-    pugi::xml_node root = doc.root();
+    pugi::xml_node root = doc.root().first_child();
     if (!buildFromXml(this, &root))
     {
         logger->warning("couldn't set value container from xml");
@@ -593,21 +660,42 @@ const Value& Value::operator=(const Boolean& value)
     return *this;
 }
 
-const Value& Value::operator=(const Integer& value)
+const Value& Value::operator=(const Integer32& value)
 {
     set(value);
 
     return *this;
 }
 
-const Value& Value::operator=(const Float& value)
+const Value& Value::operator=(const Integer64& value)
 {
     set(value);
 
     return *this;
 }
 
-const Value& Value::operator=(const char* value)
+const Value& Value::operator=(const Float32& value)
+{
+    set(value);
+
+    return *this;
+}
+
+const Value& Value::operator=(const Float64& value)
+{
+    set(value);
+
+    return *this;
+}
+
+const Value& Value::operator=(const StringChar& value)
+{
+    set(value);
+
+    return *this;
+}
+
+const Value& Value::operator=(const StringStd& value)
 {
     set(value);
 
@@ -639,7 +727,7 @@ const Value& Value::operator=(const Value& other)
 {
     if (other.isValid())
     {
-        this->value->set(*other.value);
+        this->value->set(*other.value); //TODO
     }
 
     return *this;
@@ -649,9 +737,7 @@ const Value& Value::operator=(const Value* other)
 {
     if (other->isValid())
     {
-        value->decReference();
-        value = other->value;
-        value->incReference();
+        value = other->value; //TODO
     }
 
     return *this;
@@ -768,15 +854,7 @@ void Value::set(const T& value)
 
 bool Value::buildToXml(const Value* value, pugi::xml_node* xmlValue) const
 {
-    if (value->isUndefined())
-    {
-        return false;
-    }
-    else if (value->isNull())
-    {
-
-    }
-    else if (value->isBoolean())
+    if (value->isBoolean())
     {
         Boolean v;
         value->get(v);
@@ -802,12 +880,12 @@ bool Value::buildToXml(const Value* value, pugi::xml_node* xmlValue) const
     }
     else if (value->isArray())
     {
-        Array v;
-        value->get(v);
-        for (int i = 0; i < v.size(); i++)
+        for (ArrayIterator it = *value; it; it++)
         {
-            pugi::xml_node dataChild = xmlValue->append_child("item");
-            if (!buildToXml(&v[i], &dataChild))
+            pugi::xml_node dataChild = xmlValue->append_child("value");
+            pugi::xml_attribute typeAttribute = dataChild.append_attribute("type");
+            typeAttribute.set_value(typeNames[it->getType()]);
+            if (!buildToXml(&*it, &dataChild))
             {
                 return false;
             }
@@ -815,11 +893,13 @@ bool Value::buildToXml(const Value* value, pugi::xml_node* xmlValue) const
     }
     else if (value->isObject())
     {
-        Object v;
-        value->get(v);
-        for (Object::const_iterator it = v.begin(); it != v.end(); it++)
+        for (ObjectIterator it = *value; it; it++)
         {
-            pugi::xml_node dataChild = xmlValue->append_child(it.key().toStdString().c_str());
+            pugi::xml_node dataChild = xmlValue->append_child("value");
+            pugi::xml_attribute nameAttribute = dataChild.append_attribute("name");
+            pugi::xml_attribute typeAttribute = dataChild.append_attribute("type");
+            nameAttribute.set_value(it.key().toStdString().c_str());
+            typeAttribute.set_value(typeNames[it->getType()]);
             if (!buildToXml(&it.value(), &dataChild))
             {
                 return false;
@@ -832,15 +912,7 @@ bool Value::buildToXml(const Value* value, pugi::xml_node* xmlValue) const
 
 bool Value::buildToJson(const Value* value, Json::Value* jsonValue) const
 {
-    if (value->isUndefined())
-    {
-        return false;
-    }
-    else if (value->isNull())
-    {
-
-    }
-    else if (value->isBoolean())
+    if (value->isBoolean())
     {
         Boolean v;
         value->get(v);
@@ -850,7 +922,7 @@ bool Value::buildToJson(const Value* value, Json::Value* jsonValue) const
     {
         Integer v;
         value->get(v);
-        *jsonValue = v;
+        *jsonValue = (int)v; //TODO
     }
     else if (value->isFloat())
     {
@@ -900,15 +972,7 @@ bool Value::buildToJson(const Value* value, Json::Value* jsonValue) const
 
 bool Value::buildToYaml(const Value* value, YAML::Node* yamlValue) const
 {
-    if (value->isUndefined())
-    {
-        return false;
-    }
-    else if (value->isNull())
-    {
-
-    }
-    else if (value->isBoolean())
+    if (value->isBoolean())
     {
         Boolean v;
         value->get(v);
@@ -1148,7 +1212,58 @@ bool Value::buildFromYaml(Value* value, YAML::Node* yamlValue)
 }
 
 /*
- *
+ * ArrayIterator
+ */
+Value::ArrayIterator::ArrayIterator(const Value& value) :
+    array(NULL)
+{
+    if (value.isArray())
+    {
+        array = &value.value->get<Array>();
+        it = array->begin();
+    }
+}
+
+Value& Value::ArrayIterator::operator[](int i)
+{
+    if (array == NULL)
+    {
+        return NullValue::ref();
+    }
+
+    for (int j = array->size() - i - 1; j < 0; j++)
+    {
+        array->append(Value());
+    }
+
+    return (*array)[i];
+}
+
+/*
+ * ObjectIterator
+ */
+Value::ObjectIterator::ObjectIterator(const Value& value) :
+    object(NULL)
+{
+    if (value.isObject())
+    {
+        object = &value.value->get<Object>();
+        it = object->begin();
+    }
+}
+
+Value& Value::ObjectIterator::operator[](const Value::String key)
+{
+    if (object == NULL)
+    {
+        return NullValue::ref();
+    }
+
+    return (*object)[key];
+}
+
+/*
+ * NullValue
  */
 NullValue NullValue::instance;
 
@@ -1162,7 +1277,7 @@ NullValue& NullValue::ref()
     return instance;
 }
 
-const Value&NullValue::operator[](int i) const
+const Value& NullValue::operator[](int i) const
 {
     return *this;
 }
@@ -1177,7 +1292,6 @@ bool NullValue::get(T& value) const
 {
     return false;
 }
-
 
 /*
  * ArbitraryValueException
@@ -1213,72 +1327,62 @@ struct ArbitraryValueTypeContainer;
 template<>
 struct ArbitraryValueTypeContainer<Value::Undefined>
 {
-    static const Value::ValueType type = Value::TYPE_UNDEFINED;
+    static const Value::Type type = Value::TYPE_UNDEFINED;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Value::Null>
 {
-    static const Value::ValueType type = Value::TYPE_NULL;
+    static const Value::Type type = Value::TYPE_NULL;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Value::Boolean>
 {
-    static const Value::ValueType type = Value::TYPE_BOOLEAN;
+    static const Value::Type type = Value::TYPE_BOOLEAN;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Value::Integer>
 {
-    static const Value::ValueType type = Value::TYPE_INTEGER;
+    static const Value::Type type = Value::TYPE_INTEGER;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Value::Float>
 {
-    static const Value::ValueType type = Value::TYPE_FLOAT;
+    static const Value::Type type = Value::TYPE_FLOAT;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Value::String>
 {
-    static const Value::ValueType type = Value::TYPE_STRING;
+    static const Value::Type type = Value::TYPE_STRING;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Value::Array>
 {
-    static const Value::ValueType type = Value::TYPE_ARRAY;
+    static const Value::Type type = Value::TYPE_ARRAY;
 };
 
 template<>
 struct ArbitraryValueTypeContainer<Value::Object>
 {
-    static const Value::ValueType type = Value::TYPE_OBJECT;
+    static const Value::Type type = Value::TYPE_OBJECT;
 };
 
 /*
  * ArbitraryValue
  */
-ArbitraryValue::ArbitraryValue() :
-    refCounter(1)
+ArbitraryValue::ArbitraryValue()
 {
     create(Value::TYPE_UNDEFINED);
 }
 
-
-ArbitraryValue::ArbitraryValue(ArbitraryValue const &other) :
-    refCounter(1)
+ArbitraryValue::ArbitraryValue(ArbitraryValue const &other)
 {
     create(other.type, other.data);
-}
-
-template<typename T>
-ArbitraryValue::ArbitraryValue(T const &v) :
-    refCounter(1)
-{
-    create<T>(v);
 }
 
 ArbitraryValue::~ArbitraryValue()
@@ -1286,7 +1390,7 @@ ArbitraryValue::~ArbitraryValue()
     destroy();
 }
 
-const Value::ValueType& ArbitraryValue::getType() const
+const Value::Type& ArbitraryValue::getType() const
 {
     return type;
 }
@@ -1304,7 +1408,7 @@ void const* ArbitraryValue::ptr() const
 template<typename T>
 T& ArbitraryValue::get()
 {
-    Value::ValueType expected = ArbitraryValueTypeContainer<T>::type;
+    Value::Type expected = ArbitraryValueTypeContainer<T>::type;
     if(expected != type)
     {
         throw ArbitraryValueException("invalid type");
@@ -1323,7 +1427,7 @@ T& ArbitraryValue::get()
 template<typename T>
 T const& ArbitraryValue::get() const
 {
-    Value::ValueType expected = ArbitraryValueTypeContainer<T>::type;
+    Value::Type expected = ArbitraryValueTypeContainer<T>::type;
     if(expected != type)
     {
         throw ArbitraryValueException("invalid type");
@@ -1381,25 +1485,6 @@ bool ArbitraryValue::operator==(ArbitraryValue const& other) const
     }
 }
 
-void ArbitraryValue::incReference()
-{
-    mutexRefCounter.lock();
-    refCounter++;
-    mutexRefCounter.unlock();
-}
-
-void ArbitraryValue::decReference()
-{
-    mutexRefCounter.lock();
-    refCounter--;
-    mutexRefCounter.unlock();
-
-    if (refCounter <= 0)
-    {
-        delete this;
-    }
-}
-
 template<typename T>
 void ArbitraryValue::create(T const &v)
 {
@@ -1426,7 +1511,7 @@ void ArbitraryValue::create(T const &v)
     }
 }
 
-void ArbitraryValue::create(Value::ValueType t)
+void ArbitraryValue::create(Value::Type t)
 {
     type = t;
     memset(ptr(), 0, sizeof(data));
@@ -1450,7 +1535,7 @@ void ArbitraryValue::create(Value::ValueType t)
     }
 }
 
-void ArbitraryValue::create(Value::ValueType t, DataUnion const& other)
+void ArbitraryValue::create(Value::Type t, Data const& other)
 {
     void* p = &data;
     type = t;
@@ -1546,7 +1631,7 @@ QScriptValue ValueScriptBinding::property(const QScriptValue& object, const QScr
     }
     else if (value->isInteger())
     {
-        return QScriptValue(value->getInteger());
+        return QScriptValue((int)value->getInteger()); //TODO
     }
     else if (value->isFloat())
     {
@@ -1709,55 +1794,4 @@ void ValueScriptBinding::setPropertyFromObject(const QVariantMap& map, Value* va
             setPropertyFromObject(map, &(*value)[it.key()]);
         }
     }
-}
-
-/*
- * ArrayIterator
- */
-Value::ArrayIterator::ArrayIterator(const Value& value) :
-    array(NULL)
-{
-    if (value.isArray())
-    {
-        array = &value.value->get<Array>();
-        it = array->begin();
-    }
-}
-
-Value& Value::ArrayIterator::operator[](int i)
-{
-    if (array == NULL)
-    {
-        return NullValue::ref();
-    }
-
-    for (int j = array->size() - i - 1; j < 0; j++)
-    {
-        array->append(Value());
-    }
-
-    return (*array)[i];
-}
-
-/*
- * ObjectIterator
- */
-Value::ObjectIterator::ObjectIterator(const Value& value) :
-    object(NULL)
-{
-    if (value.isObject())
-    {
-        object = &value.value->get<Object>();
-        it = object->begin();
-    }
-}
-
-Value& Value::ObjectIterator::operator[](const Value::String key)
-{
-    if (object == NULL)
-    {
-        return NullValue::ref();
-    }
-
-    return (*object)[key];
 }
