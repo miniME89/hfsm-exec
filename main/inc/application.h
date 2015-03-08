@@ -32,66 +32,63 @@
 #include <QCoreApplication>
 #include <QStringList>
 
-namespace hfsmexec
-{
-    class Configuration
-    {
-        public:
-            Configuration();
-            ~Configuration();
+namespace hfsmexec {
+    class Configuration {
+      public:
+        Configuration();
+        ~Configuration();
 
-            bool api;
-            int apiPort;
-            QString loggerFile;
-            QStringList loggers;
-            QStringList pluginDirs;
-            QString importStateMachine;
-            QString exportStateMachine;
-            QString importEncoding;
-            QString exportEncoding;
+        bool api;
+        int apiPort;
+        QString loggerFile;
+        QStringList loggers;
+        QStringList pluginDirs;
+        QString importStateMachine;
+        QString exportStateMachine;
+        QString importEncoding;
+        QString exportEncoding;
 
-            void load();
+        void load();
     };
 
-    class Application : public QObject
-    {
+    class Application : public QObject {
         Q_OBJECT
 
-        public:
-            static Application* getInstance();
+      public:
+        static Application* getInstance();
 
-            Application(int argc, char** argv);
-            ~Application();
+        Application(int argc, char** argv);
+        ~Application();
 
-            int exec();
-            void quit();
+        int exec();
+        void quit();
 
-            Configuration& getConfiguration();
-            QCoreApplication& getQtApplication();
-            PluginLoader& getCommunicationPluginLoader();
-            Api& getApi();
+        Configuration& getConfiguration();
+        QCoreApplication& getQtApplication();
+        PluginLoader& getCommunicationPluginLoader();
+        Api& getApi();
 
-        public slots:
-            bool postEvent(AbstractEvent* event);
+      public slots:
+        bool postEvent(AbstractEvent* event);
 
-            bool loadStateMachine(const QString& encoding, const QString& data);
-            bool unloadStateMachine();
+        bool loadStateMachine(const QString& encoding, const QString& data);
+        bool unloadStateMachine();
 
-            bool startStateMachine();
-            bool stopStateMachine();
+        bool startStateMachine();
+        bool stopStateMachine();
 
-        private:
-            static Application* instance;
-            static const Logger* logger;
+      private:
+        static Application* instance;
+        static const Logger* logger;
 
-            Configuration configuration;
-            QCoreApplication qtApplication;
-            PluginLoader pluginLoader;
-            Api api;
+        Configuration configuration;
+        QCoreApplication qtApplication;
+        PluginLoader pluginLoader;
+        Api api;
 
-            StateMachine* stateMachine;
+        StateMachine* stateMachine;
 
-            static void signalHandler(int signal);
+        static void signalHandler(int signal);
     };
 }
 

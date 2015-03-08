@@ -20,27 +20,19 @@
 using namespace hfsmexec;
 
 HTTPCommunicationPlugin::HTTPCommunicationPlugin() :
-    CommunicationPlugin("HTTP")
-{
-
+    CommunicationPlugin("HTTP") {
 }
 
-HTTPCommunicationPlugin::~HTTPCommunicationPlugin()
-{
-
+HTTPCommunicationPlugin::~HTTPCommunicationPlugin() {
 }
 
-CommunicationPlugin* HTTPCommunicationPlugin::create()
-{
-	return new HTTPCommunicationPlugin();
+CommunicationPlugin* HTTPCommunicationPlugin::create() {
+    return new HTTPCommunicationPlugin();
 }
 
-void HTTPCommunicationPlugin::invoke()
-{
+void HTTPCommunicationPlugin::invoke() {
     logger->info("test");
 }
 
-void HTTPCommunicationPlugin::cancel()
-{
-
+void HTTPCommunicationPlugin::cancel() {
 }

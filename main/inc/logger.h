@@ -21,44 +21,41 @@
 #include <QString>
 #include <QMap>
 
-namespace hfsmexec
-{
-    class Logger
-    {
-        public:
-            typedef enum Level
-            {
-                INFO = 0,
-                WARNING = 1,
-                ERROR = 2,
-                FATAL = 3,
-                DEBUG = 4
-            } Level;
-            typedef void LogCallback(const QString& name, Level level, const QString& message);
+namespace hfsmexec {
+    class Logger {
+      public:
+        typedef enum Level {
+            INFO = 0,
+            WARNING = 1,
+            ERROR = 2,
+            FATAL = 3,
+            DEBUG = 4
+        } Level;
+        typedef void LogCallback(const QString& name, Level level, const QString& message);
 
-            static Logger* getLogger(const QString& name);
+        static Logger* getLogger(const QString& name);
 
-            ~Logger();
+        ~Logger();
 
-            void info(const QString& message) const;
-            void warning(const QString& message) const;
-            void error(const QString& message) const;
-            void fatal(const QString& message) const;
-            void debug(const QString& message) const;
+        void info(const QString& message) const;
+        void warning(const QString& message) const;
+        void error(const QString& message) const;
+        void fatal(const QString& message) const;
+        void debug(const QString& message) const;
 
-            static void setLoggerEnabled(bool enabled);
-            static void setLoggerEnabled(const QString& name, bool enabled);
+        static void setLoggerEnabled(bool enabled);
+        static void setLoggerEnabled(const QString& name, bool enabled);
 
-            static void setFileOut(bool enabled);
-            static void setFilename(const QString& filename);
+        static void setFileOut(bool enabled);
+        static void setFilename(const QString& filename);
 
-            static void setConsoleOut(bool enabled);
+        static void setConsoleOut(bool enabled);
 
-        private:
-            static QMap<QString, Logger*> loggers;
-            const QString name;
+      private:
+        static QMap<QString, Logger*> loggers;
+        const QString name;
 
-            Logger(const QString& name);
+        Logger(const QString& name);
     };
 }
 

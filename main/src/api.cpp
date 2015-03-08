@@ -26,36 +26,31 @@ using namespace hfsmexec;
  */
 const Logger* Api::logger = Logger::getLogger(LOGGER_API);
 
-Api::Api()
-{
+Api::Api() {
     server.setHandler(std::bind(&Api::httpHandler, this, std::placeholders::_1, std::placeholders::_2));
 
     assign("/log", "GET", std::bind(&Api::log, this, std::placeholders::_1, std::placeholders::_2));
+    assign("/statemachine/", "POST", std::bind(&Api::statemachineLoad, this, std::placeholders::_1, std::placeholders::_2));
+    assign("/statemachine/", "DELETE", std::bind(&Api::statemachineUnload, this, std::placeholders::_1, std::placeholders::_2));
     assign("/statemachine/state", "GET", std::bind(&Api::statemachineState, this, std::placeholders::_1, std::placeholders::_2));
-    assign("/statemachine/load", "POST", std::bind(&Api::statemachineLoad, this, std::placeholders::_1, std::placeholders::_2));
-    assign("/statemachine/unload", "POST", std::bind(&Api::statemachineUnload, this, std::placeholders::_1, std::placeholders::_2));
     assign("/statemachine/start", "POST", std::bind(&Api::statemachineStart, this, std::placeholders::_1, std::placeholders::_2));
     assign("/statemachine/stop", "POST", std::bind(&Api::statemachineStop, this, std::placeholders::_1, std::placeholders::_2));
     assign("/statemachine/event", "POST", std::bind(&Api::statemachineEvent, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-Api::~Api()
-{
+Api::~Api() {
 
 }
 
-void Api::exec(int port)
-{
+void Api::exec(int port) {
     logger->info(QString("start HTTP server on port %1").arg(port));
 
-    if (!server.start(port))
-    {
+    if (!server.start(port)) {
         logger->warning("couldn't start HTTP server");
     }
 }
 
-void Api::quit()
-{
+void Api::quit() {
     logger->info("stop HTTP server");
 
     logPushNotification.unlock();
@@ -64,70 +59,42 @@ void Api::quit()
     server.stop();
 }
 
-void Api::pushlog(const Value& value)
-{
+void Api::pushlog(const Value& value) {
     QString data;
-    if (value.toJson(data))
-    {
+    if (value.toJson(data)) {
         logPushNotification.write(data.toStdString());
     }
 }
 
-void Api::pushState(const Value& value)
-{
+void Api::pushState(const Value& value) {
     QString data;
-    if (value.toJson(data))
-    {
+    if (value.toJson(data)) {
         statePushNotification.write(data.toStdString());
     }
 }
 
-void Api::log(HttpRequest* request, HttpResponse* response)
-{
+void Api::log(HttpRequest* request, HttpResponse* response) {
     int index = std::strtol(request->getHeader("Push-Notification-Index").c_str(), NULL, 10);
     std::string data;
-    if (logPushNotification.read(index, data, 30))
-    {
+    if (logPushNotification.read(index, data, 30)) {
         response->setStatusCode(200);
         response->setHeader("Push-Notification-Index", std::to_string(index));
         response->write(data);
-    }
-    else
-    {
+    } else {
         response->setStatusCode(304);
         response->setHeader("Push-Notification-Index", std::to_string(index));
     }
 }
 
-void Api::statemachineState(HttpRequest* request, HttpResponse* response)
-{
-    int index = std::strtol(request->getHeader("Push-Notification-Index").c_str(), NULL, 10);
-    std::string data;
-    if (statePushNotification.read(index, data, 30))
-    {
-        response->setStatusCode(HttpResponse::STATUS_OK);
-        response->setHeader("Push-Notification-Index", std::to_string(index));
-        response->write(data);
-    }
-    else
-    {
-        response->setStatusCode(HttpResponse::STATUS_NOT_MODIFIED);
-        response->setHeader("Push-Notification-Index", std::to_string(index));
-    }
-}
-
-void Api::statemachineLoad(HttpRequest* request, HttpResponse* response)
-{
+void Api::statemachineLoad(HttpRequest* request, HttpResponse* response) {
     Value value;
-    if (!value.fromJson(request->getBody().c_str()))
-    {
+    if (!value.fromJson(request->getBody().c_str())) {
         response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
 
         return;
     }
 
-    if (!value.contains("encoding") || !value.contains("data"))
-    {
+    if (!value.contains("encoding") || !value.contains("data")) {
         response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
 
         return;
@@ -135,8 +102,7 @@ void Api::statemachineLoad(HttpRequest* request, HttpResponse* response)
 
     bool ret;
     QMetaObject::invokeMethod(Application::getInstance(), "loadStateMachine", Qt::BlockingQueuedConnection, Q_RETURN_ARG(bool, ret), Q_ARG(QString, value["encoding"].getString()), Q_ARG(QString, value["data"].getString()));
-    if (!ret)
-    {
+    if (!ret) {
         response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
 
         return;
@@ -145,10 +111,8 @@ void Api::statemachineLoad(HttpRequest* request, HttpResponse* response)
     response->setStatusCode(HttpResponse::STATUS_OK);
 }
 
-void Api::statemachineUnload(HttpRequest* request, HttpResponse* response)
-{
-    if (!Application::getInstance()->unloadStateMachine())
-    {
+void Api::statemachineUnload(HttpRequest* request, HttpResponse* response) {
+    if (!Application::getInstance()->unloadStateMachine()) {
         response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
 
         return;
@@ -157,10 +121,21 @@ void Api::statemachineUnload(HttpRequest* request, HttpResponse* response)
     response->setStatusCode(HttpResponse::STATUS_OK);
 }
 
-void Api::statemachineStart(HttpRequest* request, HttpResponse* response)
-{
-    if (!Application::getInstance()->startStateMachine())
-    {
+void Api::statemachineState(HttpRequest* request, HttpResponse* response) {
+    int index = std::strtol(request->getHeader("Push-Notification-Index").c_str(), NULL, 10);
+    std::string data;
+    if (statePushNotification.read(index, data, 30)) {
+        response->setStatusCode(HttpResponse::STATUS_OK);
+        response->setHeader("Push-Notification-Index", std::to_string(index));
+        response->write(data);
+    } else {
+        response->setStatusCode(HttpResponse::STATUS_NOT_MODIFIED);
+        response->setHeader("Push-Notification-Index", std::to_string(index));
+    }
+}
+
+void Api::statemachineStart(HttpRequest* request, HttpResponse* response) {
+    if (!Application::getInstance()->startStateMachine()) {
         response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
 
         return;
@@ -169,10 +144,8 @@ void Api::statemachineStart(HttpRequest* request, HttpResponse* response)
     response->setStatusCode(HttpResponse::STATUS_OK);
 }
 
-void Api::statemachineStop(HttpRequest* request, HttpResponse* response)
-{
-    if (!Application::getInstance()->stopStateMachine())
-    {
+void Api::statemachineStop(HttpRequest* request, HttpResponse* response) {
+    if (!Application::getInstance()->stopStateMachine()) {
         response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
 
         return;
@@ -181,26 +154,22 @@ void Api::statemachineStop(HttpRequest* request, HttpResponse* response)
     response->setStatusCode(HttpResponse::STATUS_OK);
 }
 
-void Api::statemachineEvent(HttpRequest* request, HttpResponse* response)
-{
+void Api::statemachineEvent(HttpRequest* request, HttpResponse* response) {
     Value value;
-    if (!value.fromJson(request->getBody().c_str()))
-    {
+    if (!value.fromJson(request->getBody().c_str())) {
         response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
 
         return;
     }
 
-    if (!value.contains("event"))
-    {
+    if (!value.contains("event")) {
         response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
 
         return;
     }
 
     NamedEvent* event = new NamedEvent(value["event"].getString());
-    if (!Application::getInstance()->postEvent(event))
-    {
+    if (!Application::getInstance()->postEvent(event)) {
         response->setStatusCode(HttpResponse::STATUS_BAD_REQUEST);
 
         return;
@@ -209,8 +178,7 @@ void Api::statemachineEvent(HttpRequest* request, HttpResponse* response)
     response->setStatusCode(HttpResponse::STATUS_OK);
 }
 
-void Api::assign(QString pattern, QString method, std::function<void(HttpRequest*, HttpResponse*)> handler)
-{
+void Api::assign(QString pattern, QString method, std::function<void(HttpRequest*, HttpResponse*)> handler) {
     Service service;
     service.pattern = pattern;
     service.method = method;
@@ -220,30 +188,25 @@ void Api::assign(QString pattern, QString method, std::function<void(HttpRequest
     services.append(service);
 }
 
-void Api::httpHandler(HttpRequest* request, HttpResponse* response)
-{
-    //allow CORS
+void Api::httpHandler(HttpRequest* request, HttpResponse* response) {
+    // allow CORS
     response->setHeader("Access-Control-Allow-Origin", "*");
     response->setHeader("Access-Control-Expose-Headers", "Push-Notification-Index");
     response->setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
     response->setHeader("Access-Control-Allow-Headers", "Push-Notification-Index");
 
-    //handle OPTIONS method send by browsers before actual request
-    if (request->getMethod() == "OPTIONS")
-    {
+    // handle OPTIONS method send by browsers before actual request
+    if (request->getMethod() == "OPTIONS") {
         response->setStatusCode(HttpResponse::STATUS_OK);
 
         return;
     }
 
-    //lookup service
-    for (int i = 0; i < services.size(); i++)
-    {
+    // lookup service
+    for (int i = 0; i < services.size(); i++) {
         Service service = services[i];
-        if (service.regex.exactMatch(request->getUrl().c_str()))
-        {
-            if (service.method == request->getMethod().c_str())
-            {
+        if (service.regex.exactMatch(request->getUrl().c_str())) {
+            if (service.method == request->getMethod().c_str()) {
                 service.handler(request, response);
 
                 return;

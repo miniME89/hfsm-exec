@@ -22,55 +22,53 @@
 
 #include <QTcpSocket>
 
-class Rosbridge : public QObject
-{
+class Rosbridge : public QObject {
     Q_OBJECT
 
-    public:
-        Rosbridge();
-        ~Rosbridge();
+  public:
+    Rosbridge();
+    ~Rosbridge();
 
-    public slots:
-        void socketConnected();
-        void socketError(QAbstractSocket::SocketError socketError);
+  public slots:
+    void socketConnected();
+    void socketError(QAbstractSocket::SocketError socketError);
 
-        void read();
-        bool write(const hfsmexec::Value& value);
+    void read();
+    bool write(const hfsmexec::Value& value);
 
-        int registerListener(std::function<bool(hfsmexec::Value)> listener);
-        void unregisterListener(int handle);
+    int registerListener(std::function<bool(hfsmexec::Value)> listener);
+    void unregisterListener(int handle);
 
-    private:
-        static const hfsmexec::Logger* logger;
-        QTcpSocket socket;
-        QMap<int, std::function<bool(hfsmexec::Value)>> listeners;
-        QMutex listenersMutex;
-        int id;
+  private:
+    static const hfsmexec::Logger* logger;
+    QTcpSocket socket;
+    QMap<int, std::function<bool(hfsmexec::Value)>> listeners;
+    QMutex listenersMutex;
+    int id;
 };
 
-class RosCommunicationPlugin : public QObject, public hfsmexec::CommunicationPlugin
-{
+class RosCommunicationPlugin : public QObject, public hfsmexec::CommunicationPlugin {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "hfsmexec.Plugins.CommunicationPlugin")
     Q_INTERFACES(hfsmexec::CommunicationPlugin)
 
-    public:
-        RosCommunicationPlugin();
-        virtual ~RosCommunicationPlugin();
+  public:
+    RosCommunicationPlugin();
+    virtual ~RosCommunicationPlugin();
 
-        virtual CommunicationPlugin* create();
-        virtual void invoke();
-        virtual void cancel();
+    virtual CommunicationPlugin* create();
+    virtual void invoke();
+    virtual void cancel();
 
-    private:
-        static Rosbridge rosbridge;
+  private:
+    static Rosbridge rosbridge;
 
-        std::function<void()> cancelCallback;
+    std::function<void()> cancelCallback;
 
-        void publishMessage();
-        void subscribeMessage();
-        void sendServiceRequest();
-        void sendActionGoal();
+    void publishMessage();
+    void subscribeMessage();
+    void sendServiceRequest();
+    void sendActionGoal();
 };
 
 #endif

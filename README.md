@@ -19,21 +19,21 @@ A RESTful API provides an easy interface for interacting with the executor.
 | Status  | Method | Location              | Description                                 |
 |---------|--------|-----------------------|---------------------------------------------|
 | WORK    | GET    | /log                  | Get log messages (server push)              |
+| WORK    | POST   | /statemachine         | Load state machine                          |
+| WORK    | DELETE | /statemachine         | Unload state machine                        |
 | WORK    | GET    | /statemachine/state   | Get state/transition changes (server push)  |
-| WORK    | POST   | /statemachine/load    | Load state machine                          |
-| WORK    | POST   | /statemachine/unload  | Unload state machine                        |
 | WORK    | POST   | /statemachine/start   | Start loaded state machine                  |
 | WORK    | POST   | /statemachine/stop    | Stop loaded state machine                   |
 | WORK    | POST   | /statemachine/event   | Post an event to the running state machine  |
 
 ### Dependencies
-- Qt5 (Modules: core, network, script)
+- Qt5 5.2+ (Modules: core, network, script)
 - microhttpd
 - pugixml
 - jsoncpp
 - yaml-cpp
 
-Note: All dependencies, except for QT5, can be installed during compilation using the *ext_install* target.
+Note: All dependencies, except for QT5, can be installed during compilation using the *ext* target.
 
 ### Compiler
 Compiler needs to support C++11.

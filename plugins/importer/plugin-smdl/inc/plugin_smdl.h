@@ -22,29 +22,28 @@
 #include <builder.h>
 #include <pugixml.hpp>
 
-class Importer : public QObject, public hfsmexec::ImporterPlugin
-{
+class Importer : public QObject, public hfsmexec::ImporterPlugin {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "hfsmexec.Plugins.ImporterPlugin")
     Q_INTERFACES(hfsmexec::ImporterPlugin)
 
-    public:
-        Importer();
-        virtual ~Importer();
+  public:
+    Importer();
+    virtual ~Importer();
 
-        hfsmexec::StateMachine* importStateMachine(const QString &data);
+    hfsmexec::StateMachine* importStateMachine(const QString &data);
 
-    private:
-        bool decodeChilds(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);
-        bool decodeTransitions(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* state);
-        bool decodeInput(pugi::xml_node& node, hfsmexec::AbstractState* state);
-        bool decodeOutput(pugi::xml_node& node, hfsmexec::AbstractState* state);
-        bool decodeDataflows(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* state);
-        hfsmexec::AbstractState* decodeStateMachine(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);
-        hfsmexec::AbstractState* decodeComposite(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);
-        hfsmexec::AbstractState* decodeParallel(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);
-        hfsmexec::AbstractState* decodeInvoke(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);
-        hfsmexec::AbstractState* decodeFinal(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);
+  private:
+    bool decodeChilds(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);
+    bool decodeTransitions(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* state);
+    bool decodeInput(pugi::xml_node& node, hfsmexec::AbstractState* state);
+    bool decodeOutput(pugi::xml_node& node, hfsmexec::AbstractState* state);
+    bool decodeDataflows(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* state);
+    hfsmexec::AbstractState* decodeStateMachine(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);
+    hfsmexec::AbstractState* decodeComposite(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);
+    hfsmexec::AbstractState* decodeParallel(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);
+    hfsmexec::AbstractState* decodeInvoke(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);
+    hfsmexec::AbstractState* decodeFinal(pugi::xml_node& node, hfsmexec::StateMachineBuilder& builder, hfsmexec::AbstractState* parentState);
 };
 
 #endif

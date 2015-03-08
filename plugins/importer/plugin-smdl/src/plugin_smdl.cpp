@@ -25,41 +25,35 @@ using namespace hfsmexec;
  * Importer
  */
 Importer::Importer() :
-    ImporterPlugin("SMDL/XML")
-{
+    ImporterPlugin("SMDL/XML") {
 
 }
 
-Importer::~Importer()
-{
+Importer::~Importer() {
 
 }
 
-StateMachine* Importer::importStateMachine(const QString& data)
-{
-    //parse XML
+StateMachine* Importer::importStateMachine(const QString& data) {
+    // parse XML
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_buffer(data.toStdString().c_str(), data.size());
-    if (result.status != pugi::status_ok)
-    {
+    if (result.status != pugi::status_ok) {
         logger->warning(QString("couldn't parse XML: %1").arg(result.description()));
 
         return NULL;
     }
 
-    //get root element
+    // get root element
     pugi::xml_node root = doc.first_child();
-    if (std::string(root.name()) != "statemachine")
-    {
+    if (std::string(root.name()) != "statemachine") {
         logger->warning("invalid XML encoding: root element needs to be a \"statemachine\" element");
 
         return NULL;
     }
 
-    //decode state machine recursively
+    // decode state machine recursively
     StateMachineBuilder builder;
-    if (!decodeChilds(doc, builder, NULL))
-    {
+    if (!decodeChilds(doc, builder, NULL)) {
         logger->warning("couldn't decode state machine");
 
         return NULL;
@@ -68,37 +62,25 @@ StateMachine* Importer::importStateMachine(const QString& data)
     return builder.build();
 }
 
-bool Importer::decodeChilds(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
-{
+bool Importer::decodeChilds(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState) {
     logger->info("decode childs");
 
-    for (pugi::xml_node child = node.first_child(); child; child = child.next_sibling())
-    {
+    for (pugi::xml_node child = node.first_child(); child; child = child.next_sibling()) {
         AbstractState* state = NULL;
         QString tagName = child.name();
-        if (tagName == "statemachine")
-        {
+        if (tagName == "statemachine") {
             state = decodeStateMachine(child, builder, parentState);
-        }
-        else if (tagName == "composite")
-        {
-           state = decodeComposite(child, builder, parentState);
-        }
-        else if (tagName == "parallel")
-        {
-           state = decodeParallel(child, builder, parentState);
-        }
-        else if (tagName == "invoke")
-        {
-           state = decodeInvoke(child, builder, parentState);
-        }
-        else if (tagName == "final")
-        {
-           state = decodeFinal(child, builder, parentState);
+        } else if (tagName == "composite") {
+            state = decodeComposite(child, builder, parentState);
+        } else if (tagName == "parallel") {
+            state = decodeParallel(child, builder, parentState);
+        } else if (tagName == "invoke") {
+            state = decodeInvoke(child, builder, parentState);
+        } else if (tagName == "final") {
+            state = decodeFinal(child, builder, parentState);
         }
 
-        if (state == NULL)
-        {
+        if (state == NULL) {
             return false;
         }
 
@@ -108,28 +90,23 @@ bool Importer::decodeChilds(pugi::xml_node& node, StateMachineBuilder& builder, 
         pugi::xml_node transitions = child.child("transitions");
         pugi::xml_node childs = child.child("childs");
 
-        if (!decodeInput(input, state))
-        {
+        if (!decodeInput(input, state)) {
             return false;
         }
 
-        if (!decodeOutput(output, state))
-        {
+        if (!decodeOutput(output, state)) {
             return false;
         }
 
-        if (!decodeDataflows(dataflows, builder, state))
-        {
+        if (!decodeDataflows(dataflows, builder, state)) {
             return false;
         }
 
-        if (!decodeTransitions(transitions, builder, state))
-        {
+        if (!decodeTransitions(transitions, builder, state)) {
             return false;
         }
 
-        if (!decodeChilds(childs, builder, state))
-        {
+        if (!decodeChilds(childs, builder, state)) {
             return false;
         }
     }
@@ -137,12 +114,10 @@ bool Importer::decodeChilds(pugi::xml_node& node, StateMachineBuilder& builder, 
     return true;
 }
 
-bool Importer::decodeTransitions(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* state)
-{
+bool Importer::decodeTransitions(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* state) {
     logger->info("decode transitions");
 
-    for (pugi::xml_node transitionElement = node.child("transition"); transitionElement; transitionElement = transitionElement.next_sibling())
-    {
+    for (pugi::xml_node transitionElement = node.child("transition"); transitionElement; transitionElement = transitionElement.next_sibling()) {
         QString id = transitionElement.attribute("id").value();
         QString target = transitionElement.attribute("target").value();
         QString event = transitionElement.attribute("event").value();
@@ -157,8 +132,7 @@ bool Importer::decodeTransitions(pugi::xml_node& node, StateMachineBuilder& buil
     return true;
 }
 
-bool Importer::decodeInput(pugi::xml_node& node, AbstractState* state)
-{
+bool Importer::decodeInput(pugi::xml_node& node, AbstractState* state) {
     logger->info("decode input");
 
     std::ostringstream stream;
@@ -166,8 +140,7 @@ bool Importer::decodeInput(pugi::xml_node& node, AbstractState* state)
     QString nodeStr = stream.str().c_str();
 
     Value parameters;
-    if (!parameters.fromXml(nodeStr))
-    {
+    if (!parameters.fromXml(nodeStr)) {
         return false;
     }
 
@@ -176,8 +149,7 @@ bool Importer::decodeInput(pugi::xml_node& node, AbstractState* state)
     return true;
 }
 
-bool Importer::decodeOutput(pugi::xml_node& node, AbstractState* state)
-{
+bool Importer::decodeOutput(pugi::xml_node& node, AbstractState* state) {
     logger->info("decode output");
 
     std::ostringstream stream;
@@ -185,8 +157,7 @@ bool Importer::decodeOutput(pugi::xml_node& node, AbstractState* state)
     QString nodeStr = stream.str().c_str();
 
     Value parameters;
-    if (!parameters.fromXml(nodeStr))
-    {
+    if (!parameters.fromXml(nodeStr)) {
         return false;
     }
 
@@ -195,12 +166,10 @@ bool Importer::decodeOutput(pugi::xml_node& node, AbstractState* state)
     return true;
 }
 
-bool Importer::decodeDataflows(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* state)
-{
+bool Importer::decodeDataflows(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* state) {
     logger->info("decode dataflows");
 
-    for (pugi::xml_node dataflowElement = node.child("dataflow"); dataflowElement; dataflowElement = dataflowElement.next_sibling("dataflow"))
-    {
+    for (pugi::xml_node dataflowElement = node.child("dataflow"); dataflowElement; dataflowElement = dataflowElement.next_sibling("dataflow")) {
         QString source = dataflowElement.attribute("source").value();
         QString from = dataflowElement.attribute("from").value();
         QString to = dataflowElement.attribute("to").value();
@@ -210,8 +179,7 @@ bool Importer::decodeDataflows(pugi::xml_node& node, StateMachineBuilder& builde
         Dataflow* dataflow = new Dataflow(source, state->getId());
         builder <<dataflow;
 
-        for (pugi::xml_node assignElement = dataflowElement.child("assign"); assignElement; assignElement = assignElement.next_sibling("assign"))
-        {
+        for (pugi::xml_node assignElement = dataflowElement.child("assign"); assignElement; assignElement = assignElement.next_sibling("assign")) {
             QString from = assignElement.attribute("from").value();
             QString to = assignElement.attribute("to").value();
 
@@ -225,14 +193,12 @@ bool Importer::decodeDataflows(pugi::xml_node& node, StateMachineBuilder& builde
     return true;
 }
 
-AbstractState* Importer::decodeStateMachine(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
-{
+AbstractState* Importer::decodeStateMachine(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState) {
     QString id = node.attribute("id").value();
     QString initial = node.attribute("initial").value();
 
     QString parentStateId = "";
-    if (parentState != NULL)
-    {
+    if (parentState != NULL) {
         parentStateId = parentState->getId();
     }
 
@@ -244,8 +210,7 @@ AbstractState* Importer::decodeStateMachine(pugi::xml_node& node, StateMachineBu
     return state;
 }
 
-AbstractState* Importer::decodeComposite(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
-{
+AbstractState* Importer::decodeComposite(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState) {
     QString id = node.attribute("id").value();
     QString initial = node.attribute("initial").value();
 
@@ -257,8 +222,7 @@ AbstractState* Importer::decodeComposite(pugi::xml_node& node, StateMachineBuild
     return state;
 }
 
-AbstractState* Importer::decodeParallel(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
-{
+AbstractState* Importer::decodeParallel(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState) {
     QString id = node.attribute("id").value();
 
     logger->info(QString("decode ParallelState: id=%1, parent=%2").arg(id).arg(parentState->getId()));
@@ -269,8 +233,7 @@ AbstractState* Importer::decodeParallel(pugi::xml_node& node, StateMachineBuilde
     return state;
 }
 
-AbstractState* Importer::decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
-{
+AbstractState* Importer::decodeInvoke(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState) {
     QString id = node.attribute("id").value();
     pugi::xml_node endpoint = node.child("endpoint");
     QString binding = endpoint.attribute("binding").value();
@@ -291,8 +254,7 @@ AbstractState* Importer::decodeInvoke(pugi::xml_node& node, StateMachineBuilder&
     return state;
 }
 
-AbstractState* Importer::decodeFinal(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState)
-{
+AbstractState* Importer::decodeFinal(pugi::xml_node& node, StateMachineBuilder& builder, AbstractState* parentState) {
     QString id = node.attribute("id").value();
 
     logger->info(QString("decode FinalState: id=%1, parent=%2").arg(id).arg(parentState->getId()));

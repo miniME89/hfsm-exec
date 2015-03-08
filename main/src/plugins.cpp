@@ -27,33 +27,26 @@ using namespace hfsmexec;
 const Logger* CommunicationPlugin::logger = Logger::getLogger(LOGGER_PLUGIN);
 
 CommunicationPlugin::CommunicationPlugin(const QString &pluginId) :
-    pluginId(pluginId)
-{
+    pluginId(pluginId) {
 
 }
 
-CommunicationPlugin::~CommunicationPlugin()
-{
+CommunicationPlugin::~CommunicationPlugin() {
 
 }
 
-const QString& CommunicationPlugin::getPluginId() const
-{
+const QString& CommunicationPlugin::getPluginId() const {
     return pluginId;
 }
 
-void CommunicationPlugin::success(const Value& output)
-{
-    if (successCallback)
-    {
+void CommunicationPlugin::success(const Value& output) {
+    if (successCallback) {
         successCallback(output);
     }
 }
 
-void CommunicationPlugin::error(QString message)
-{
-    if (errorCallback)
-    {
+void CommunicationPlugin::error(QString message) {
+    if (errorCallback) {
         errorCallback(message);
     }
 }
@@ -64,18 +57,15 @@ void CommunicationPlugin::error(QString message)
 const Logger* ImporterPlugin::logger = Logger::getLogger(LOGGER_PLUGIN);
 
 ImporterPlugin::ImporterPlugin(const QString& pluginId) :
-    pluginId(pluginId)
-{
+    pluginId(pluginId) {
 
 }
 
-ImporterPlugin::~ImporterPlugin()
-{
+ImporterPlugin::~ImporterPlugin() {
 
 }
 
-const QString& ImporterPlugin::getPluginId() const
-{
+const QString& ImporterPlugin::getPluginId() const {
     return pluginId;
 }
 
@@ -85,18 +75,15 @@ const QString& ImporterPlugin::getPluginId() const
 const Logger* ExporterPlugin::logger = Logger::getLogger(LOGGER_PLUGIN);
 
 ExporterPlugin::ExporterPlugin(const QString& pluginId) :
-    pluginId(pluginId)
-{
+    pluginId(pluginId) {
 
 }
 
-ExporterPlugin::~ExporterPlugin()
-{
+ExporterPlugin::~ExporterPlugin() {
 
 }
 
-const QString& ExporterPlugin::getPluginId() const
-{
+const QString& ExporterPlugin::getPluginId() const {
     return pluginId;
 }
 
@@ -105,22 +92,18 @@ const QString& ExporterPlugin::getPluginId() const
  */
 const Logger* PluginLoader::logger = Logger::getLogger(LOGGER_PLUGIN);
 
-PluginLoader::PluginLoader()
-{
+PluginLoader::PluginLoader() {
 
 }
 
-PluginLoader::~PluginLoader()
-{
+PluginLoader::~PluginLoader() {
 
 }
 
-CommunicationPlugin* PluginLoader::getCommunicationPlugin(const QString& pluginId)
-{
+CommunicationPlugin* PluginLoader::getCommunicationPlugin(const QString& pluginId) {
     QMap<QString, CommunicationPlugin*>::Iterator it = communicationPlugins.find(pluginId);
 
-    if (it == communicationPlugins.end())
-    {
+    if (it == communicationPlugins.end()) {
         logger->warning(QString("couldn't get communication plugin \"%1\"").arg(pluginId));
 
         return NULL;
@@ -129,12 +112,10 @@ CommunicationPlugin* PluginLoader::getCommunicationPlugin(const QString& pluginI
     return it.value()->create();
 }
 
-ImporterPlugin* PluginLoader::getImporterPlugin(const QString& pluginId)
-{
+ImporterPlugin* PluginLoader::getImporterPlugin(const QString& pluginId) {
     QMap<QString, ImporterPlugin*>::Iterator it = importerPlugins.find(pluginId);
 
-    if (it == importerPlugins.end())
-    {
+    if (it == importerPlugins.end()) {
         logger->warning(QString("couldn't get importer plugin \"%1\"").arg(pluginId));
 
         return NULL;
@@ -143,12 +124,10 @@ ImporterPlugin* PluginLoader::getImporterPlugin(const QString& pluginId)
     return it.value();
 }
 
-ExporterPlugin* PluginLoader::getExporterPlugin(const QString& pluginId)
-{
+ExporterPlugin* PluginLoader::getExporterPlugin(const QString& pluginId) {
     QMap<QString, ExporterPlugin*>::Iterator it = exporterPlugins.find(pluginId);
 
-    if (it == exporterPlugins.end())
-    {
+    if (it == exporterPlugins.end()) {
         logger->warning(QString("couldn't get exporter plugin \"%1\"").arg(pluginId));
 
         return NULL;
@@ -157,13 +136,11 @@ ExporterPlugin* PluginLoader::getExporterPlugin(const QString& pluginId)
     return it.value();
 }
 
-bool PluginLoader::load(const QString &path)
-{
+bool PluginLoader::load(const QString &path) {
     QDir pluginsDir = QDir(path);
     pluginsDir.setNameFilters(QStringList("*.so"));
 
-    if (!pluginsDir.exists())
-    {
+    if (!pluginsDir.exists()) {
         logger->warning(QString("couldn't load plugins in directory \"%1\": directory doesn't exist").arg(path));
 
         return false;
@@ -171,26 +148,23 @@ bool PluginLoader::load(const QString &path)
 
     logger->info(QString("loading all plugins in directory %1").arg(pluginsDir.absolutePath()));
 
-    foreach (QString fileName, pluginsDir.entryList(QDir::Files))
-    {
+    foreach (QString fileName, pluginsDir.entryList(QDir::Files)) {
         QString filePath = pluginsDir.absoluteFilePath(fileName);
 
         logger->info(QString("load plugin from file %1").arg(filePath));
 
-        //load plugin
+        // load plugin
         QPluginLoader pluginLoader(filePath);
         QObject* plugin = pluginLoader.instance();
-        if (!plugin)
-        {
+        if (!plugin) {
             logger->warning(QString("invalid plugin: %1").arg(pluginLoader.errorString()));
 
             continue;
         }
 
-        //communication plugin
+        // communication plugin
         CommunicationPlugin* instanceCommunicationPlugin = qobject_cast<CommunicationPlugin*>(plugin);
-        if (instanceCommunicationPlugin)
-        {
+        if (instanceCommunicationPlugin) {
             QString pluginId = instanceCommunicationPlugin->getPluginId();
 
             communicationPlugins[pluginId] = instanceCommunicationPlugin;
@@ -200,10 +174,9 @@ bool PluginLoader::load(const QString &path)
             continue;
         }
 
-        //importer plugin
+        // importer plugin
         ImporterPlugin* instanceImporterPlugin = qobject_cast<ImporterPlugin*>(plugin);
-        if (instanceImporterPlugin)
-        {
+        if (instanceImporterPlugin) {
             QString pluginId = instanceImporterPlugin->getPluginId();
 
             importerPlugins[pluginId] = instanceImporterPlugin;
@@ -213,10 +186,9 @@ bool PluginLoader::load(const QString &path)
             continue;
         }
 
-        //exporter plugin
+        // exporter plugin
         ExporterPlugin* instanceExporterPlugin = qobject_cast<ExporterPlugin*>(plugin);
-        if (instanceExporterPlugin)
-        {
+        if (instanceExporterPlugin) {
             QString pluginId = instanceExporterPlugin->getPluginId();
 
             exporterPlugins[pluginId] = instanceExporterPlugin;

@@ -31,364 +31,348 @@
 
 class QScriptEngine;
 
-namespace hfsmexec
-{
+namespace hfsmexec {
     class AbstractState;
     class StateMachine;
     class CommunicationPlugin;
 
-    class AbstractEvent : public QEvent
-    {
-        public:
-            AbstractEvent(Type type);
+    class AbstractEvent : public QEvent {
+      public:
+        AbstractEvent(Type type);
 
-            virtual QString toString() const = 0;
+        virtual QString toString() const = 0;
 
-        protected:
-            static const Logger* logger;
+      protected:
+        static const Logger* logger;
     };
 
-    class AbstractTransition : public QAbstractTransition
-    {
+    class AbstractTransition : public QAbstractTransition {
         friend class StateMachineBuilder;
 
-        public:
-            AbstractTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId);
-            virtual ~AbstractTransition();
+      public:
+        AbstractTransition(const QString transitionId, const QString sourceStateId, const QString targetStateId);
+        virtual ~AbstractTransition();
 
-            const QString& getId() const;
-            AbstractState* getSourceState();
-            AbstractState* getTargetState();
-            StateMachine* getStateMachine();
+        const QString& getId() const;
+        AbstractState* getSourceState();
+        AbstractState* getTargetState();
+        StateMachine* getStateMachine();
 
-            virtual bool initialize();
+        virtual bool initialize();
 
-            virtual QString toString() const = 0;
+        virtual QString toString() const = 0;
 
-        protected:
-            static const Logger* logger;
-            QString transitionId;
-            QString sourceStateId;
-            QString targetStateId;
-            AbstractState* sourceState;
-            AbstractState* targetState;
-            StateMachine* stateMachine;
+      protected:
+        static const Logger* logger;
+        QString transitionId;
+        QString sourceStateId;
+        QString targetStateId;
+        AbstractState* sourceState;
+        AbstractState* targetState;
+        StateMachine* stateMachine;
 
-            virtual bool eventTest(QEvent* e) = 0;
-            virtual void onTransition(QEvent* e) = 0;
+        virtual bool eventTest(QEvent* e) = 0;
+        virtual void onTransition(QEvent* e) = 0;
     };
 
-    class Assign
-    {
-        public:
-            Assign(const QString& from, const QString& to);
-            ~Assign();
+    class Assign {
+      public:
+        Assign(const QString& from, const QString& to);
+        ~Assign();
 
-            const QString& getFrom() const;
-            const QString& getTo() const;
+        const QString& getFrom() const;
+        const QString& getTo() const;
 
-            QString toString() const;
+        QString toString() const;
 
-        private:
-            QString from;
-            QString to;
-            StateMachine* stateMachine;
+      private:
+        QString from;
+        QString to;
+        StateMachine* stateMachine;
     };
 
-    class Dataflow
-    {
+    class Dataflow {
         friend class StateMachineBuilder;
 
-        public:
-            Dataflow(const QString& sourceStateId, const QString& targetStateId);
-            ~Dataflow();
+      public:
+        Dataflow(const QString& sourceStateId, const QString& targetStateId);
+        ~Dataflow();
 
-            void addAssign(Assign* assign);
-            const QList<Assign*> getAssigns() const;
+        void addAssign(Assign* assign);
+        const QList<Assign*> getAssigns() const;
 
-            const QString& getSourceStateId() const;
-            const QString& getTargetStateId() const;
+        const QString& getSourceStateId() const;
+        const QString& getTargetStateId() const;
 
-            AbstractState* getSourceState();
-            AbstractState* getTargetState();
-            StateMachine* getStateMachine();
+        AbstractState* getSourceState();
+        AbstractState* getTargetState();
+        StateMachine* getStateMachine();
 
-            QString toString() const;
+        QString toString() const;
 
-        private:
-            QString sourceStateId;
-            QString targetStateId;
-            QList<Assign*> assigns;
-            AbstractState* sourceState;
-            AbstractState* targetState;
-            StateMachine* stateMachine;
+      private:
+        QString sourceStateId;
+        QString targetStateId;
+        QList<Assign*> assigns;
+        AbstractState* sourceState;
+        AbstractState* targetState;
+        StateMachine* stateMachine;
     };
 
-    class AbstractState : public QObject
-    {
+    class AbstractState : public QObject {
         Q_OBJECT
 
         friend class StateMachineBuilder;
 
-        public:
-            AbstractState(const QString& stateId, const QString& parentStateId = "");
-            virtual ~AbstractState();
+      public:
+        AbstractState(const QString& stateId, const QString& parentStateId = "");
+        virtual ~AbstractState();
 
-            const QString& getUuid() const;
-            const QString& getId() const;
-            void setId(const QString& stateId);
-            const QString& getParentStateId() const;
-            void setParentStateId(const QString& parentStateId);
-            StateMachine* getStateMachine();
+        const QString& getUuid() const;
+        const QString& getId() const;
+        void setId(const QString& stateId);
+        const QString& getParentStateId() const;
+        void setParentStateId(const QString& parentStateId);
+        StateMachine* getStateMachine();
 
-            Value& getInput();
-            void setInput(const Value& value);
-            Value& getOutput();
-            void setOutput(const Value& value);
+        Value& getInput();
+        void setInput(const Value& value);
+        Value& getOutput();
+        void setOutput(const Value& value);
 
-            const QList<Dataflow*>& getDataflows() const;
+        const QList<Dataflow*>& getDataflows() const;
 
-            AbstractState* getParentState();
+        AbstractState* getParentState();
 
-            const QList<AbstractState*>& getChildStates() const;
-            AbstractState* getChildState(const QString& stateId);
+        const QList<AbstractState*>& getChildStates() const;
+        AbstractState* getChildState(const QString& stateId);
 
-            const QList<AbstractTransition*>& getTransitions() const;
-            AbstractTransition* getTransition(const QString& transitionId);
+        const QList<AbstractTransition*>& getTransitions() const;
+        AbstractTransition* getTransition(const QString& transitionId);
 
-            AbstractState* findState(const QString& stateId);
+        AbstractState* findState(const QString& stateId);
 
-            virtual QAbstractState* getDelegate() const = 0;
-            virtual bool initialize() = 0;
-            virtual QString toString() const = 0;
+        virtual QAbstractState* getDelegate() const = 0;
+        virtual bool initialize() = 0;
+        virtual QString toString() const = 0;
 
-        protected:
-            static const Logger* logger;
-            QString uuid;
-            QString stateId;
-            QString parentStateId;
-            StateMachine* stateMachine;
-            Value input;
-            Value output;
-            QList<Dataflow*> dataflows;
-            QList<AbstractTransition*> transitions;
-            QList<AbstractState*> childStates;
+      protected:
+        static const Logger* logger;
+        QString uuid;
+        QString stateId;
+        QString parentStateId;
+        StateMachine* stateMachine;
+        Value input;
+        Value output;
+        QList<Dataflow*> dataflows;
+        QList<AbstractTransition*> transitions;
+        QList<AbstractState*> childStates;
     };
 
-    class AbstractComplexState : public AbstractState
-    {
+    class AbstractComplexState : public AbstractState {
         Q_OBJECT
 
-        public:
-            AbstractComplexState(const QString& stateId, const QString& parentStateId = "");
-            virtual ~AbstractComplexState();
+      public:
+        AbstractComplexState(const QString& stateId, const QString& parentStateId = "");
+        virtual ~AbstractComplexState();
 
-            bool isActive();
+        bool isActive();
 
-            virtual QState* getDelegate() const;
-            virtual bool initialize();
-            virtual QString toString() const = 0;
+        virtual QState* getDelegate() const;
+        virtual bool initialize();
+        virtual QString toString() const = 0;
 
-        protected slots:
-            virtual void eventStart();
-            virtual void eventStop();
-            virtual void eventEnter();
-            virtual void eventExit();
-            virtual void eventFinish();
+      protected slots:
+        virtual void eventStart();
+        virtual void eventStop();
+        virtual void eventEnter();
+        virtual void eventExit();
+        virtual void eventFinish();
 
-        protected:
-            QState* delegate;
-            bool active;
+      protected:
+        QState* delegate;
+        bool active;
     };
 
-    class NamedEvent : public AbstractEvent
-    {
-        public:
-            static const QEvent::Type type;
+    class NamedEvent : public AbstractEvent {
+      public:
+        static const QEvent::Type type;
 
-            NamedEvent(const QString& eventName);
-            ~NamedEvent();
+        NamedEvent(const QString& eventName);
+        ~NamedEvent();
 
-            const QString& getEventName() const;
-            void setEventName(const QString& eventName);
+        const QString& getEventName() const;
+        void setEventName(const QString& eventName);
 
-            const QString& getOrigin() const;
-            void setOrigin(const QString& origin);
+        const QString& getOrigin() const;
+        void setOrigin(const QString& origin);
 
-            const QString& getMessage() const;
-            void setMessage(const QString& message);
+        const QString& getMessage() const;
+        void setMessage(const QString& message);
 
-            virtual QString toString() const;
+        virtual QString toString() const;
 
-        private:
-            QString eventName;
-            QString origin;
-            QString message;
+      private:
+        QString eventName;
+        QString origin;
+        QString message;
     };
 
-    class ConditionalTransition : public AbstractTransition
-    {
-        public:
-            ConditionalTransition(const QString& transitionId, const QString& sourceStateId, const QString& targetStateId, const QString& eventName, QString condition = "");
+    class ConditionalTransition : public AbstractTransition {
+      public:
+        ConditionalTransition(const QString& transitionId, const QString& sourceStateId, const QString& targetStateId, const QString& eventName, QString condition = "");
 
-            virtual bool initialize();
+        virtual bool initialize();
 
-            virtual QString toString() const;
+        virtual QString toString() const;
 
-        protected:
-            virtual bool eventTest(QEvent* e);
-            virtual void onTransition(QEvent* e);
+      protected:
+        virtual bool eventTest(QEvent* e);
+        virtual void onTransition(QEvent* e);
 
-        private:
-            QString eventName;
-            QString condition;
+      private:
+        QString eventName;
+        QString condition;
     };
 
-    class InternalEvent : public AbstractEvent
-    {
-        public:
-            static const QEvent::Type type;
+    class InternalEvent : public AbstractEvent {
+      public:
+        static const QEvent::Type type;
 
-            InternalEvent(const QString& eventName);
-            ~InternalEvent();
+        InternalEvent(const QString& eventName);
+        ~InternalEvent();
 
-            const QString& getEventName() const;
+        const QString& getEventName() const;
 
-            virtual QString toString() const;
+        virtual QString toString() const;
 
-        private:
-            QString eventName;
+      private:
+        QString eventName;
     };
 
-    class InternalTransition : public QAbstractTransition
-    {
-        public:
-            InternalTransition(const QString& eventName);
+    class InternalTransition : public QAbstractTransition {
+      public:
+        InternalTransition(const QString& eventName);
 
-        protected:
-            virtual bool eventTest(QEvent* e);
-            virtual void onTransition(QEvent* e);
+      protected:
+        virtual bool eventTest(QEvent* e);
+        virtual void onTransition(QEvent* e);
 
-        private:
-            QString eventName;
+      private:
+        QString eventName;
     };
 
-    class FinalState : public AbstractState
-    {
+    class FinalState : public AbstractState {
         Q_OBJECT
 
-        public:
-            FinalState(const QString& stateId, const QString& parentStateId = "");
-            ~FinalState();
+      public:
+        FinalState(const QString& stateId, const QString& parentStateId = "");
+        ~FinalState();
 
-            virtual QFinalState* getDelegate() const;
-            virtual bool initialize();
-            virtual QString toString() const;
+        virtual QFinalState* getDelegate() const;
+        virtual bool initialize();
+        virtual QString toString() const;
 
-        private:
-            QFinalState* delegate;
+      private:
+        QFinalState* delegate;
     };
 
 
-    class CompositeState : public AbstractComplexState
-    {
+    class CompositeState : public AbstractComplexState {
         Q_OBJECT
 
-        public:
-            CompositeState(const QString& stateId, const QString &initialStateId, const QString& parentStateId = "");
-            ~CompositeState();
+      public:
+        CompositeState(const QString& stateId, const QString &initialStateId, const QString& parentStateId = "");
+        ~CompositeState();
 
-            virtual bool initialize();
-            virtual QString toString() const;
+        virtual bool initialize();
+        virtual QString toString() const;
 
-        private:
-            QString initialStateId;
+      private:
+        QString initialStateId;
     };
 
-    class ParallelState : public AbstractComplexState
-    {
+    class ParallelState : public AbstractComplexState {
         Q_OBJECT
 
-        public:
-            ParallelState(const QString& stateId, const QString& parentStateId = "");
-            ~ParallelState();
+      public:
+        ParallelState(const QString& stateId, const QString& parentStateId = "");
+        ~ParallelState();
 
-            virtual bool initialize();
-            virtual QString toString() const;
+        virtual bool initialize();
+        virtual QString toString() const;
     };
 
-    class InvokeState : public AbstractComplexState
-    {
+    class InvokeState : public AbstractComplexState {
         Q_OBJECT
 
-        public:
-            InvokeState(const QString& stateId, const QString& binding, const QString& parentStateId = "");
-            virtual ~InvokeState();
+      public:
+        InvokeState(const QString& stateId, const QString& binding, const QString& parentStateId = "");
+        virtual ~InvokeState();
 
-            void invoke();
-            void cancel();
+        void invoke();
+        void cancel();
 
-            const QString& getBinding() const;
+        const QString& getBinding() const;
 
-            CommunicationPlugin* getCommunicationPlugin();
+        CommunicationPlugin* getCommunicationPlugin();
 
-            Value& getEndpoint();
-            void setEndpoint(Value& value);
+        Value& getEndpoint();
+        void setEndpoint(Value& value);
 
-            virtual bool initialize();
-            virtual QString toString() const;
+        virtual bool initialize();
+        virtual QString toString() const;
 
-        protected slots:
-            virtual void eventStop();
-            virtual void eventEnter();
-            virtual void eventExit();
-            virtual void eventFinish();
+      protected slots:
+        virtual void eventStop();
+        virtual void eventEnter();
+        virtual void eventExit();
+        virtual void eventFinish();
 
-        private:
-            QString binding;
-            CommunicationPlugin* communicationPlugin;
-            Value endpoint;
-            bool invocationActive;
+      private:
+        QString binding;
+        CommunicationPlugin* communicationPlugin;
+        Value endpoint;
+        bool invocationActive;
 
-            void success(const Value& output);
-            void error(QString message = "");
+        void success(const Value& output);
+        void error(QString message = "");
     };
 
-    class StateMachine : public AbstractComplexState
-    {
+    class StateMachine : public AbstractComplexState {
         Q_OBJECT
 
         friend class StateMachineBuilder;
 
-        public:
-            StateMachine(const QString& stateId, const QString& initialId, const QString& parentStateId = "");
-            ~StateMachine();
+      public:
+        StateMachine(const QString& stateId, const QString& initialId, const QString& parentStateId = "");
+        ~StateMachine();
 
-            bool isRoot();
+        bool isRoot();
 
-            void start() const;
-            void stop() const;
+        void start() const;
+        void stop() const;
 
-            int postDelayedEvent(AbstractEvent* event, int delay);
-            void postEvent(AbstractEvent* event, QStateMachine::EventPriority priority = QStateMachine::NormalPriority);
+        int postDelayedEvent(AbstractEvent* event, int delay);
+        void postEvent(AbstractEvent* event, QStateMachine::EventPriority priority = QStateMachine::NormalPriority);
 
-            QScriptEngine* getScriptEngine();
+        QScriptEngine* getScriptEngine();
 
-            virtual QStateMachine* getDelegate() const;
-            virtual bool initialize();
-            virtual QString toString() const;
+        virtual QStateMachine* getDelegate() const;
+        virtual bool initialize();
+        virtual QString toString() const;
 
-        protected slots:
-            virtual void eventStart();
-            virtual void eventStop();
-            virtual void eventFinish();
+      protected slots:
+        virtual void eventStart();
+        virtual void eventStop();
+        virtual void eventFinish();
 
-        protected:
-            QStateMachine* delegate;
-            QScriptEngine* scriptEngine;
+      protected:
+        QStateMachine* delegate;
+        QScriptEngine* scriptEngine;
 
-        private:
-            QString initialId;
+      private:
+        QString initialId;
     };
 }
 

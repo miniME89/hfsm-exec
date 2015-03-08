@@ -23,18 +23,15 @@ using namespace hfsmexec;
  * Exporter
  */
 Exporter::Exporter() :
-    ExporterPlugin("DOT")
-{
+    ExporterPlugin("DOT") {
 
 }
 
-Exporter::~Exporter()
-{
+Exporter::~Exporter() {
 
 }
 
-QString Exporter::exportStateMachine(StateMachine* stateMachine)
-{
+QString Exporter::exportStateMachine(StateMachine* stateMachine) {
     QString dot;
     dot.append("digraph {\n");
     dot.append("    graph[compound=true];\n");
@@ -44,24 +41,21 @@ QString Exporter::exportStateMachine(StateMachine* stateMachine)
     return dot;
 }
 
-void Exporter::decode(QString& dot, AbstractState* state, int level, const QString& prefix)
-{
+void Exporter::decode(QString& dot, AbstractState* state, int level, const QString& prefix) {
     QString nodeId = prefix + state->getId();
     dot.append(QString("%1subgraph cluster_%2 {\n").arg(QString("    ").repeated(level)).arg(nodeId));
     dot.append(QString("%1label = %2; \n").arg(QString("    ").repeated(level + 1)).arg(state->getId()));
     dot.append(QString("%1cluster_%2_node [shape=point style=invis]; \n").arg(QString("    ").repeated(level + 1)).arg(nodeId));
 
     QList<AbstractState*> childs = state->getChildStates();
-    for (int i = 0; i < childs.size(); i++)
-    {
+    for (int i = 0; i < childs.size(); i++) {
         decode(dot, childs[i], level + 1, prefix + state->getId() + "_");
     }
 
     dot.append(QString("%1}\n").arg(QString("    ").repeated(level)));
 
     QList<AbstractTransition*> transitions = state->getTransitions();
-    for (int i = 0; i < transitions.size(); i++)
-    {
+    for (int i = 0; i < transitions.size(); i++) {
         QString sourceNodeId = prefix + transitions[i]->getSourceState()->getId();
         QString targetNodeId = prefix + transitions[i]->getTargetState()->getId();
         dot.append(QString("%1cluster_%2_node -> cluster_%3_node [ltail=cluster_%2 lhead=cluster_%3, minlen=1.5];\n").arg(QString("    ").repeated(level)).arg(sourceNodeId).arg(targetNodeId));

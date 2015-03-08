@@ -25,30 +25,25 @@ using namespace hfsmexec;
 PushNotification::PushNotification(int maxQueueSize, int maxReadSize) :
     pos(0),
     maxQueueSize(maxQueueSize),
-    maxReadSize(maxReadSize)
-{
+    maxReadSize(maxReadSize) {
 
 }
 
-PushNotification::~PushNotification()
-{
+PushNotification::~PushNotification() {
 
 }
 
-void PushNotification::write(const std::string& data)
-{
+void PushNotification::write(const std::string& data) {
     {
         std::lock_guard<std::mutex> scopedLock(lock);
 
-        if (this->pos == -1)
-        {
+        if (this->pos == -1) {
             return;
         }
 
         pos++;
         buffer[pos] = data;
-        if (pos > maxQueueSize)
-        {
+        if (pos > maxQueueSize) {
             buffer.erase(buffer.find(pos - maxQueueSize));
         }
     }
@@ -56,44 +51,37 @@ void PushNotification::write(const std::string& data)
     condition.notify_all();
 }
 
-bool PushNotification::read(int& pos, std::string& data, int timeout)
-{
-    //set pos to buffer end, if pos <= 0
-    if (pos <= 0)
-    {
+bool PushNotification::read(int& pos, std::string& data, int timeout) {
+    // set pos to buffer end, if pos <= 0
+    if (pos <= 0) {
         pos = this->pos + 1;
     }
 
-    //wait till message at buffer pos is available
+    // wait till message at buffer pos is available
     std::unique_lock<std::mutex> conditionLock(lock);
-    if (!condition.wait_for(conditionLock, std::chrono::seconds(timeout), [&] {return pos <= this->pos || this->pos == -1;}))
-    {
+    if (!condition.wait_for(conditionLock, std::chrono::seconds(timeout), [&] {return pos <= this->pos || this->pos == -1;})) {
         return false;
     }
 
-    //verify that buffer is still valid
-    if (this->pos == -1)
-    {
+    // verify that buffer is still valid
+    if (this->pos == -1) {
         conditionLock.unlock();
         condition.notify_all();
 
         return false;
     }
 
-    //make sure that a valid buffer pos is selected
+    // make sure that a valid buffer pos is selected
     int bufferStart = this->pos - maxQueueSize + 1;
-    if (pos < bufferStart)
-    {
+    if (pos < bufferStart) {
         pos = bufferStart;
     }
 
-    //read all available buffer from pos (max
+    // read all available buffer from pos (max
     data.append("[");
     int bufferEnd = this->pos;
-    for (int i = 0; pos <= bufferEnd && i < maxReadSize; i++, pos++)
-    {
-        if (i > 0)
-        {
+    for (int i = 0; pos <= bufferEnd && i < maxReadSize; i++, pos++) {
+        if (i > 0) {
             data.append(", ");
         }
 
@@ -107,8 +95,7 @@ bool PushNotification::read(int& pos, std::string& data, int timeout)
     return true;
 }
 
-void PushNotification::unlock()
-{
+void PushNotification::unlock() {
     this->pos = -1;
     condition.notify_all();
 }
@@ -116,87 +103,71 @@ void PushNotification::unlock()
 /*
  * HttpRequest
  */
-HttpRequest::HttpRequest()
-{
+HttpRequest::HttpRequest() {
 
 }
 
-HttpRequest::~HttpRequest()
-{
+HttpRequest::~HttpRequest() {
 
 }
 
-const std::string& HttpRequest::getVersion() const
-{
+const std::string& HttpRequest::getVersion() const {
     return version;
 }
 
-const std::string& HttpRequest::getMethod() const
-{
+const std::string& HttpRequest::getMethod() const {
     return method;
 }
 
-const std::string& HttpRequest::getUrl() const
-{
+const std::string& HttpRequest::getUrl() const {
     return url;
 }
 
-const std::string& HttpRequest::getBody() const
-{
+const std::string& HttpRequest::getBody() const {
     return body;
 }
 
-const std::map<std::string, std::string>& HttpRequest::getHeaders() const
-{
+const std::map<std::string, std::string>& HttpRequest::getHeaders() const {
     return headers;
 }
 
-std::string HttpRequest::getHeader(const std::string& key) const
-{
+std::string HttpRequest::getHeader(const std::string& key) const {
     std::map<std::string, std::string>::const_iterator i = headers.find(key);
 
-    if (i == headers.end())
-    {
+    if (i == headers.end()) {
         return "";
     }
 
     return i->second;
 }
 
-void HttpRequest::setHeader(const std::string& key, const std::string& value)
-{
+void HttpRequest::setHeader(const std::string& key, const std::string& value) {
     headers.insert(std::pair<std::string, std::string>(key, value));
 }
 
-bool HttpRequest::hasHeader(const std::string& key)
-{
+bool HttpRequest::hasHeader(const std::string& key) {
     return headers.find(key) != headers.end();
 }
 
-const std::map<std::string, std::string>& HttpRequest::getArguments() const
-{
+const std::map<std::string, std::string>& HttpRequest::getArguments() const {
     return arguments;
 }
 
-std::string HttpRequest::getArgument(const std::string& key) const
-{
+std::string HttpRequest::getArgument(const std::string& key) const {
     std::map<std::string, std::string>::const_iterator i = arguments.find(key);
 
-    if (i == arguments.end())
-    {
+    if (i == arguments.end()) {
         return "";
     }
 
     return i->second;
 }
 
-void HttpRequest::setArgument(const std::string& key, const std::string& value)
-{
+void HttpRequest::setArgument(const std::string& key, const std::string& value) {
     arguments.insert(std::pair<std::string, std::string>(key, value));
 }
 
-bool HttpRequest::hasArgument(const std::string& key)
-{
+bool HttpRequest::hasArgument(const std::string& key) {
     return arguments.find(key) != arguments.end();
 }
 
@@ -204,114 +175,94 @@ bool HttpRequest::hasArgument(const std::string& key)
  * HttpResponse
  */
 HttpResponse::HttpResponse() :
-    statusCode(STATUS_NOT_FOUND)
-{
+    statusCode(STATUS_NOT_FOUND) {
 
 }
 
-HttpResponse::~HttpResponse()
-{
+HttpResponse::~HttpResponse() {
 
 }
 
-void HttpResponse::setStatusCode(int statusCode)
-{
+void HttpResponse::setStatusCode(int statusCode) {
     this->statusCode = statusCode;
 }
 
-void HttpResponse::write(const std::string& data)
-{
+void HttpResponse::write(const std::string& data) {
     this->data <<data;
 }
 
-const std::map<std::string, std::string>& HttpResponse::getHeaders() const
-{
+const std::map<std::string, std::string>& HttpResponse::getHeaders() const {
     return headers;
 }
 
-std::string HttpResponse::getHeader(const std::string& key) const
-{
+std::string HttpResponse::getHeader(const std::string& key) const {
     std::map<std::string, std::string>::const_iterator i = headers.find(key);
 
-    if (i == headers.end())
-    {
+    if (i == headers.end()) {
         return "";
     }
 
     return i->second;
 }
 
-void HttpResponse::setHeader(const std::string& key, const std::string& value)
-{
+void HttpResponse::setHeader(const std::string& key, const std::string& value) {
     headers.insert(std::pair<std::string, std::string>(key, value));
 }
 
-bool HttpResponse::hasHeader(const std::string& key)
-{
+bool HttpResponse::hasHeader(const std::string& key) {
     return headers.find(key) != headers.end();
 }
 
 /*
  * Context
  */
-Context::Context()
-{
+Context::Context() {
 
 }
 
-Context::~Context()
-{
+Context::~Context() {
     delete request;
     delete response;
 }
 
-HttpRequest* Context::getRequest()
-{
+HttpRequest* Context::getRequest() {
     return request;
 }
 
-HttpResponse* Context::getResponse()
-{
+HttpResponse* Context::getResponse() {
     return response;
 }
 
 /*
  * HttpServer
  */
-HttpServer::HttpServer()
-{
+HttpServer::HttpServer() {
 
 }
 
-HttpServer::~HttpServer()
-{
+HttpServer::~HttpServer() {
 
 }
 
-bool HttpServer::start(int port)
-{
+bool HttpServer::start(int port) {
     daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION, port, NULL, NULL, requestHandler, this, MHD_OPTION_NOTIFY_COMPLETED, requestCompleted, NULL, MHD_OPTION_END);
 
     return daemon != NULL;
 }
 
-bool HttpServer::stop()
-{
+bool HttpServer::stop() {
     MHD_stop_daemon(daemon);
 
     return true;
 }
 
-void HttpServer::setHandler(const std::function<HttpServer::HandlerCallback>& handler)
-{
+void HttpServer::setHandler(const std::function<HttpServer::HandlerCallback>& handler) {
     this->handler = handler;
 }
 
-int HttpServer::requestHandler(void* cls, struct MHD_Connection* connection, const char* url, const char* method, const char* version, const char* uploadData, size_t* uploadDataSize, void** conCls)
-{
-    //create context
-    if (*conCls == NULL)
-    {
+int HttpServer::requestHandler(void* cls, struct MHD_Connection* connection, const char* url, const char* method, const char* version, const char* uploadData, size_t* uploadDataSize, void** conCls) {
+    // create context
+    if (*conCls == NULL) {
         HttpRequest* request = new HttpRequest();
         request->version = version;
         request->method = method;
@@ -332,41 +283,38 @@ int HttpServer::requestHandler(void* cls, struct MHD_Connection* connection, con
     HttpRequest* request = context->getRequest();
     HttpResponse* response = context->getResponse();
 
-    //process upload data  
-    if (*uploadDataSize != 0)
-    {
+    // process upload data
+    if (*uploadDataSize != 0) {
         context->request->body = uploadData;
         *uploadDataSize = 0;
 
         return MHD_YES;
     }
 
-    //read headers
+    // read headers
     MHD_get_connection_values(connection, MHD_HEADER_KIND, readHeader, context);
 
-    //read URI arguments
+    // read URI arguments
     MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, readArguments, context);
 
-    //handle request
+    // handle request
     HttpServer* server = (HttpServer*)cls;
-    if (server->handler)
-    {
+    if (server->handler) {
         server->handler(request, response);
     }
 
-    //create response
+    // create response
     std::string dataStr = response->data.str();
     const char* data = dataStr.c_str();
     struct MHD_Response* responseMHD = MHD_create_response_from_buffer(dataStr.size(), (void*)data, MHD_RESPMEM_MUST_COPY);
 
-    //set response headers
+    // set response headers
     std::map<std::string, std::string> responseHeaders = response->getHeaders();
-    for (std::map<std::string, std::string>::iterator i = responseHeaders.begin(); i != responseHeaders.end(); i++)
-    {
+    for (std::map<std::string, std::string>::iterator i = responseHeaders.begin(); i != responseHeaders.end(); i++) {
         MHD_add_response_header(responseMHD, i->first.c_str(), i->second.c_str());
     }
 
-    //send response
+    // send response
     int ret = MHD_queue_response(connection, response->statusCode, responseMHD);
 
     MHD_destroy_response(responseMHD);
@@ -374,12 +322,10 @@ int HttpServer::requestHandler(void* cls, struct MHD_Connection* connection, con
     return ret;
 }
 
-void HttpServer::requestCompleted(void* cls, MHD_Connection* connection, void** conCls, MHD_RequestTerminationCode toe)
-{
+void HttpServer::requestCompleted(void* cls, MHD_Connection* connection, void** conCls, MHD_RequestTerminationCode toe) {
     Context* context = (Context*)*conCls;
 
-    if (context == NULL)
-    {
+    if (context == NULL) {
         return;
     }
 
@@ -388,16 +334,14 @@ void HttpServer::requestCompleted(void* cls, MHD_Connection* connection, void** 
     *conCls = NULL;
 }
 
-int HttpServer::readHeader(void* cls, MHD_ValueKind kind, const char* key, const char* value)
-{
+int HttpServer::readHeader(void* cls, MHD_ValueKind kind, const char* key, const char* value) {
     Context* context = (Context*)cls;
     context->request->headers.insert(std::pair<std::string, std::string>(key, value));
 
     return MHD_YES;
 }
 
-int HttpServer::readArguments(void* cls, MHD_ValueKind kind, const char* key, const char* value)
-{
+int HttpServer::readArguments(void* cls, MHD_ValueKind kind, const char* key, const char* value) {
     Context* context = (Context*)cls;
     context->request->arguments.insert(std::pair<std::string, std::string>(key, value));
 

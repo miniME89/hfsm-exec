@@ -31,7 +31,7 @@ ExternalProject_Add(ext_gtest
 )
 
 ExternalProject_Add(ext_jsoncpp
-                    URL https://github.com/open-source-parsers/jsoncpp/archive/0.9.0.tar.gz
+                    URL https://github.com/open-source-parsers/jsoncpp/archive/0.9.4.tar.gz
                     PREFIX ${EXT_SOURCE_DIR}
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}
                     BUILD_IN_SOURCE 1

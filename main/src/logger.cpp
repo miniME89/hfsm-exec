@@ -33,15 +33,12 @@ INITIALIZE_EASYLOGGINGPP
 QMap<QString, Logger*> Logger::loggers;
 
 Logger::Logger(const QString& name) :
-    name(name)
-{
+    name(name) {
     el::Loggers::getLogger(name.toStdString());
 }
 
-Logger* Logger::getLogger(const QString& name)
-{
-    if (loggers.contains(name))
-    {
+Logger* Logger::getLogger(const QString& name) {
+    if (loggers.contains(name)) {
         return loggers[name];
     }
 
@@ -52,13 +49,11 @@ Logger* Logger::getLogger(const QString& name)
     return logger;
 }
 
-Logger::~Logger()
-{
+Logger::~Logger() {
 
 }
 
-void Logger::info(const QString& message) const
-{
+void Logger::info(const QString& message) const {
     CLOG(INFO, name.toStdString().c_str()) <<message;
 
     Value value;
@@ -68,8 +63,7 @@ void Logger::info(const QString& message) const
     Application::getInstance()->getApi().pushlog(value);
 }
 
-void Logger::warning(const QString& message) const
-{
+void Logger::warning(const QString& message) const {
     CLOG(WARNING, name.toStdString().c_str()) <<message;
 
     Value value;
@@ -79,8 +73,7 @@ void Logger::warning(const QString& message) const
     Application::getInstance()->getApi().pushlog(value);
 }
 
-void Logger::error(const QString& message) const
-{
+void Logger::error(const QString& message) const {
     CLOG(ERROR, name.toStdString().c_str()) <<message;
 
     Value value;
@@ -90,8 +83,7 @@ void Logger::error(const QString& message) const
     Application::getInstance()->getApi().pushlog(value);
 }
 
-void Logger::fatal(const QString& message) const
-{
+void Logger::fatal(const QString& message) const {
     CLOG(FATAL, name.toStdString().c_str()) <<message;
 
     Value value;
@@ -101,8 +93,7 @@ void Logger::fatal(const QString& message) const
     Application::getInstance()->getApi().pushlog(value);
 }
 
-void Logger::debug(const QString& message) const
-{
+void Logger::debug(const QString& message) const {
     CLOG(DEBUG, name.toStdString().c_str()) <<message;
 
     Value value;
@@ -112,36 +103,31 @@ void Logger::debug(const QString& message) const
     Application::getInstance()->getApi().pushlog(value);
 }
 
-void Logger::setLoggerEnabled(bool enabled)
-{
+void Logger::setLoggerEnabled(bool enabled) {
     el::Configurations config;
     config.set(el::Level::Global, el::ConfigurationType::Enabled, (enabled) ? "true" : "false");
     el::Loggers::reconfigureAllLoggers(config);
 }
 
-void Logger::setLoggerEnabled(const QString& name, bool enabled)
-{
+void Logger::setLoggerEnabled(const QString& name, bool enabled) {
     el::Configurations config;
     config.set(el::Level::Global, el::ConfigurationType::Enabled, (enabled) ? "true" : "false");
     el::Loggers::reconfigureLogger(name.toStdString(), config);
 }
 
-void Logger::setFileOut(bool enabled)
-{
+void Logger::setFileOut(bool enabled) {
     el::Configurations config;
     config.set(el::Level::Global, el::ConfigurationType::ToFile, (enabled) ? "true" : "false");
     el::Loggers::reconfigureAllLoggers(config);
 }
 
-void Logger::setFilename(const QString& filename)
-{
+void Logger::setFilename(const QString& filename) {
     el::Configurations config;
     config.set(el::Level::Global, el::ConfigurationType::Filename, filename.toStdString());
     el::Loggers::reconfigureAllLoggers(config);
 }
 
-void Logger::setConsoleOut(bool enabled)
-{
+void Logger::setConsoleOut(bool enabled) {
     el::Configurations config;
     config.set(el::Level::Global, el::ConfigurationType::ToStandardOutput, (enabled) ? "true" : "false");
     el::Loggers::reconfigureAllLoggers(config);

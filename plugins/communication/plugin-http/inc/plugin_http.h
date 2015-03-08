@@ -20,21 +20,19 @@
 
 #include <plugins.h>
 
-namespace hfsmexec
-{
-    class HTTPCommunicationPlugin : public QObject, public CommunicationPlugin
-    {
+namespace hfsmexec {
+    class HTTPCommunicationPlugin : public QObject, public CommunicationPlugin {
         Q_OBJECT
         Q_PLUGIN_METADATA(IID "hfsmexec.Plugins.CommunicationPlugin")
         Q_INTERFACES(hfsmexec::CommunicationPlugin)
 
-        public:
-            HTTPCommunicationPlugin();
-            virtual ~HTTPCommunicationPlugin();
+      public:
+        HTTPCommunicationPlugin();
+        virtual ~HTTPCommunicationPlugin();
 
-            virtual CommunicationPlugin* create();
-            virtual void invoke();
-            virtual void cancel();
+        virtual CommunicationPlugin* create();
+        virtual void invoke();
+        virtual void cancel();
     };
 }
 

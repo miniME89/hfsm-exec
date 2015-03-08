@@ -26,84 +26,79 @@
 #include <QtPlugin>
 #include <QPluginLoader>
 
-namespace hfsmexec
-{
-    class CommunicationPlugin
-    {
+namespace hfsmexec {
+    class CommunicationPlugin {
         friend class InvokeState;
 
-        public:
-            CommunicationPlugin(const QString& pluginId);
-            virtual ~CommunicationPlugin();
+      public:
+        CommunicationPlugin(const QString& pluginId);
+        virtual ~CommunicationPlugin();
 
-            const QString& getPluginId() const;
+        const QString& getPluginId() const;
 
-            void success(const Value& output = NullValue::ref());
-            void error(QString message = "");
+        void success(const Value& output = NullValue::ref());
+        void error(QString message = "");
 
-            virtual CommunicationPlugin* create() = 0;
-            virtual void invoke() = 0;
-            virtual void cancel() = 0;
+        virtual CommunicationPlugin* create() = 0;
+        virtual void invoke() = 0;
+        virtual void cancel() = 0;
 
-        private:
-            std::function<void(const Value& output)> successCallback;
-            std::function<void(QString)> errorCallback;
+      private:
+        std::function<void(const Value& output)> successCallback;
+        std::function<void(QString)> errorCallback;
 
-        protected:
-            static const Logger* logger;
-            const QString pluginId;
+      protected:
+        static const Logger* logger;
+        const QString pluginId;
 
-            Value endpoint;
-            Value input;
+        Value endpoint;
+        Value input;
     };
 
-    class ImporterPlugin
-    {
-        public:
-            ImporterPlugin(const QString& pluginId);
-            virtual ~ImporterPlugin();
+    class ImporterPlugin {
+      public:
+        ImporterPlugin(const QString& pluginId);
+        virtual ~ImporterPlugin();
 
-            const QString& getPluginId() const;
+        const QString& getPluginId() const;
 
-            virtual StateMachine* importStateMachine(const QString& data) = 0;
+        virtual StateMachine* importStateMachine(const QString& data) = 0;
 
-        protected:
-            static const Logger* logger;
-            const QString pluginId;
+      protected:
+        static const Logger* logger;
+        const QString pluginId;
     };
 
-    class ExporterPlugin
-    {
-        public:
-            ExporterPlugin(const QString& pluginId);
-            virtual ~ExporterPlugin();
+    class ExporterPlugin {
+      public:
+        ExporterPlugin(const QString& pluginId);
+        virtual ~ExporterPlugin();
 
-            const QString& getPluginId() const;
+        const QString& getPluginId() const;
 
-            virtual QString exportStateMachine(StateMachine* stateMachine) = 0;
+        virtual QString exportStateMachine(StateMachine* stateMachine) = 0;
 
-        protected:
-            static const Logger* logger;
-            const QString pluginId;
+      protected:
+        static const Logger* logger;
+        const QString pluginId;
     };
 
-    class PluginLoader
-    {
-        public:
-            PluginLoader();
-            ~PluginLoader();
+    class PluginLoader {
+      public:
+        PluginLoader();
+        ~PluginLoader();
 
-            CommunicationPlugin* getCommunicationPlugin(const QString& pluginId);
-            ImporterPlugin* getImporterPlugin(const QString& pluginId);
-            ExporterPlugin* getExporterPlugin(const QString& pluginId);
+        CommunicationPlugin* getCommunicationPlugin(const QString& pluginId);
+        ImporterPlugin* getImporterPlugin(const QString& pluginId);
+        ExporterPlugin* getExporterPlugin(const QString& pluginId);
 
-            bool load(const QString& path);
+        bool load(const QString& path);
 
-        private:
-            static const Logger* logger;
-            QMap<QString, CommunicationPlugin*> communicationPlugins;
-            QMap<QString, ImporterPlugin*> importerPlugins;
-            QMap<QString, ExporterPlugin*> exporterPlugins;
+      private:
+        static const Logger* logger;
+        QMap<QString, CommunicationPlugin*> communicationPlugins;
+        QMap<QString, ImporterPlugin*> importerPlugins;
+        QMap<QString, ExporterPlugin*> exporterPlugins;
     };
 }
 

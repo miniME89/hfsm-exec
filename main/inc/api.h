@@ -26,46 +26,43 @@
 
 #include <QRegExp>
 
-namespace hfsmexec
-{
-    class Api
-    {
-        public:
-            Api();
-            ~Api();
+namespace hfsmexec {
+    class Api {
+      public:
+        Api();
+        ~Api();
 
-            void exec(int port = 8080);
-            void quit();
+        void exec(int port = 8080);
+        void quit();
 
-            void pushlog(const Value& value);
-            void pushState(const Value& value);
+        void pushlog(const Value& value);
+        void pushState(const Value& value);
 
-        private:
-            typedef struct Service
-            {
-                QString pattern;
-                QString method;
-                QRegExp regex;
-                std::function<void(HttpRequest*, HttpResponse*)> handler;
-            } Service;
+      private:
+        typedef struct Service {
+            QString pattern;
+            QString method;
+            QRegExp regex;
+            std::function<void(HttpRequest*, HttpResponse*)> handler;
+        } Service;
 
-            static const Logger* logger;
-            HttpServer server;
-            QList<Service> services;
+        static const Logger* logger;
+        HttpServer server;
+        QList<Service> services;
 
-            PushNotification logPushNotification;
-            PushNotification statePushNotification;
+        PushNotification logPushNotification;
+        PushNotification statePushNotification;
 
-            void log(HttpRequest* request, HttpResponse* response);
-            void statemachineState(HttpRequest* request, HttpResponse* response);
-            void statemachineLoad(HttpRequest* request, HttpResponse* response);
-            void statemachineUnload(HttpRequest* request, HttpResponse* response);
-            void statemachineStart(HttpRequest* request, HttpResponse* response);
-            void statemachineStop(HttpRequest* request, HttpResponse* response);
-            void statemachineEvent(HttpRequest* request, HttpResponse* response);
+        void log(HttpRequest* request, HttpResponse* response);
+        void statemachineState(HttpRequest* request, HttpResponse* response);
+        void statemachineLoad(HttpRequest* request, HttpResponse* response);
+        void statemachineUnload(HttpRequest* request, HttpResponse* response);
+        void statemachineStart(HttpRequest* request, HttpResponse* response);
+        void statemachineStop(HttpRequest* request, HttpResponse* response);
+        void statemachineEvent(HttpRequest* request, HttpResponse* response);
 
-            void assign(QString pattern, QString method, std::function<void(HttpRequest*, HttpResponse*)> handler);
-            void httpHandler(HttpRequest* request, HttpResponse* response);
+        void assign(QString pattern, QString method, std::function<void(HttpRequest*, HttpResponse*)> handler);
+        void httpHandler(HttpRequest* request, HttpResponse* response);
     };
 }
 

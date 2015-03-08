@@ -27,8 +27,7 @@ const hfsmexec::Logger* Rosbridge::logger = hfsmexec::Logger::getLogger(LOGGER_P
  * Rosbridge
  */
 Rosbridge::Rosbridge() :
-    id(0)
-{
+    id(0) {
     connect(&socket, SIGNAL(connected()), this, SLOT(socketConnected()));
     connect(&socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
     connect(&socket, SIGNAL(readyRead()), this, SLOT(read()));
@@ -36,31 +35,26 @@ Rosbridge::Rosbridge() :
     socket.connectToHost("localhost", 9090);
 }
 
-Rosbridge::~Rosbridge()
-{
+Rosbridge::~Rosbridge() {
     socket.close();
 }
 
-void Rosbridge::socketConnected()
-{
+void Rosbridge::socketConnected() {
     logger->info("connected");
 }
 
-void Rosbridge::socketError(QAbstractSocket::SocketError socketError)
-{
+void Rosbridge::socketError(QAbstractSocket::SocketError socketError) {
     logger->warning(socket.errorString());
 }
 
-void Rosbridge::read()
-{
+void Rosbridge::read() {
     QByteArray data = socket.readLine();
     QString message(data);
 
     logger->info("read rosbridge message: " + message);
 
     Value value;
-    if (!value.fromJson(message))
-    {
+    if (!value.fromJson(message)) {
         logger->warning("couldn't decode JSON data");
 
         return;
@@ -68,22 +62,18 @@ void Rosbridge::read()
 
     listenersMutex.lock();
     QMapIterator<int, std::function<bool(hfsmexec::Value)>> it(listeners);
-    while (it.hasNext())
-    {
+    while (it.hasNext()) {
         it.next();
-        if (it.value()(value))
-        {
+        if (it.value()(value)) {
             listeners.remove(it.key());
         }
     }
     listenersMutex.unlock();
 }
 
-bool Rosbridge::write(const hfsmexec::Value& value)
-{
+bool Rosbridge::write(const hfsmexec::Value& value) {
     QString data;
-    if (!value.toJson(data))
-    {
+    if (!value.toJson(data)) {
         logger->warning("couldn't encode JSON data");
 
         return false;
@@ -93,8 +83,7 @@ bool Rosbridge::write(const hfsmexec::Value& value)
 
     int num = socket.write(data.toUtf8());
 
-    if (num != data.size())
-    {
+    if (num != data.size()) {
         logger->warning(QString("couldn't write all bytes to socket (%1 of %2)").arg(num).arg(data.size()));
 
         return false;
@@ -103,8 +92,7 @@ bool Rosbridge::write(const hfsmexec::Value& value)
     return true;
 }
 
-int Rosbridge::registerListener(std::function<bool(Value)> listener)
-{
+int Rosbridge::registerListener(std::function<bool(Value)> listener) {
     listenersMutex.lock();
     int handle = id++;
     listeners[handle] = listener;
@@ -113,8 +101,7 @@ int Rosbridge::registerListener(std::function<bool(Value)> listener)
     return handle;
 }
 
-void Rosbridge::unregisterListener(int handle)
-{
+void Rosbridge::unregisterListener(int handle) {
     listenersMutex.lock();
     listeners.remove(handle);
     listenersMutex.unlock();
@@ -126,65 +113,48 @@ void Rosbridge::unregisterListener(int handle)
 Rosbridge RosCommunicationPlugin::rosbridge;
 
 RosCommunicationPlugin::RosCommunicationPlugin() :
-    CommunicationPlugin("ROS")
-{
+    CommunicationPlugin("ROS") {
 
 }
 
-RosCommunicationPlugin::~RosCommunicationPlugin()
-{
+RosCommunicationPlugin::~RosCommunicationPlugin() {
 
 }
 
-CommunicationPlugin* RosCommunicationPlugin::create()
-{
+CommunicationPlugin* RosCommunicationPlugin::create() {
     return new RosCommunicationPlugin();
 }
 
-void RosCommunicationPlugin::invoke()
-{
+void RosCommunicationPlugin::invoke() {
     QString type = endpoint["type"].getString();
     logger->info(QString("ROS communication type is \"%1\"").arg(type));
-    if (type == "publish")
-    {
+    if (type == "publish") {
         publishMessage();
-    }
-    else if (type == "subscribe")
-    {
+    } else if (type == "subscribe") {
         subscribeMessage();
-    }
-    else if (type == "service")
-    {
+    } else if (type == "service") {
         sendServiceRequest();
-    }
-    else if (type == "action")
-    {
+    } else if (type == "action") {
         sendActionGoal();
-    }
-    else
-    {
+    } else {
         error(QString("unknown ROS communication type \"%1\"").arg(type));
     }
 }
 
-void RosCommunicationPlugin::cancel()
-{
-    if (cancelCallback)
-    {
+void RosCommunicationPlugin::cancel() {
+    if (cancelCallback) {
         cancelCallback();
     }
 }
 
-void RosCommunicationPlugin::publishMessage()
-{
-    //publish to topic
+void RosCommunicationPlugin::publishMessage() {
+    // publish to topic
     Value publish;
     publish = Value();
     publish["op"] = "publish";
     publish["topic"] = endpoint["topic"].getString();
     publish["msg"] = input;
-    if (!rosbridge.write(publish))
-    {
+    if (!rosbridge.write(publish)) {
         error();
         return;
     }
@@ -192,20 +162,18 @@ void RosCommunicationPlugin::publishMessage()
     success();
 }
 
-void RosCommunicationPlugin::subscribeMessage()
-{
-    //subscribe to topic
+void RosCommunicationPlugin::subscribeMessage() {
+    // subscribe to topic
     Value subscribe;
     subscribe["op"] = "subscribe";
     subscribe["topic"] = endpoint["topic"].getString();
     subscribe["id"] = QUuid::createUuid().toString();
-    if (!rosbridge.write(subscribe))
-    {
+    if (!rosbridge.write(subscribe)) {
         error();
         return;
     }
 
-    //callback: unsubscribe from topic
+    // callback: unsubscribe from topic
     auto unsubscribeTopic = [=]() {
         Value unsubscribe;
         unsubscribe["op"] = "unsubscribe";
@@ -214,18 +182,17 @@ void RosCommunicationPlugin::subscribeMessage()
         rosbridge.write(unsubscribe);
     };
 
-    //callback: received message
+    // callback: received message
     auto receivedMessage = [=](Value& message) {
         logger->info("received message");
 
         success(message["msg"]);
     };
 
-    //register rosbridge callback
+    // register rosbridge callback
     int handle = rosbridge.registerListener([=](Value message) {
         if (!(message["op"].getString() == "publish" &&
-              message["topic"] == subscribe["topic"]))
-        {
+                message["topic"] == subscribe["topic"])) {
             return false;
         }
 
@@ -235,38 +202,35 @@ void RosCommunicationPlugin::subscribeMessage()
         return true;
     });
 
-    //register cancel callback
+    // register cancel callback
     cancelCallback = [=]() {
         unsubscribeTopic();
         rosbridge.unregisterListener(handle);
     };
 }
 
-void RosCommunicationPlugin::sendServiceRequest()
-{
-    //service request
+void RosCommunicationPlugin::sendServiceRequest() {
+    // service request
     Value request;
     request["op"] = "call_service";
     request["service"] = endpoint["topic"].getString();
     request["args"] = input;
-    if (!rosbridge.write(request))
-    {
+    if (!rosbridge.write(request)) {
         error();
         return;
     }
 
-    //callback: received response
+    // callback: received response
     auto receivedResponse = [=](Value& message) {
         logger->info("received service response");
 
         success(message["values"]);
     };
 
-    //register rosbridge callback
+    // register rosbridge callback
     int handle = rosbridge.registerListener([=](Value message) {
         if (!(message["op"].getString() == "service_response" &&
-              message["service"] == request["service"]))
-        {
+                message["service"] == request["service"])) {
             return false;
         }
 
@@ -275,38 +239,35 @@ void RosCommunicationPlugin::sendServiceRequest()
         return true;
     });
 
-    //register cancel callback
+    // register cancel callback
     cancelCallback = [=]() {
         rosbridge.unregisterListener(handle);
     };
 }
 
-void RosCommunicationPlugin::sendActionGoal()
-{
-    //subscribe to action result topic
+void RosCommunicationPlugin::sendActionGoal() {
+    // subscribe to action result topic
     Value subscribe;
     subscribe["op"] = "subscribe";
     subscribe["topic"] = endpoint["topic"].getString() + "/result";
     subscribe["id"] = QUuid::createUuid().toString();
-    if (!rosbridge.write(subscribe))
-    {
+    if (!rosbridge.write(subscribe)) {
         error();
         return;
     }
 
-    //send action goal
+    // send action goal
     Value publish;
     publish["op"] = "publish";
     publish["topic"] = endpoint["topic"].getString() + "/goal";
     publish["msg"]["goal"] = input["goal"];
     publish["msg"]["goal_id"]["id"] = QUuid::createUuid().toString();
-    if (!rosbridge.write(publish))
-    {
+    if (!rosbridge.write(publish)) {
         error();
         return;
     }
 
-    //callback: unsubscribe from result topic
+    // callback: unsubscribe from result topic
     auto unsubscribeResultTopic = [=]() {
         Value unsubscribe;
         unsubscribe["op"] = "unsubscribe";
@@ -315,7 +276,7 @@ void RosCommunicationPlugin::sendActionGoal()
         rosbridge.write(unsubscribe);
     };
 
-    //callback: cancel goal
+    // callback: cancel goal
     auto cancelGoal = [=]() {
         Value cancel;
         cancel["op"] = "publish";
@@ -324,19 +285,18 @@ void RosCommunicationPlugin::sendActionGoal()
         rosbridge.write(cancel);
     };
 
-    //callback: received result
+    // callback: received result
     auto receivedResult = [=](Value& message) {
         logger->info("received action result");
 
         success(message["msg"]);
     };
 
-    //register rosbridge callback
+    // register rosbridge callback
     int handle = rosbridge.registerListener([=](Value message) {
         if (!(message["op"].getString() == "publish" &&
-              message["topic"] == subscribe["topic"] &&
-              message["msg"]["status"]["goal_id"]["id"] == publish["msg"]["goal_id"]["id"]))
-        {
+                message["topic"] == subscribe["topic"] &&
+                message["msg"]["status"]["goal_id"]["id"] == publish["msg"]["goal_id"]["id"])) {
             return false;
         }
 
@@ -346,7 +306,7 @@ void RosCommunicationPlugin::sendActionGoal()
         return true;
     });
 
-    //register cancel callback
+    // register cancel callback
     cancelCallback = [=]() {
         cancelGoal();
         unsubscribeResultTopic();

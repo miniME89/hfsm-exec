@@ -1,3 +1,20 @@
+/*
+ *  Copyright (C) 2014 Marcel Lehwald
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <builder.h>
 
 using namespace hfsmexec;
@@ -8,37 +25,28 @@ using namespace hfsmexec;
 const Logger* StateMachineBuilder::logger = Logger::getLogger(LOGGER_BUILDER);
 
 StateMachineBuilder::StateMachineBuilder() :
-    stateMachine(NULL)
-{
+    stateMachine(NULL) {
 
 }
 
-StateMachineBuilder::~StateMachineBuilder()
-{
+StateMachineBuilder::~StateMachineBuilder() {
 
 }
 
-void StateMachineBuilder::addState(StateMachine* stateMachine)
-{
-    if (this->stateMachine == NULL)
-    {
+void StateMachineBuilder::addState(StateMachine* stateMachine) {
+    if (this->stateMachine == NULL) {
         this->stateMachine = stateMachine;
-    }
-    else
-    {
+    } else {
         states.append(stateMachine);
     }
 }
 
-void StateMachineBuilder::addState(AbstractState* state)
-{
+void StateMachineBuilder::addState(AbstractState* state) {
     states.append(state);
 }
 
-void StateMachineBuilder::addTransition(AbstractTransition* transition)
-{
-    if (transition->stateMachine != NULL)
-    {
+void StateMachineBuilder::addTransition(AbstractTransition* transition) {
+    if (transition->stateMachine != NULL) {
         logger->warning("can't add transition: transition is already part of another state machine");
 
         return;
@@ -47,15 +55,12 @@ void StateMachineBuilder::addTransition(AbstractTransition* transition)
     transitions.append(transition);
 }
 
-void StateMachineBuilder::addDataflow(Dataflow* dataflow)
-{
+void StateMachineBuilder::addDataflow(Dataflow* dataflow) {
     dataflows.append(dataflow);
 }
 
-StateMachine* StateMachineBuilder::build()
-{
-    if (stateMachine == NULL)
-    {
+StateMachine* StateMachineBuilder::build() {
+    if (stateMachine == NULL) {
         logger->warning("can't build state machine: no instance of StateMachine was provided");
 
         return NULL;
@@ -63,49 +68,44 @@ StateMachine* StateMachineBuilder::build()
 
     logger->info("create state machine");
 
-    //link states
+    // link states
     logger->info("link states");
-    for (int i = 0; i < states.size(); i++)
-    {
+    for (int i = 0; i < states.size(); i++) {
         AbstractState* state = states[i];
 
-        //find parent state
+        // find parent state
         AbstractState* parentState = getState(state->parentStateId);
-        if (parentState == NULL)
-        {
+        if (parentState == NULL) {
             logger->warning(QString("initialization failed: couldn't find parent state \"%1\"").arg(state->parentStateId));
 
             return NULL;
         }
 
-        //link state
+        // link state
         logger->info(QString("link child state \"%1\" with parent state \"%2\"").arg(state->getId()).arg(parentState->getId()));
         parentState->childStates.append(state);
         state->setParent(parentState);
         state->getDelegate()->setParent(parentState->getDelegate());
 
-        //set state machine
+        // set state machine
         state->stateMachine = stateMachine;
     }
 
-    //link dataflows
-    for (int i = 0; i < dataflows.size(); i++)
-    {
+    // link dataflows
+    for (int i = 0; i < dataflows.size(); i++) {
         Dataflow* dataflow = dataflows[i];
 
-        //find source state
+        // find source state
         AbstractState* sourceState = getState(dataflow->getSourceStateId());
-        if (sourceState == NULL)
-        {
+        if (sourceState == NULL) {
             logger->warning(QString("initialization failed: couldn't find dataflow source state \"%1\"").arg(dataflow->getSourceStateId()));
 
             return NULL;
         }
 
-        //find target state
+        // find target state
         AbstractState* targetState = getState(dataflow->getTargetStateId());
-        if (targetState == NULL)
-        {
+        if (targetState == NULL) {
             logger->warning(QString("initialization failed: couldn't find dataflow target state \"%1\"").arg(dataflow->getTargetStateId()));
 
             return NULL;
@@ -120,8 +120,7 @@ StateMachine* StateMachineBuilder::build()
         targetParameters["output"] = &targetState->getOutput();
 
         const QList<Assign*>& assigns = dataflow->getAssigns();
-        for (int j = 0; j < assigns.size(); j++)
-        {
+        for (int j = 0; j < assigns.size(); j++) {
             targetParameters.getValue(assigns[j]->getTo()) = &sourceParameters.getValue(assigns[j]->getFrom());
         }
 
@@ -132,51 +131,45 @@ StateMachine* StateMachineBuilder::build()
         targetState->dataflows.append(dataflow);
     }
 
-    //initialize state machine
+    // initialize state machine
     logger->info("initialize state machine");
     stateMachine->stateMachine = stateMachine;
-    if (!stateMachine->initialize())
-    {
+    if (!stateMachine->initialize()) {
         logger->warning("initialization failed: initialization of state machine failed");
 
         return NULL;
     }
 
-    //initialize states
+    // initialize states
     logger->info(QString("initialize %1 states").arg(states.size()));
-    for (int i = 0; i < states.size(); i++)
-    {
+    for (int i = 0; i < states.size(); i++) {
         AbstractState* state = states[i];
 
-        //initialize state
+        // initialize state
         logger->info(QString("[%1] initialize state \"%2\"").arg(i).arg(state->getId()));
-        if (!state->initialize())
-        {
+        if (!state->initialize()) {
             logger->warning("initialization failed: initialization of states failed");
 
             return NULL;
         }
     }
 
-    //initialize transitions
+    // initialize transitions
     logger->info(QString("initialize %1 transitions").arg(transitions.size()));
-    for (int i = 0; i < transitions.size(); i++)
-    {
+    for (int i = 0; i < transitions.size(); i++) {
         AbstractTransition* transition = transitions[i];
 
-        //find source state
+        // find source state
         AbstractState* sourceState = getState(transition->sourceStateId);
-        if (sourceState == NULL)
-        {
+        if (sourceState == NULL) {
             logger->warning(QString("initialization failed: couldn't find transition source state \"%1\"").arg(transition->sourceStateId));
 
             return NULL;
         }
 
-        //find target state
+        // find target state
         AbstractState* targetState = getState(transition->targetStateId);
-        if (targetState == NULL)
-        {
+        if (targetState == NULL) {
             logger->warning(QString("initialization failed: couldn't find transition target state \"%1\"").arg(transition->targetStateId));
 
             return NULL;
@@ -188,8 +181,7 @@ StateMachine* StateMachineBuilder::build()
         transition->targetState = targetState;
 
         logger->info(QString("[%1] initialize transition \"%2\"").arg(i).arg(transition->getId()));
-        if (!transition->initialize())
-        {
+        if (!transition->initialize()) {
             logger->warning("initialization failed: couldn't initialize all transitions");
 
             return NULL;
@@ -201,45 +193,37 @@ StateMachine* StateMachineBuilder::build()
     return stateMachine;
 }
 
-StateMachineBuilder& StateMachineBuilder::operator<<(StateMachine* stateMachine)
-{
+StateMachineBuilder& StateMachineBuilder::operator<<(StateMachine* stateMachine) {
     addState(stateMachine);
 
     return *this;
 }
 
-StateMachineBuilder& StateMachineBuilder::operator<<(AbstractState* state)
-{
+StateMachineBuilder& StateMachineBuilder::operator<<(AbstractState* state) {
     addState(state);
 
     return *this;
 }
 
-StateMachineBuilder& StateMachineBuilder::operator<<(AbstractTransition* transition)
-{
+StateMachineBuilder& StateMachineBuilder::operator<<(AbstractTransition* transition) {
     addTransition(transition);
 
     return *this;
 }
 
-StateMachineBuilder& StateMachineBuilder::operator<<(Dataflow* dataflow)
-{
+StateMachineBuilder& StateMachineBuilder::operator<<(Dataflow* dataflow) {
     addDataflow(dataflow);
 
     return *this;
 }
 
-AbstractState* StateMachineBuilder::getState(const QString& stateId)
-{
-    if (stateMachine->getId() == stateId)
-    {
+AbstractState* StateMachineBuilder::getState(const QString& stateId) {
+    if (stateMachine->getId() == stateId) {
         return stateMachine;
     }
 
-    for (int i = 0; i < states.size(); i++)
-    {
-        if (states[i]->getId() == stateId)
-        {
+    for (int i = 0; i < states.size(); i++) {
+        if (states[i]->getId() == stateId) {
             return states[i];
         }
     }

@@ -31,332 +31,393 @@
 #include <exception>
 #include <memory>
 
-namespace pugi
-{
+namespace pugi {
     class xml_node;
 }
 
-namespace Json
-{
+namespace Json {
     class Value;
 }
 
-namespace YAML
-{
+namespace YAML {
     class Node;
 }
 
-namespace hfsmexec
-{
+namespace hfsmexec {
     class ArbitraryValue;
     class NullValue;
 
-    class Value : public QObject
-    {
+    class Value : public QObject {
         Q_OBJECT
 
         friend class Iterator;
 
-        public:
-            typedef enum
-            {
-                TYPE_UNDEFINED = 0,
-                TYPE_NULL,
-                TYPE_BOOLEAN,
-                TYPE_INTEGER,
-                TYPE_FLOAT,
-                TYPE_STRING,
-                TYPE_ARRAY,
-                TYPE_OBJECT
-            } Type;
+      public:
+        typedef enum {
+            TYPE_UNDEFINED = 0,
+            TYPE_NULL,
+            TYPE_BOOLEAN,
+            TYPE_INTEGER,
+            TYPE_FLOAT,
+            TYPE_STRING,
+            TYPE_ARRAY,
+            TYPE_OBJECT
+        } Type;
 
-            const char* typeNames[8] = {"Undefined",
-                                        "Null",
-                                        "Boolean",
-                                        "Integer",
-                                        "Float",
-                                        "String",
-                                        "Array",
-                                        "Object"};
+        const char* typeNames[8] = {"Undefined",
+                                    "Null",
+                                    "Boolean",
+                                    "Integer",
+                                    "Float",
+                                    "String",
+                                    "Array",
+                                    "Object"};
 
-            struct Undefined {};
-            struct Null {};
-            typedef bool Boolean;
-            typedef int Integer32;
-            typedef long Integer64;
-            typedef Integer64 Integer;
-            typedef float Float32;
-            typedef double Float64;
-            typedef Float64 Float;
-            typedef const char* StringChar;
-            typedef std::string StringStd;
-            typedef QString StringQt;
-            typedef StringQt String;
-            typedef QList<Value> Array;
-            typedef QMap<String, Value> Object;
+        struct Undefined {};
+        struct Null {};
+        typedef bool Boolean;
+        typedef int Integer32;
+        typedef long Integer64;
+        typedef Integer64 Integer;
+        typedef float Float32;
+        typedef double Float64;
+        typedef Float64 Float;
+        typedef const char* StringChar;
+        typedef std::string StringStd;
+        typedef QString StringQt;
+        typedef StringQt String;
+        typedef QList<Value> Array;
+        typedef QMap<String, Value> Object;
 
-            class ArrayIterator
-            {
-                public:
-                    ArrayIterator(const Value& value);
+        class ArrayIterator {
+          public:
+            ArrayIterator(const Value& value);
 
-                    inline int index() const { return it - array->begin(); }
-                    inline Value& value() const { return *it; }
+            inline int index() const {
+                return it - array->begin();
+            }
 
-                    inline operator bool() const { return array != NULL && it != array->end(); }
+            inline Value& value() const {
+                return *it;
+            }
 
-                    inline ArrayIterator& operator++() { ++it; return *this; }
-                    inline ArrayIterator operator++(int) { ArrayIterator r = *this; ++it; return r; }
-                    inline ArrayIterator& operator+=(int i) { it += i; return *this; }
+            inline operator bool() const {
+                return array != NULL && it != array->end();
+            }
 
-                    inline ArrayIterator& operator--() { --it; return *this; }
-                    inline ArrayIterator operator--(int) { ArrayIterator r = *this; --it; return r; }
-                    inline ArrayIterator& operator-=(int i) { it -= i; return *this; }
+            inline ArrayIterator& operator++() {
+                ++it;
+                return *this;
+            }
 
-                    inline Value& operator*() const { return *it; }
-                    inline Value* operator->() const { return &*it; }
-                    Value& operator[](int i);
+            inline ArrayIterator operator++(int) {
+                ArrayIterator r = *this;
+                ++it;
+                return r;
+            }
 
-                private:
-                    Array* array;
-                    Array::iterator it;
-            };
+            inline ArrayIterator& operator+=(int i) {
+                it += i;
+                return *this;
+            }
 
-            class ObjectIterator
-            {
-                public:
-                    ObjectIterator(const Value& value);
+            inline ArrayIterator& operator--() {
+                --it;
+                return *this;
+            }
 
-                    inline String key() const { return it.key(); }
-                    inline Value& value() const { return *it; }
+            inline ArrayIterator operator--(int) {
+                ArrayIterator r = *this;
+                --it;
+                return r;
+            }
 
-                    inline operator bool() const { return object != NULL && it != object->end(); }
+            inline ArrayIterator& operator-=(int i) {
+                it -= i;
+                return *this;
+            }
 
-                    inline ObjectIterator& operator++() { ++it; return *this; }
-                    inline ObjectIterator operator++(int) { ObjectIterator r = *this; ++it; return r; }
-                    inline ObjectIterator& operator+=(int i) { it += i; return *this; }
+            inline Value& operator*() const {
+                return *it;
+            }
 
-                    inline ObjectIterator& operator--() { --it; return *this; }
-                    inline ObjectIterator operator--(int) { ObjectIterator r = *this; --it; return r; }
-                    inline ObjectIterator& operator-=(int i) { it -= i; return *this; }
+            inline Value* operator->() const {
+                return &*it;
+            }
 
-                    inline Value& operator*() const { return *it; }
-                    inline Value* operator->() const { return &*it; }
-                    Value& operator[](const String key);
-
-                private:
-                    Object* object;
-                    Object::iterator it;
-            };
-
-            Value();
-            Value(const Boolean& value);
-            Value(const Integer32& value);
-            Value(const Integer64& value);
-            Value(const Float32& value);
-            Value(const Float64& value);
-            Value(const StringChar& value);
-            Value(const StringStd& value);
-            Value(const String& value);
-            Value(const Array& value);
-            Value(const Object& value);
-            Value(const Value& value);
-            Value(Value* const & value);
-            ~Value();
-
-            bool isUndefined() const;
-            bool isNull() const;
-            bool isBoolean() const;
-            bool isInteger() const;
-            bool isFloat() const;
-            bool isString() const;
-            bool isArray() const;
-            bool isObject() const;
-
-            Boolean getBoolean(Boolean defaultValue = false) const;
-            Integer getInteger(Integer defaultValue = 0) const;
-            Float getFloat(Float defaultValue = 0) const;
-            String getString(String defaultValue = "") const;
-            Array getArray(Array defaultValue = Array()) const;
-            Object getObject(Object defaultValue = Object()) const;
-
-            bool get(Boolean& value, Boolean defaultValue = false) const;
-            bool get(Integer& value, Integer defaultValue = 0) const;
-            bool get(Float& value, Float defaultValue = 0) const;
-            bool get(String& value, String defaultValue = "") const;
-            bool get(Array& value, Array defaultValue = Array()) const;
-            bool get(Object& value, Object defaultValue = Object()) const;
-
-            void set(const Boolean& value);
-            void set(const Integer32& value);
-            void set(const Integer64& value);
-            void set(const Float32& value);
-            void set(const Float64& value);
-            void set(const StringChar& value);
-            void set(const StringStd& value);
-            void set(const String& value);
-            void set(const Array& value);
-            void set(const Object& value);
-            void set(const Value& value);
-            void set(Value* const & value);
-
-            Value& getValue(const QString& path);
-            const Value& getValue(const QString& path) const;
-
-            void unite(const Value& value);
-
-            int size();
-            void remove(const QString& key);
-            void remove(int i);
-            bool contains(const QString& key);
-
-            void undefined();
-            void null();
-
-            bool isValid() const;
-
-            const Type& getType() const;
-
-            String toString();
-
-            bool toXml(QString& xml, bool pretty = false) const;
-            bool toJson(QString& json, bool pretty = false) const;
-            bool toYaml(QString& yaml) const;
-
-            bool fromXml(const QString& xml);
-            bool fromJson(const QString& json);
-            bool fromYaml(const QString& yaml);
-
-            const Value& operator=(const Boolean& value);
-            const Value& operator=(const Integer32& value);
-            const Value& operator=(const Integer64& value);
-            const Value& operator=(const Float32& value);
-            const Value& operator=(const Float64& value);
-            const Value& operator=(const StringChar& value);
-            const Value& operator=(const StringStd& value);
-            const Value& operator=(const String& value);
-            const Value& operator=(const Array& value);
-            const Value& operator=(const Object& value);
-            const Value& operator=(const Value& other);
-            const Value& operator=(const Value* other);
-
-            bool operator==(const Value& other) const;
-            bool operator!=(const Value& other) const;
-
-            Value& operator[](const QString& name);
-            const Value& operator[](const QString& name) const;
             Value& operator[](int i);
-            const Value& operator[](int i) const;
 
-        private:
-            static const Logger* logger;
-            std::shared_ptr<ArbitraryValue> value;
+          private:
+            Array* array;
+            Array::iterator it;
+        };
 
-            template <typename T>
-            bool get(T& value) const;
+        class ObjectIterator {
+          public:
+            ObjectIterator(const Value& value);
 
-            template <typename T>
-            void set(const T& value);
+            inline String key() const {
+                return it.key();
+            }
 
-            bool buildToXml(const Value* value, pugi::xml_node* xmlValue) const;
-            bool buildToJson(const Value* value, Json::Value* jsonValue) const;
-            bool buildToYaml(const Value* value, YAML::Node* yamlValue) const;
+            inline Value& value() const {
+                return *it;
+            }
 
-            bool buildFromXml(Value* value, pugi::xml_node* xmlValue);
-            bool buildFromJson(Value* value, Json::Value* jsonValue);
-            bool buildFromYaml(Value* value, YAML::Node* yamlValue);
+            inline operator bool() const {
+                return object != NULL && it != object->end();
+            }
+
+            inline ObjectIterator& operator++() {
+                ++it;
+                return *this;
+            }
+
+            inline ObjectIterator operator++(int) {
+                ObjectIterator r = *this;
+                ++it;
+                return r;
+            }
+
+            inline ObjectIterator& operator+=(int i) {
+                it += i;
+                return *this;
+            }
+
+            inline ObjectIterator& operator--() {
+                --it;
+                return *this;
+            }
+
+            inline ObjectIterator operator--(int) {
+                ObjectIterator r = *this;
+                --it;
+                return r;
+            }
+
+            inline ObjectIterator& operator-=(int i) {
+                it -= i;
+                return *this;
+            }
+
+            inline Value& operator*() const {
+                return *it;
+            }
+
+            inline Value* operator->() const {
+                return &*it;
+            }
+
+            Value& operator[](const String key);
+
+          private:
+            Object* object;
+            Object::iterator it;
+        };
+
+        Value();
+        Value(const Boolean& value);
+        Value(const Integer32& value);
+        Value(const Integer64& value);
+        Value(const Float32& value);
+        Value(const Float64& value);
+        Value(const StringChar& value);
+        Value(const StringStd& value);
+        Value(const String& value);
+        Value(const Array& value);
+        Value(const Object& value);
+        Value(const Value& value);
+        Value(Value* const & value);
+        ~Value();
+
+        bool isUndefined() const;
+        bool isNull() const;
+        bool isBoolean() const;
+        bool isInteger() const;
+        bool isFloat() const;
+        bool isString() const;
+        bool isArray() const;
+        bool isObject() const;
+
+        Boolean getBoolean(Boolean defaultValue = false) const;
+        Integer getInteger(Integer defaultValue = 0) const;
+        Float getFloat(Float defaultValue = 0) const;
+        String getString(String defaultValue = "") const;
+        Array getArray(Array defaultValue = Array()) const;
+        Object getObject(Object defaultValue = Object()) const;
+
+        bool get(Boolean& value, Boolean defaultValue = false) const;
+        bool get(Integer& value, Integer defaultValue = 0) const;
+        bool get(Float& value, Float defaultValue = 0) const;
+        bool get(String& value, String defaultValue = "") const;
+        bool get(Array& value, Array defaultValue = Array()) const;
+        bool get(Object& value, Object defaultValue = Object()) const;
+
+        void set(const Boolean& value);
+        void set(const Integer32& value);
+        void set(const Integer64& value);
+        void set(const Float32& value);
+        void set(const Float64& value);
+        void set(const StringChar& value);
+        void set(const StringStd& value);
+        void set(const String& value);
+        void set(const Array& value);
+        void set(const Object& value);
+        void set(const Value& value);
+        void set(Value* const & value);
+
+        Value& getValue(const QString& path);
+        const Value& getValue(const QString& path) const;
+
+        void unite(const Value& value);
+
+        int size();
+        void remove(const QString& key);
+        void remove(int i);
+        bool contains(const QString& key);
+
+        void undefined();
+        void null();
+
+        bool isValid() const;
+
+        const Type& getType() const;
+
+        String toString();
+
+        bool toXml(QString& xml, bool pretty = false) const;
+        bool toJson(QString& json, bool pretty = false) const;
+        bool toYaml(QString& yaml) const;
+
+        bool fromXml(const QString& xml);
+        bool fromJson(const QString& json);
+        bool fromYaml(const QString& yaml);
+
+        const Value& operator=(const Boolean& value);
+        const Value& operator=(const Integer32& value);
+        const Value& operator=(const Integer64& value);
+        const Value& operator=(const Float32& value);
+        const Value& operator=(const Float64& value);
+        const Value& operator=(const StringChar& value);
+        const Value& operator=(const StringStd& value);
+        const Value& operator=(const String& value);
+        const Value& operator=(const Array& value);
+        const Value& operator=(const Object& value);
+        const Value& operator=(const Value& other);
+        const Value& operator=(const Value* other);
+
+        bool operator==(const Value& other) const;
+        bool operator!=(const Value& other) const;
+
+        Value& operator[](const QString& name);
+        const Value& operator[](const QString& name) const;
+        Value& operator[](int i);
+        const Value& operator[](int i) const;
+
+      private:
+        static const Logger* logger;
+        std::shared_ptr<ArbitraryValue> value;
+
+        template <typename T>
+        bool get(T& value) const;
+
+        template <typename T>
+        void set(const T& value);
+
+        bool buildToXml(const Value* value, pugi::xml_node* xmlValue) const;
+        bool buildToJson(const Value* value, Json::Value* jsonValue) const;
+        bool buildToYaml(const Value* value, YAML::Node* yamlValue) const;
+
+        bool buildFromXml(Value* value, pugi::xml_node* xmlValue);
+        bool buildFromJson(Value* value, Json::Value* jsonValue);
+        bool buildFromYaml(Value* value, YAML::Node* yamlValue);
     };
 
-    class NullValue : public Value
-    {
-        public:
-            static NullValue& ref();
+    class NullValue : public Value {
+      public:
+        static NullValue& ref();
 
-            const Value& operator[](const QString& name) const;
-            const Value& operator[](int i) const;
+        const Value& operator[](const QString& name) const;
+        const Value& operator[](int i) const;
 
-        private:
-            static NullValue instance;
+      private:
+        static NullValue instance;
 
-            NullValue();
+        NullValue();
 
-            template <typename T>
-            bool get(T& value) const;
+        template <typename T>
+        bool get(T& value) const;
     };
 
-    class ArbitraryValueException : public std::exception
-    {
-        public:
-            ArbitraryValueException();
-            ArbitraryValueException(QString const& message);
-            virtual ~ArbitraryValueException() throw();
+    class ArbitraryValueException : public std::exception {
+      public:
+        ArbitraryValueException();
+        ArbitraryValueException(QString const& message);
+        virtual ~ArbitraryValueException() throw();
 
-            virtual const char* what() const throw();
+        virtual const char* what() const throw();
 
-        private:
-            QString message;
+      private:
+        QString message;
     };
 
-    class ArbitraryValue
-    {
-        public:
-            ArbitraryValue();
-            ArbitraryValue(ArbitraryValue const &other);
-            ~ArbitraryValue();
+    class ArbitraryValue {
+      public:
+        ArbitraryValue();
+        ArbitraryValue(ArbitraryValue const &other);
+        ~ArbitraryValue();
 
-            const Value::Type& getType() const;
+        const Value::Type& getType() const;
 
-            void* ptr();
-            void const* ptr() const;
+        void* ptr();
+        void const* ptr() const;
 
-            template<typename T>
-            T& get();
-            template<typename T>
-            T const& get() const;
+        template<typename T>
+        T& get();
+        template<typename T>
+        T const& get() const;
 
-            template<typename T>
-            void set(T const& other);
-            void set(ArbitraryValue const& other);
+        template<typename T>
+        void set(T const& other);
+        void set(ArbitraryValue const& other);
 
-            bool operator==(ArbitraryValue const& other) const;
+        bool operator==(ArbitraryValue const& other) const;
 
-        private:
-            Value::Type type;
+      private:
+        Value::Type type;
 
-            union Data
-            {
-                void* p;
-                bool b;
-                int i;
-                double d;
-                char s[sizeof(Value::String)];
-                char a[sizeof(Value::Array)];
-                char o[sizeof(Value::Object)];
-            } data;
+        union Data {
+            void* p;
+            bool b;
+            int i;
+            double d;
+            char s[sizeof(Value::String)];
+            char a[sizeof(Value::Array)];
+            char o[sizeof(Value::Object)];
+        } data;
 
-            template<typename T>
-            void create(T const &v);
-            void create(Value::Type t);
-            void create(Value::Type t, Data const& other);
+        template<typename T>
+        void create(T const &v);
+        void create(Value::Type t);
+        void create(Value::Type t, Data const& other);
 
-            void destroy();
+        void destroy();
     };
 
-    class ValueScriptBinding : public QScriptClass
-    {
-        public:
-            virtual QScriptValue property(const QScriptValue& object, const QScriptString& name, uint id);
-            virtual void setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& newValue);
-            virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& name, QueryFlags flags, uint* id);
+    class ValueScriptBinding : public QScriptClass {
+      public:
+        virtual QScriptValue property(const QScriptValue& object, const QScriptString& name, uint id);
+        virtual void setProperty(QScriptValue& object, const QScriptString& name, uint id, const QScriptValue& newValue);
+        virtual QueryFlags queryProperty(const QScriptValue& object, const QScriptString& name, QueryFlags flags, uint* id);
 
-            static QScriptValue create(QScriptEngine* engine, Value* value);
+        static QScriptValue create(QScriptEngine* engine, Value* value);
 
-        private:
-            ValueScriptBinding(QScriptEngine* engine);
-            ~ValueScriptBinding();
+      private:
+        ValueScriptBinding(QScriptEngine* engine);
+        ~ValueScriptBinding();
 
-            void setPropertyFromArray(const QVariantList& list, Value* value);
-            void setPropertyFromObject(const QVariantMap& map, Value* value);
+        void setPropertyFromArray(const QVariantList& list, Value* value);
+        void setPropertyFromObject(const QVariantMap& map, Value* value);
     };
 }
 

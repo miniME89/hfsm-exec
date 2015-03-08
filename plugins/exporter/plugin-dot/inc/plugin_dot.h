@@ -20,20 +20,19 @@
 
 #include <plugins.h>
 
-class Exporter : public QObject, public hfsmexec::ExporterPlugin
-{
+class Exporter : public QObject, public hfsmexec::ExporterPlugin {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "hfsmexec.Plugins.ExporterPlugin")
     Q_INTERFACES(hfsmexec::ExporterPlugin)
 
-    public:
-        Exporter();
-        virtual ~Exporter();
+  public:
+    Exporter();
+    virtual ~Exporter();
 
-        QString exportStateMachine(hfsmexec::StateMachine* stateMachine);
-        void decode(QString& dot, hfsmexec::AbstractState* state, int level, const QString& prefix = "");
+    QString exportStateMachine(hfsmexec::StateMachine* stateMachine);
+    void decode(QString& dot, hfsmexec::AbstractState* state, int level, const QString& prefix = "");
 
-    private:
+  private:
 
 };
 
